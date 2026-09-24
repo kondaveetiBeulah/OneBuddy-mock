@@ -1,0 +1,18 @@
+{
+  "rules": {
+    "rideLocations": {
+      "$rideId": {
+        ".read": "auth != null && (data.child('userId').val() === auth.uid || data.child('driverUid').val() === auth.uid)",
+        ".write": "auth != null && data.exists() && data.child('driverUid').val() === auth.uid && newData.child('driverUid').val() === auth.uid && newData.child('userId').val() === data.child('userId').val()",
+        ".validate": "newData.hasChildren(['userId', 'driverUid', 'latitude', 'longitude', 'updatedAt']) && newData.child('latitude').isNumber() && newData.child('latitude').val() >= -90 && newData.child('latitude').val() <= 90 && newData.child('longitude').isNumber() && newData.child('longitude').val() >= -180 && newData.child('longitude').val() <= 180 && newData.child('updatedAt').isNumber()",
+        "userId": { ".validate": "newData.isString() && newData.val() === data.val()" },
+        "driverUid": { ".validate": "newData.isString() && newData.val() === data.val()" },
+        "latitude": { ".validate": "newData.isNumber() && newData.val() >= -90 && newData.val() <= 90" },
+        "longitude": { ".validate": "newData.isNumber() && newData.val() >= -180 && newData.val() <= 180" },
+        "heading": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 360" },
+        "updatedAt": { ".validate": "newData.isNumber()" },
+        "$other": { ".validate": false }
+      }
+    }
+  }
+}

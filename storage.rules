@@ -1,0 +1,31 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function signedIn() { return request.auth != null; }
+    function owns(uid) { return signedIn() && request.auth.uid == uid; }
+    function imageUpload() {
+      return request.resource != null
+        && request.resource.size < 10 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
+    match /users/{uid}/profile/{fileName} {
+      allow read: if owns(uid);
+      allow create, update: if owns(uid) && imageUpload();
+      allow delete: if owns(uid);
+    }
+    match /users/{uid}/orders/{orderId}/feedback/{fileName} {
+      allow read: if owns(uid);
+      allow create, update: if owns(uid) && imageUpload();
+      allow delete: if owns(uid);
+    }
+    match /medical/{uid}/{fileName=**} {
+      allow read: if owns(uid);
+      allow write: if false; // upload through authenticated backend after appointment ownership checks
+    }
+    match /catalog/{serviceName}/{entityId}/{fileName=**} {
+      allow read: if true;
+      allow write: if signedIn() && request.auth.token.admin == true && imageUpload();
+    }
+    match /{fileName=**} { allow read, write: if false; }
+  }
+}

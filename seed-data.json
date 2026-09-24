@@ -1,0 +1,44 @@
+{
+  "collections": {
+    "systemMetadata": [
+      {
+        "id": "firestoreSchema",
+        "data": {
+          "schemaVersion": 1,
+          "services": ["food", "grocery", "rides", "homeServices", "healthcare"],
+          "collectionsDefinedIn": "FIRESTORE_SCHEMA.md"
+        }
+      }
+    ],
+    "serviceCatalog": [
+      { "id": "food", "data": { "label": "Food", "active": true, "sortOrder": 1 } },
+      { "id": "grocery", "data": { "label": "Groceries", "active": true, "sortOrder": 2 } },
+      { "id": "rides", "data": { "label": "Rides", "active": true, "sortOrder": 3 } },
+      { "id": "homeServices", "data": { "label": "Home services", "active": true, "sortOrder": 4 } },
+      { "id": "healthcare", "data": { "label": "Hospitals and care", "active": true, "sortOrder": 5 } }
+    ],
+    "healthcareSpecialties": [
+      { "id": "general-medicine", "data": { "name": "General Medicine", "active": true, "sortOrder": 1 } },
+      { "id": "cardiology", "data": { "name": "Cardiology", "active": true, "sortOrder": 2 } },
+      { "id": "dermatology", "data": { "name": "Dermatology", "active": true, "sortOrder": 3 } },
+      { "id": "dentistry", "data": { "name": "Dentistry", "active": true, "sortOrder": 4 } },
+      { "id": "gynecology", "data": { "name": "Gynecology", "active": true, "sortOrder": 5 } },
+      { "id": "pediatrics", "data": { "name": "Pediatrics", "active": true, "sortOrder": 6 } },
+      { "id": "orthopedics", "data": { "name": "Orthopedics", "active": true, "sortOrder": 7 } },
+      { "id": "neurology", "data": { "name": "Neurology", "active": true, "sortOrder": 8 } },
+      { "id": "ophthalmology", "data": { "name": "Ophthalmology", "active": true, "sortOrder": 9 } },
+      { "id": "ent", "data": { "name": "ENT", "active": true, "sortOrder": 10 } },
+      { "id": "psychiatry", "data": { "name": "Psychiatry", "active": true, "sortOrder": 11 } },
+      { "id": "oncology", "data": { "name": "Oncology", "active": true, "sortOrder": 12 } }
+    ],
+    "catalogHospitals": [],
+    "catalogRestaurants": [],
+    "catalogFoodBanners": [],
+    "catalogGroceryCategories": [],
+    "catalogGroceryProducts": [],
+    "catalogGroceryOffers": [],
+    "catalogServiceProviders": [],
+    "catalogPharmacies": [],
+    "catalogMedicines": []
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "onebuddy-firestore-bootstrap",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "import:seed": "node import-firestore.mjs"
+  },
+  "dependencies": {
+    "firebase-admin": "14.4.0"
+  }
+}

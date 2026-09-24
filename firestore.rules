@@ -1,0 +1,211 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function owns(uid) { return signedIn() && request.auth.uid == uid; }
+    function isAdmin() { return signedIn() && request.auth.token.admin == true; }
+
+    match /users/{uid} {
+      allow read: if owns(uid);
+      allow create, delete: if false;
+      allow update: if owns(uid)
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['displayName', 'photoURL', 'updatedAt']);
+
+      match /preferences/{kind} {
+        allow read: if owns(uid);
+        allow create, update: if owns(uid)
+          && kind in ['settings', 'service', 'notifications'];
+        allow delete: if owns(uid) && kind in ['settings', 'service', 'notifications'];
+      }
+      match /privacy/{kind} {
+        allow read: if owns(uid);
+        allow write: if owns(uid) && kind == 'security';
+      }
+      match /privacy/consents/{consentId} {
+        allow read: if owns(uid);
+        allow write: if false;
+      }
+      match /addresses/{addressId} {
+        allow read, create, update, delete: if owns(uid);
+      }
+      match /savedPlaces/{placeId} {
+        allow read, create, update, delete: if owns(uid);
+      }
+      match /devices/{deviceId} {
+        allow read, create, update, delete: if owns(uid);
+      }
+      match /favorites/{favoriteId} {
+        allow read, create, update, delete: if owns(uid);
+      }
+      match /paymentMethods/{methodId} {
+        allow read: if owns(uid);
+        allow write: if false;
+      }
+      match /orders/{orderId} {
+        allow read: if owns(uid);
+        allow write: if false;
+      }
+      match /walletTransactions/{entryId} {
+        allow read: if owns(uid);
+        allow write: if false;
+      }
+      match /{nested=**} { allow read, write: if false; }
+    }
+
+    match /catalogRestaurants/{restaurantId} {
+      allow read: if resource.data.active == true;
+      allow write: if isAdmin();
+      match /menuItems/{itemId} {
+        allow read: if get(/databases/$(database)/documents/catalogRestaurants/$(restaurantId)).data.active == true
+          && resource.data.available == true;
+        allow write: if isAdmin();
+      }
+    }
+    match /catalogFoodBanners/{bannerId} {
+      allow read: if resource.data.active == true;
+      allow write: if isAdmin();
+    }
+    match /catalogGroceryCategories/{categoryId} {
+      allow read: if resource.data.active == true;
+      allow write: if isAdmin();
+    }
+    match /catalogGroceryProducts/{productId} {
+      allow read: if resource.data.isAvailable == true;
+      allow write: if isAdmin();
+    }
+    match /catalogGroceryOffers/{offerId} {
+      allow read: if resource.data.active == true;
+      allow write: if isAdmin();
+    }
+    match /catalogServiceProviders/{providerId} {
+      allow read: if resource.data.active == true;
+      allow write: if isAdmin();
+    }
+    match /catalogPharmacies/{pharmacyId} {
+      allow read: if resource.data.active == true;
+      allow write: if isAdmin();
+      match /inventory/{medicineId} {
+        allow read: if resource.data.active == true;
+        allow write: if isAdmin();
+      }
+    }
+    match /catalogMedicines/{medicineId} {
+      allow read: if resource.data.active == true;
+      allow write: if isAdmin();
+    }
+    match /serviceCatalog/{serviceId} {
+      allow read: if resource.data.active == true;
+      allow write: if isAdmin();
+    }
+    match /healthcareSpecialties/{specialtyId} {
+      allow read: if resource.data.active == true;
+      allow write: if isAdmin();
+    }
+
+    match /catalogHospitals/{hospitalId} {
+      allow read: if resource.data.active == true;
+      allow write: if isAdmin();
+      match /departments/{departmentId} {
+        allow read: if resource.data.active == true;
+        allow write: if isAdmin();
+      }
+      match /doctors/{doctorId} {
+        allow read: if resource.data.active == true;
+        allow write: if isAdmin();
+        match /availability/{slotId} {
+          allow read: if resource.data.bookable == true;
+          allow write: if false;
+        }
+      }
+    }
+
+    match /carts/{cartId} {
+      allow read: if signedIn() && resource.data.userId == request.auth.uid;
+      allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if signedIn() && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == request.auth.uid;
+      allow delete: if signedIn() && resource.data.userId == request.auth.uid;
+      match /items/{itemId} {
+        function ownsCart() {
+          return signedIn() && get(/databases/$(database)/documents/carts/$(cartId)).data.userId == request.auth.uid;
+        }
+        allow read, create, update, delete: if ownsCart();
+      }
+    }
+
+    match /orders/{orderId} {
+      allow read: if signedIn() && resource.data.userId == request.auth.uid;
+      allow write: if false;
+      match /{nested=**} {
+        allow read: if signedIn()
+          && get(/databases/$(database)/documents/orders/$(orderId)).data.userId == request.auth.uid;
+        allow write: if false;
+      }
+    }
+    match /rides/{rideId} {
+      allow read: if signedIn() && resource.data.userId == request.auth.uid;
+      allow write: if false;
+      match /locationEvents/{eventId} {
+        allow read: if signedIn()
+          && get(/databases/$(database)/documents/rides/$(rideId)).data.userId == request.auth.uid;
+        allow write: if false;
+      }
+    }
+    match /serviceBookings/{bookingId} {
+      allow read: if signedIn() && resource.data.userId == request.auth.uid;
+      allow write: if false;
+      match /events/{eventId} {
+        allow read: if signedIn()
+          && get(/databases/$(database)/documents/serviceBookings/$(bookingId)).data.userId == request.auth.uid;
+        allow write: if false;
+      }
+    }
+    match /hospitalAppointments/{appointmentId} {
+      allow read: if signedIn() && resource.data.userId == request.auth.uid;
+      allow write: if false;
+      match /events/{eventId} {
+        allow read: if signedIn()
+          && get(/databases/$(database)/documents/hospitalAppointments/$(appointmentId)).data.userId == request.auth.uid;
+        allow write: if false;
+      }
+    }
+    match /prescriptions/{prescriptionId} {
+      allow read: if signedIn() && resource.data.userId == request.auth.uid;
+      allow write: if false;
+    }
+    match /medicalDocuments/{documentId} {
+      allow read: if signedIn() && resource.data.userId == request.auth.uid;
+      allow write: if false;
+    }
+    match /payments/{paymentId} {
+      allow read: if signedIn() && resource.data.userId == request.auth.uid;
+      allow write: if false;
+    }
+    match /wallets/{uid} {
+      allow read: if owns(uid);
+      allow write: if false;
+      match /entries/{entryId} {
+        allow read: if owns(uid);
+        allow write: if false;
+      }
+    }
+    match /notifications/{notificationId} {
+      allow read: if signedIn() && resource.data.userId == request.auth.uid;
+      allow create, delete: if false;
+      allow update: if signedIn() && resource.data.userId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['readAt']);
+    }
+    match /feedback/{feedbackId} {
+      allow read: if signedIn() && resource.data.userId == request.auth.uid;
+      allow write: if false;
+    }
+    match /supportRequests/{requestId} {
+      allow read: if signedIn() && resource.data.userId == request.auth.uid;
+      allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if false;
+    }
+    match /outbox/{eventId} { allow read, write: if false; }
+    match /{document=**} { allow read, write: if false; }
+  }
+}

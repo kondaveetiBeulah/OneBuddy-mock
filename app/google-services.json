@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "923658815455",
+    "project_id": "onebuddyuser",
+    "storage_bucket": "onebuddyuser.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:923658815455:android:ebd8c179c923401583a66a",
+        "android_client_info": {
+          "package_name": "com.onebuddy.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "923658815455-el8hl5ju0asajs94h85mcur1hf9r4bo6.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.onebuddy.app",
+            "certificate_hash": "21d9c5682ed0b9c85d85f80c42612ca1491240a5"
+          }
+        },
+        {
+          "client_id": "923658815455-1ob3vjdp63o32hpfmjht00boqoqhqndf.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC0i2PsCmk0H1pBYcF_cl5EYIrgFMHXY3Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "923658815455-1ob3vjdp63o32hpfmjht00boqoqhqndf.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
