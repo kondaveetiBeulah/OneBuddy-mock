@@ -4,6 +4,8 @@ import {
   getDoc,
   getDocs,
   onSnapshot,
+  query,
+  where,
 } from 'firebase/firestore';
 import { db } from '../config';
 import { Offer } from '../../categories/groceries/types/offer.types';
@@ -31,7 +33,11 @@ export async function fetchOffers(): Promise<Offer[]> {
     return [];
   }
   try {
-    const snap = await getDocs(collection(db, 'offers'));
+    const q = query(
+      collection(db, 'catalogGroceryOffers'),
+      where('active', '==', true)
+    );
+    const snap = await getDocs(q);
     return snap.docs.map((d) => mapOffer(d.id, d.data()));
   } catch (err) {
     console.error('[GroceryBackend] Error fetching offers:', err);
@@ -42,7 +48,7 @@ export async function fetchOffers(): Promise<Offer[]> {
 export async function fetchOfferById(offerId: string): Promise<Offer | null> {
   if (!db) return null;
   try {
-    const ref = doc(db, 'offers', offerId);
+    const ref = doc(db, 'catalogGroceryOffers', offerId);
     const snap = await getDoc(ref);
     if (snap.exists()) {
       return mapOffer(snap.id, snap.data());
@@ -63,8 +69,12 @@ export function subscribeOffers(
     onData([]);
     return () => {};
   }
+  const q = query(
+    collection(db, 'catalogGroceryOffers'),
+    where('active', '==', true)
+  );
   return onSnapshot(
-    collection(db, 'offers'),
+    q,
     (snap) => {
       const offers = snap.docs.map((d) => mapOffer(d.id, d.data()));
       onData(offers);

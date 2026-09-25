@@ -13,9 +13,18 @@ import { Product } from '../../categories/groceries/types/product.types';
 /* ─────────────── Defensive Mapper ─────────────── */
 
 export function mapProduct(docId: string, data: any): Product {
-  const price = typeof data.price === 'number' ? data.price : 0;
-  const discountPrice =
-    typeof data.discountPrice === 'number' ? data.discountPrice : price;
+  // Convert minor units (paise) back to rupees if present, else fallback
+  const price = typeof data.priceMinor === 'number'
+    ? data.priceMinor / 100
+    : (typeof data.price === 'number' ? data.price : 0);
+
+  const discountPrice = typeof data.discountPriceMinor === 'number'
+    ? data.discountPriceMinor / 100
+    : (typeof data.discountPrice === 'number' ? data.discountPrice : price);
+
+  const stock = typeof data.stockQuantity === 'number'
+    ? data.stockQuantity
+    : (typeof data.stock === 'number' ? data.stock : 10);
 
   return {
     id: data.id || docId,
@@ -33,10 +42,10 @@ export function mapProduct(docId: string, data: any): Product {
         : price > discountPrice && price > 0
         ? Math.round(((price - discountPrice) / price) * 100)
         : 0,
-    unit: data.unit || '',
+    unit: data.unit || '1 unit',
     rating: typeof data.rating === 'number' ? data.rating : 4.5,
     reviewCount: typeof data.reviewCount === 'number' ? data.reviewCount : 0,
-    stock: typeof data.stock === 'number' ? data.stock : 10,
+    stock,
     isFeatured: Boolean(data.isFeatured),
     isAvailable: data.isAvailable !== false,
   };
@@ -50,7 +59,11 @@ export async function fetchProducts(): Promise<Product[]> {
     return [];
   }
   try {
-    const snap = await getDocs(collection(db, 'products'));
+    const q = query(
+      collection(db, 'catalogGroceryProducts'),
+      where('isAvailable', '==', true)
+    );
+    const snap = await getDocs(q);
     return snap.docs.map((d) => mapProduct(d.id, d.data()));
   } catch (err) {
     console.error('[GroceryBackend] Error fetching products:', err);
@@ -61,7 +74,7 @@ export async function fetchProducts(): Promise<Product[]> {
 export async function fetchProductById(productId: string): Promise<Product | null> {
   if (!db) return null;
   try {
-    const ref = doc(db, 'products', productId);
+    const ref = doc(db, 'catalogGroceryProducts', productId);
     const snap = await getDoc(ref);
     if (snap.exists()) {
       return mapProduct(snap.id, snap.data());
@@ -75,7 +88,11 @@ export async function fetchProductById(productId: string): Promise<Product | nul
 export async function fetchFeaturedProducts(): Promise<Product[]> {
   if (!db) return [];
   try {
-    const q = query(collection(db, 'products'), where('isFeatured', '==', true));
+    const q = query(
+      collection(db, 'catalogGroceryProducts'),
+      where('isAvailable', '==', true),
+      where('isFeatured', '==', true)
+    );
     const snap = await getDocs(q);
     return snap.docs.map((d) => mapProduct(d.id, d.data()));
   } catch (err) {
@@ -94,8 +111,12 @@ export function subscribeProducts(
     onData([]);
     return () => {};
   }
+  const q = query(
+    collection(db, 'catalogGroceryProducts'),
+    where('isAvailable', '==', true)
+  );
   return onSnapshot(
-    collection(db, 'products'),
+    q,
     (snap) => {
       const products = snap.docs.map((d) => mapProduct(d.id, d.data()));
       onData(products);

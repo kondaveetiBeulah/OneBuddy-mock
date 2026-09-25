@@ -4,6 +4,8 @@ import {
   getDoc,
   getDocs,
   onSnapshot,
+  query,
+  where,
 } from 'firebase/firestore';
 import { db } from '../config';
 import { Category } from '../../categories/groceries/types/category.types';
@@ -29,7 +31,11 @@ export async function fetchCategories(): Promise<Category[]> {
     return [];
   }
   try {
-    const snap = await getDocs(collection(db, 'categories'));
+    const q = query(
+      collection(db, 'catalogGroceryCategories'),
+      where('active', '==', true)
+    );
+    const snap = await getDocs(q);
     return snap.docs.map((d) => mapCategory(d.id, d.data()));
   } catch (err) {
     console.error('[GroceryBackend] Error fetching categories:', err);
@@ -40,7 +46,7 @@ export async function fetchCategories(): Promise<Category[]> {
 export async function fetchCategoryById(categoryId: string): Promise<Category | null> {
   if (!db) return null;
   try {
-    const ref = doc(db, 'categories', categoryId);
+    const ref = doc(db, 'catalogGroceryCategories', categoryId);
     const snap = await getDoc(ref);
     if (snap.exists()) {
       return mapCategory(snap.id, snap.data());
@@ -61,8 +67,12 @@ export function subscribeCategories(
     onData([]);
     return () => {};
   }
+  const q = query(
+    collection(db, 'catalogGroceryCategories'),
+    where('active', '==', true)
+  );
   return onSnapshot(
-    collection(db, 'categories'),
+    q,
     (snap) => {
       const categories = snap.docs.map((d) => mapCategory(d.id, d.data()));
       onData(categories);

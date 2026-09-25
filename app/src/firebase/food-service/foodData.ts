@@ -4,18 +4,29 @@ import {
   getDoc,
   getDocs,
   onSnapshot,
+  query,
+  where,
 } from 'firebase/firestore';
 import { db } from '../config';
 import { MenuItem, OfferBanner, Restaurant } from '../../categories/food/types';
 
 /* ─────────────── Defensive Mappers ─────────────── */
 
-function mapMenuItem(item: any, idx: number): MenuItem {
+export function mapMenuItem(item: any, idx: number): MenuItem {
+  // Convert minor units (paise) back to rupees if present, else fallback
+  const price = typeof item.priceMinor === 'number'
+    ? item.priceMinor / 100
+    : (typeof item.price === 'number' ? item.price : 0);
+
+  const originalPrice = typeof item.originalPriceMinor === 'number'
+    ? item.originalPriceMinor / 100
+    : (typeof item.originalPrice === 'number' ? item.originalPrice : undefined);
+
   return {
     id: item.id || `item-${idx}`,
     name: item.name || '',
-    price: typeof item.price === 'number' ? item.price : 0,
-    originalPrice: typeof item.originalPrice === 'number' ? item.originalPrice : undefined,
+    price,
+    originalPrice,
     description: item.description || '',
     image: item.image || '',
     rating: typeof item.rating === 'number' ? item.rating : 4.5,
@@ -32,11 +43,24 @@ function mapMenuItem(item: any, idx: number): MenuItem {
   };
 }
 
-export function mapRestaurant(docId: string, data: any): Restaurant {
+export function mapRestaurant(docId: string, data: any, menuItems: MenuItem[] = []): Restaurant {
   const gradientColors: [string, string] =
     Array.isArray(data.gradientColors) && data.gradientColors.length >= 2
       ? [String(data.gradientColors[0]), String(data.gradientColors[1])]
       : ['#173a2b', '#0a1812'];
+
+  const costForTwo = typeof data.costForTwoMinor === 'number'
+    ? data.costForTwoMinor / 100
+    : (typeof data.costForTwo === 'number' ? data.costForTwo : 350);
+
+  const totalRatings = typeof data.ratingCount === 'number'
+    ? `${data.ratingCount}+ ratings`
+    : (data.totalRatings || '100+ ratings');
+
+  // Use subcollection menu items if provided; else fall back to legacy embedded menu array
+  const menu = menuItems.length > 0
+    ? menuItems
+    : (Array.isArray(data.menu) ? data.menu.map(mapMenuItem) : []);
 
   return {
     id: data.id || docId,
@@ -44,11 +68,11 @@ export function mapRestaurant(docId: string, data: any): Restaurant {
     tagline: data.tagline || '',
     cuisine: Array.isArray(data.cuisine) ? data.cuisine : [],
     rating: typeof data.rating === 'number' ? data.rating : 4.5,
-    totalRatings: data.totalRatings || '1k+ ratings',
+    totalRatings,
     deliveryTime: data.deliveryTime || '20-25 mins',
     deliveryMins: typeof data.deliveryMins === 'number' ? data.deliveryMins : 25,
     distance: data.distance || '2.0 km',
-    costForTwo: typeof data.costForTwo === 'number' ? data.costForTwo : 350,
+    costForTwo,
     featuredImage: data.featuredImage || '',
     bannerImage: data.bannerImage || data.featuredImage || '',
     dietaryType: (data.dietaryType === 'pure-veg' || data.dietaryType === 'non-veg' || data.dietaryType === 'mixed')
@@ -60,7 +84,7 @@ export function mapRestaurant(docId: string, data: any): Restaurant {
     couponCode: data.couponCode || undefined,
     gradientColors,
     cardBorderColor: data.cardBorderColor || 'rgba(76, 154, 106, 0.4)',
-    menu: Array.isArray(data.menu) ? data.menu.map(mapMenuItem) : [],
+    menu,
   };
 }
 
@@ -91,10 +115,26 @@ export async function fetchBanners(): Promise<OfferBanner[]> {
     return [];
   }
   try {
-    const snap = await getDocs(collection(db, 'banners'));
+    const q = query(collection(db, 'catalogFoodBanners'), where('active', '==', true));
+    const snap = await getDocs(q);
     return snap.docs.map((d) => mapBanner(d.id, d.data()));
   } catch (err) {
     console.error('[FoodBackend] Error fetching banners:', err);
+    return [];
+  }
+}
+
+export async function fetchMenuItems(restaurantId: string): Promise<MenuItem[]> {
+  if (!db) return [];
+  try {
+    const q = query(
+      collection(db, 'catalogRestaurants', restaurantId, 'menuItems'),
+      where('available', '==', true)
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map((d, idx) => mapMenuItem({ id: d.id, ...d.data() }, idx));
+  } catch (err) {
+    console.error(`[FoodBackend] Error fetching menu items for ${restaurantId}:`, err);
     return [];
   }
 }
@@ -105,8 +145,17 @@ export async function fetchRestaurants(): Promise<Restaurant[]> {
     return [];
   }
   try {
-    const snap = await getDocs(collection(db, 'restaurants'));
-    return snap.docs.map((d) => mapRestaurant(d.id, d.data()));
+    const q = query(collection(db, 'catalogRestaurants'), where('active', '==', true));
+    const snap = await getDocs(q);
+    
+    // Fetch menu items for each restaurant in parallel
+    const restaurants = await Promise.all(
+      snap.docs.map(async (d) => {
+        const menuItems = await fetchMenuItems(d.id);
+        return mapRestaurant(d.id, d.data(), menuItems);
+      })
+    );
+    return restaurants;
   } catch (err) {
     console.error('[FoodBackend] Error fetching restaurants:', err);
     return [];
@@ -116,10 +165,11 @@ export async function fetchRestaurants(): Promise<Restaurant[]> {
 export async function fetchRestaurantById(restaurantId: string): Promise<Restaurant | null> {
   if (!db) return null;
   try {
-    const ref = doc(db, 'restaurants', restaurantId);
+    const ref = doc(db, 'catalogRestaurants', restaurantId);
     const snap = await getDoc(ref);
     if (snap.exists()) {
-      return mapRestaurant(snap.id, snap.data());
+      const menuItems = await fetchMenuItems(restaurantId);
+      return mapRestaurant(snap.id, snap.data(), menuItems);
     }
   } catch (err) {
     console.error(`[FoodBackend] Error fetching restaurant ${restaurantId}:`, err);
@@ -137,8 +187,9 @@ export function subscribeBanners(
     onData([]);
     return () => {};
   }
+  const q = query(collection(db, 'catalogFoodBanners'), where('active', '==', true));
   return onSnapshot(
-    collection(db, 'banners'),
+    q,
     (snap) => {
       const banners = snap.docs.map((d) => mapBanner(d.id, d.data()));
       onData(banners);
@@ -158,10 +209,16 @@ export function subscribeRestaurants(
     onData([]);
     return () => {};
   }
+  const q = query(collection(db, 'catalogRestaurants'), where('active', '==', true));
   return onSnapshot(
-    collection(db, 'restaurants'),
-    (snap) => {
-      const restaurants = snap.docs.map((d) => mapRestaurant(d.id, d.data()));
+    q,
+    async (snap) => {
+      const restaurants = await Promise.all(
+        snap.docs.map(async (d) => {
+          const menuItems = await fetchMenuItems(d.id);
+          return mapRestaurant(d.id, d.data(), menuItems);
+        })
+      );
       onData(restaurants);
     },
     (err) => {
