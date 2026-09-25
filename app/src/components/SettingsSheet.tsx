@@ -34,6 +34,7 @@ import BuddyAvatar from './BuddyAvatar';
 import { useProfile } from '@/context/ProfileContext';
 import { useAppTheme } from '@/theme/ThemeContext';
 import { useOtpAuth } from '@/auth/OtpAuthContext';
+import { useAuth } from '@/firebase/context/AuthContext';
 import { useServicePreferences } from '@/native/screens/ServicePreferences';
 import type { RootStackParamList } from '@/navigation/types';
 
@@ -58,6 +59,7 @@ export default function SettingsSheet({
   const navigation = useNavigation<Nav>();
   const { profile } = useProfile();
   const { signOut } = useOtpAuth();
+  const { signOut: firebaseSignOut, deleteAccount } = useAuth();
   const { summaryLabel } = useServicePreferences();
 
   // Android hardware back button — dismiss the sheet
@@ -92,7 +94,12 @@ export default function SettingsSheet({
           style: 'destructive',
           onPress: async () => {
             onClose();
-            await signOut();
+            try {
+              await firebaseSignOut();
+            } catch {}
+            try {
+              await signOut();
+            } catch {}
           },
         },
       ]
@@ -110,7 +117,12 @@ export default function SettingsSheet({
           style: 'destructive',
           onPress: async () => {
             onClose();
-            await signOut();
+            try {
+              await deleteAccount();
+            } catch {}
+            try {
+              await signOut();
+            } catch {}
           },
         },
       ]

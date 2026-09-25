@@ -123,15 +123,20 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
 
   // Listen to Firestore profile updates when Firebase user is active
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setProfile(DEFAULT_PROFILE);
+      return;
+    }
     const unsub = subscribeToProfile(user.uid, (data) => {
       if (data) {
         setProfile((prev) => {
+          const resolvedName = data.displayName || data.name || prev.name;
+          const resolvedPhone = data.phoneNumber || data.phone || prev.phone;
           const updated: ProfileData = {
             ...prev,
-            name: data.name || prev.name,
+            name: resolvedName,
             email: data.email || prev.email,
-            phone: data.phone || prev.phone,
+            phone: resolvedPhone,
           };
           AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated)).catch(() => {});
           return updated;

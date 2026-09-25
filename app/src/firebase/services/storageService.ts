@@ -16,6 +16,5 @@ export async function uploadProfilePhoto(uid: string, fileUri: string): Promise<
   const photoRef = ref(storage, `profile-photos/${uid}.jpg`);
   await uploadBytes(photoRef, blob, { contentType: 'image/jpeg' });
   const url = await getDownloadURL(photoRef);
-  await updateProfileFields(uid, { photoURL: url });
   return url;
 }

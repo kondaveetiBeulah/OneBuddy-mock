@@ -7,10 +7,8 @@ service cloud.firestore {
 
     match /users/{uid} {
       allow read: if owns(uid);
-      allow create, delete: if false;
-      allow update: if owns(uid)
-        && request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['displayName', 'photoURL', 'updatedAt']);
+      allow create, update: if owns(uid);
+      allow delete: if false;
 
       match /preferences/{kind} {
         allow read: if owns(uid);

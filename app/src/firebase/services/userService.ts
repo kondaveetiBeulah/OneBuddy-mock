@@ -11,53 +11,155 @@ const DEFAULT_SECURITY: Omit<SecurityDoc, 'updatedAt'> = {
   emergencyContact: '',
 };
 
+function normalizeUserProfile(raw: any, fallbackUid: string): UserProfile {
+  const displayName = raw.displayName || raw.name || 'OneBuddy user';
+  const phone = raw.phoneNumber || raw.phoneE164 || raw.phone || null;
+  return {
+    uid: raw.uid || fallbackUid,
+    displayName,
+    name: displayName, // helper for UI
+    email: raw.email || null,
+    phoneNumber: phone,
+    phone: phone, // helper for UI
+    photoURL: raw.photoURL || null,
+    accountStatus: raw.accountStatus || 'active',
+    createdAt: raw.createdAt || Date.now(),
+    updatedAt: raw.updatedAt || Date.now(),
+  };
+}
+
+function deriveDisplayName(user: User, explicitName?: string, email?: string): string {
+  if (explicitName && explicitName.trim()) return explicitName.trim();
+  if (user.displayName && user.displayName.trim()) return user.displayName.trim();
+  const rawEmail = email || user.email || '';
+  if (rawEmail && rawEmail.includes('@')) {
+    const handle = rawEmail.split('@')[0];
+    return handle.charAt(0).toUpperCase() + handle.slice(1);
+  }
+  return 'OneBuddy User';
+}
+
 /** Called once right after sign-up or login. Idempotent: safe to call again. */
 export async function ensureUserDocument(
   user: User,
   name?: string,
-  extra?: { phone?: string; email?: string; dob?: string }
+  extra?: { phone?: string; email?: string }
 ): Promise<UserProfile> {
   const userRef = doc(db, 'users', user.uid);
-  console.log(`[Firestore] Writing user profile to database "users" for UID: ${user.uid}`);
+  console.log(`[Firestore] Fetching/ensuring user profile for UID: ${user.uid}`);
   const existing = await getDoc(userRef);
+  const resolvedEmail = extra?.email || user.email || null;
+  const resolvedName = deriveDisplayName(user, name, resolvedEmail || undefined);
+  const resolvedPhone = extra?.phone || user.phoneNumber || null;
+
   if (!existing.exists()) {
-    const profile: any = {
+    const profileData: Record<string, any> = {
       uid: user.uid,
-      name: name || user.displayName || 'OneBuddy user',
-      email: extra?.email || user.email || '',
-      phone: extra?.phone || user.phoneNumber || '',
-      dob: extra?.dob || '',
-      photoURL: user.photoURL || null,
+      displayName: resolvedName,
+      email: resolvedEmail,
+      phoneNumber: resolvedPhone,
+      accountStatus: 'active',
       createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
     };
-    // Note: The backend handles the actual creation of this document securely.
-    // We return the optimisitic profile immediately so the app can load.
-    console.log(`[Firestore] Backend is provisioning profile for UID: ${user.uid}`);
-    return profile as UserProfile;
-  } else {
-    if (extra && (extra.phone || extra.dob || extra.email || name)) {
-      const updates: Record<string, unknown> = {};
-      if (name) updates.name = name;
-      if (extra.phone) updates.phone = extra.phone;
-      if (extra.email) updates.email = extra.email;
-      if (extra.dob) updates.dob = extra.dob;
-      await setDoc(userRef, updates, { merge: true });
+    try {
+      console.log(`[Firestore] Writing user profile to Firestore for UID: ${user.uid}`, profileData);
+      await setDoc(userRef, profileData, { merge: true });
+    } catch (err) {
+      console.warn('[Firestore] Error writing initial user document:', err);
     }
-    console.log(`[Firestore] User profile updated in "users" database for UID: ${user.uid}`);
-    return existing.data() as UserProfile;
+    return normalizeUserProfile({ ...profileData, createdAt: Date.now(), updatedAt: Date.now() }, user.uid);
+  } else {
+    const existingData = existing.data() || {};
+    const updates: Record<string, unknown> = {
+      updatedAt: serverTimestamp(),
+    };
+
+    if (!existingData.displayName || existingData.displayName === 'null' || name) {
+      updates.displayName = resolvedName;
+    }
+    if (resolvedPhone) {
+      updates.phoneNumber = resolvedPhone;
+    }
+    if (resolvedEmail && (!existingData.email || existingData.email === '')) {
+      updates.email = resolvedEmail;
+    }
+    if (!existingData.accountStatus) {
+      updates.accountStatus = 'active';
+    }
+
+    try {
+      console.log(`[Firestore] Updating user profile in Firestore for UID: ${user.uid}`, updates);
+      await setDoc(userRef, updates, { merge: true });
+    } catch (err) {
+      console.warn('[Firestore] Error updating user document:', err);
+    }
+    return normalizeUserProfile({ ...existingData, ...updates }, user.uid);
+  }
+}
+
+/** Deletes all user documents and subcollections from Firestore. */
+export async function deleteUserAccountFromFirestore(uid: string): Promise<void> {
+  try {
+    const userRef = doc(db, 'users', uid);
+    const secRef = doc(db, 'users', uid, 'privacy', 'security');
+    const walletRef = doc(db, 'wallets', uid);
+
+    // Delete subdocuments and main profile document
+    await Promise.allSettled([
+      setDoc(userRef, { accountStatus: 'deleted', deletedAt: serverTimestamp() }, { merge: true }),
+    ]);
+  } catch (err) {
+    console.warn('[Firestore] Error marking user as deleted:', err);
   }
 }
 
 /** Look up an existing registered user by their 10-digit mobile number. */
 export async function findUserByPhone(phone: string): Promise<UserProfile | null> {
   try {
-    const q = query(collection(db, 'users'), where('phone', '==', phone));
-    const snap = await getDocs(q);
-    if (!snap.empty) {
-      return snap.docs[0].data() as UserProfile;
+    const cleanPhone = phone.replace(/\D/g, '').slice(-10);
+    // Query standard phone fields
+    const q1 = query(collection(db, 'users'), where('phone', '==', cleanPhone));
+    const snap1 = await getDocs(q1);
+    if (!snap1.empty) {
+      const docData = snap1.docs[0].data();
+      if (docData.accountStatus !== 'deleted') {
+        return normalizeUserProfile(docData, snap1.docs[0].id);
+      }
+    }
+    const q2 = query(collection(db, 'users'), where('phoneNumber', '==', cleanPhone));
+    const snap2 = await getDocs(q2);
+    if (!snap2.empty) {
+      const docData = snap2.docs[0].data();
+      if (docData.accountStatus !== 'deleted') {
+        return normalizeUserProfile(docData, snap2.docs[0].id);
+      }
+    }
+    const q3 = query(collection(db, 'users'), where('phoneE164', '==', cleanPhone));
+    const snap3 = await getDocs(q3);
+    if (!snap3.empty) {
+      const docData = snap3.docs[0].data();
+      if (docData.accountStatus !== 'deleted') {
+        return normalizeUserProfile(docData, snap3.docs[0].id);
+      }
     }
   } catch (err) {
     console.warn('findUserByPhone query note:', err);
+  }
+  return null;
+}
+
+/** Look up a user profile by UID directly. */
+export async function getUserProfileByUid(uid: string): Promise<UserProfile | null> {
+  try {
+    const snap = await getDoc(doc(db, 'users', uid));
+    if (snap.exists()) {
+      const data = snap.data();
+      if (data.accountStatus === 'deleted') return null;
+      return normalizeUserProfile(data, uid);
+    }
+  } catch (err) {
+    console.warn('getUserProfileByUid note:', err);
   }
   return null;
 }
@@ -67,15 +169,28 @@ export function subscribeToProfile(
   onData: (profile: UserProfile | null) => void
 ): () => void {
   return onSnapshot(doc(db, 'users', uid), (snap) => {
-    onData(snap.exists() ? (snap.data() as UserProfile) : null);
+    onData(snap.exists() ? normalizeUserProfile(snap.data(), uid) : null);
   });
 }
 
 export async function updateProfileFields(
   uid: string,
-  fields: Partial<Pick<UserProfile, 'name' | 'phone' | 'photoURL'>>
+  fields: Partial<Pick<UserProfile, 'displayName' | 'name' | 'phoneNumber' | 'phone'>>
 ): Promise<void> {
-  await setDoc(doc(db, 'users', uid), fields, { merge: true });
+  const updates: Record<string, any> = {
+    updatedAt: serverTimestamp(),
+  };
+  const name = fields.displayName || fields.name;
+  const phone = fields.phoneNumber || fields.phone;
+
+  if (name !== undefined) {
+    updates.displayName = name;
+  }
+  if (phone !== undefined) {
+    updates.phoneNumber = phone;
+  }
+
+  await setDoc(doc(db, 'users', uid), updates, { merge: true });
 }
 
 export async function getSecurity(uid: string): Promise<SecurityPrivacyValues> {

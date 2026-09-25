@@ -36,6 +36,9 @@ import Svg, { Path } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '@/firebase/config';
+
 import { useOtpAuth } from '@/auth/OtpAuthContext';
 import { OTP_LENGTH, OTP_RESEND_SECONDS } from '@/auth/otpProvider';
 import { useAuth } from '@/firebase/context/AuthContext';
@@ -1365,9 +1368,13 @@ export default function AuthScreen({ navigation }: RootScreenProps<'Auth'>) {
       console.log('[Auth] Successfully created/authenticated user in Firestore:', fbUser.uid);
 
       // 2. Persist profile data to AsyncStorage & ProfileContext for app-wide use
+      const resolvedName = (fullName && fullName.trim())
+        ? fullName.trim()
+        : (fbUser.displayName || (fbUser.email ? fbUser.email.split('@')[0] : 'User'));
+
       if (activeTab === 'signup') {
         const userProfile = {
-          name: fullName.trim() || fbUser.displayName || 'User',
+          name: resolvedName,
           dob: dob.trim(),
           email: email.trim() || fbUser.email || '',
           phone: cleanPhone,
@@ -1379,16 +1386,35 @@ export default function AuthScreen({ navigation }: RootScreenProps<'Auth'>) {
           console.warn('Could not save user profile to AsyncStorage:', err);
         }
         updateProfile({
-          name: fullName.trim() || fbUser.displayName || 'User',
+          name: resolvedName,
           phone: cleanPhone,
           email: email.trim() || fbUser.email || '',
         });
       } else {
         updateProfile({
-          name: fbUser.displayName || 'User',
+          name: resolvedName,
           phone: cleanPhone,
           email: fbUser.email || '',
         });
+      }
+
+      // Direct write to Firestore to 100% guarantee data is populated
+      try {
+        if (db && fbUser?.uid) {
+          const userDocRef = doc(db, 'users', fbUser.uid);
+          const cleanRecord: Record<string, any> = {
+            uid: fbUser.uid,
+            displayName: resolvedName,
+            email: email.trim() || fbUser.email || null,
+            phoneNumber: cleanPhone,
+            accountStatus: 'active',
+            updatedAt: serverTimestamp(),
+          };
+          await setDoc(userDocRef, cleanRecord, { merge: true });
+          console.log('[Auth] Confirmed clean write to Firestore for UID:', fbUser.uid);
+        }
+      } catch (writeErr) {
+        console.warn('[Auth] Direct setDoc fallback note:', writeErr);
       }
 
       // 3. Now verify OTP and issue the session token so the app transitions to HomeScreen
@@ -1410,10 +1436,11 @@ export default function AuthScreen({ navigation }: RootScreenProps<'Auth'>) {
       const googleUser = await signInWithGoogle();
       const identifier = googleUser.phoneNumber || googleUser.email || cleanPhoneNumber(phone) || 'google_user';
       await verifyOtp(identifier, 'GOOGLE_SSO');
+      const resolvedGoogleName = googleUser.displayName || (googleUser.email ? googleUser.email.split('@')[0] : 'Google User');
       updateProfile({
-        name: googleUser.displayName || 'Google User',
+        name: resolvedGoogleName,
         email: googleUser.email || '',
-        phone: googleUser.phoneNumber || '',
+        phone: googleUser.phoneNumber || cleanPhoneNumber(phone) || '',
       });
     } catch (e: any) {
       console.warn('Google sign-in error:', e);

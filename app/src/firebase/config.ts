@@ -85,8 +85,13 @@ export const auth = authInstance;
 let firestoreInstance: Firestore;
 if (firebaseConfigured && app) {
   try {
-    firestoreInstance = getFirestore(app, FIRESTORE_DATABASE_ID);
-  } catch {
+    if (FIRESTORE_DATABASE_ID && FIRESTORE_DATABASE_ID !== '(default)') {
+      firestoreInstance = getFirestore(app, FIRESTORE_DATABASE_ID);
+    } else {
+      firestoreInstance = getFirestore(app);
+    }
+  } catch (err) {
+    console.error('[Firebase] Error initializing Firestore:', err);
     firestoreInstance = null as unknown as Firestore;
   }
 } else {

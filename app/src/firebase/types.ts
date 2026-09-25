@@ -19,11 +19,18 @@
 
 export interface UserProfile {
   uid: string;
-  name: string;
+  displayName: string;
+  name?: string; // backwards-compatible alias for existing screens
   email: string | null;
-  phone: string | null;
-  photoURL: string | null;
-  createdAt: number;
+  phoneNumber?: string | null;
+  phoneE164?: string | null;
+  phone?: string | null; // backwards-compatible alias for existing screens
+  photoURL?: string | null;
+  dob?: string | null;
+  dateOfBirth?: string | null;
+  accountStatus?: 'active' | 'suspended' | 'deletion_requested' | 'deleted';
+  createdAt: number | string | any;
+  updatedAt?: number | string | any;
 }
 
 export interface SettingsDoc {

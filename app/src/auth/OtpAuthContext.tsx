@@ -59,6 +59,24 @@ export function OtpAuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  // Synchronize with Firebase Auth
+  useEffect(() => {
+    if (!auth) return;
+    const unsubscribe = auth.onAuthStateChanged((fbUser) => {
+      if (!fbUser) {
+        setToken(null);
+        setIdentifier(null);
+        AsyncStorage.multiRemove([
+          TOKEN_KEY,
+          IDENT_KEY,
+          'onebuddy:profile',
+          'onebuddy:userProfile',
+        ]).catch(() => {});
+      }
+    });
+    return unsubscribe;
+  }, []);
+
   const sendOtp = useCallback(
     (value: string) => provider.sendOtp(value),
     []
@@ -75,7 +93,12 @@ export function OtpAuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
-    await AsyncStorage.multiRemove([TOKEN_KEY, IDENT_KEY]);
+    await AsyncStorage.multiRemove([
+      TOKEN_KEY,
+      IDENT_KEY,
+      'onebuddy:profile',
+      'onebuddy:userProfile',
+    ]);
     setToken(null);
     setIdentifier(null);
     try {

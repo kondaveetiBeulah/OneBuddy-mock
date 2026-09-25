@@ -9,6 +9,7 @@ import {
   GoogleAuthProvider,
   User,
   createUserWithEmailAndPassword,
+  deleteUser,
   onAuthStateChanged,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
@@ -16,8 +17,9 @@ import {
   signOut as firebaseSignOut,
   updateProfile,
 } from 'firebase/auth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { auth, firebaseConfigured } from '../config';
-import { ensureUserDocument, findUserByPhone } from '../services/userService';
+import { deleteUserAccountFromFirestore, ensureUserDocument, findUserByPhone } from '../services/userService';
 
 interface AuthContextValue {
   user: User | null;
@@ -36,6 +38,7 @@ interface AuthContextValue {
     isSignUp: boolean;
   }) => Promise<User>;
   signOut: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
 }
 
@@ -102,10 +105,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           provider.setCustomParameters({ prompt: 'select_account' });
           const credential = await signInWithPopup(auth, provider);
           if (credential.user) {
-            await ensureUserDocument(credential.user, credential.user.displayName || undefined, {
-              email: credential.user.email || undefined,
+            const rawEmail = credential.user.email || '';
+            const emailHandle = rawEmail.includes('@')
+              ? rawEmail.split('@')[0].charAt(0).toUpperCase() + rawEmail.split('@')[0].slice(1)
+              : 'Google User';
+            const resolvedDisplayName = credential.user.displayName || emailHandle;
+
+            await ensureUserDocument(credential.user, resolvedDisplayName, {
+              email: rawEmail || undefined,
               phone: credential.user.phoneNumber || undefined,
             });
+
+            // Explicit write to guarantee displayName is never null in Firestore
+            try {
+              const userDocRef = doc(db, 'users', credential.user.uid);
+              await setDoc(
+                userDocRef,
+                {
+                  uid: credential.user.uid,
+                  displayName: resolvedDisplayName,
+                  email: rawEmail || null,
+                  accountStatus: 'active',
+                  updatedAt: serverTimestamp(),
+                },
+                { merge: true }
+              );
+            } catch (err) {
+              console.warn('[Auth] Error writing Google profile:', err);
+            }
           }
           return credential.user;
         } catch (err) {
@@ -121,62 +148,127 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }): Promise<User> {
         if (!auth) throw new Error('Firebase Auth is not configured');
         const cleanPhone = phone.replace(/\D/g, '').slice(-10);
+        if (!cleanPhone || cleanPhone.length < 10) {
+          throw new Error('Please enter a valid 10-digit mobile number.');
+        }
         const deterministicPassword = `OneBuddy#Auth_${cleanPhone}_2026`;
+        const targetEmail = (email && email.trim()) ? email.trim().toLowerCase() : `${cleanPhone}@onebuddy.app`;
 
         if (isSignUp) {
-          const targetEmail = (email && email.trim()) ? email.trim().toLowerCase() : `${cleanPhone}@onebuddy.app`;
+          // ========================
+          // STRICT SIGNUP FLOW
+          // ========================
+          if (!fullName || !fullName.trim()) {
+            throw new Error('Full name is required to complete signup.');
+          }
+
           let credUser: User;
           try {
             const cred = await createUserWithEmailAndPassword(auth, targetEmail, deterministicPassword);
             credUser = cred.user;
           } catch (err: any) {
             if (err?.code === 'auth/email-already-in-use') {
+              const existingUser = await findUserByPhone(cleanPhone);
+              if (existingUser && existingUser.accountStatus !== 'deleted') {
+                throw new Error('An account with this mobile number already exists. Please login instead.');
+              }
+              // If orphaned Auth account with no active Firestore record, sign in and provision profile
               const cred = await signInWithEmailAndPassword(auth, targetEmail, deterministicPassword);
               credUser = cred.user;
             } else {
               throw mapAuthError(err);
             }
           }
+
           if (fullName && fullName.trim()) {
             try {
               await updateProfile(credUser, { displayName: fullName.trim() });
             } catch {}
           }
-          await ensureUserDocument(credUser, fullName?.trim(), {
+
+          await ensureUserDocument(credUser, fullName.trim(), {
             phone: cleanPhone,
             email: targetEmail,
-            dob: dob?.trim(),
           });
+
           return credUser;
         } else {
-          // Login flow
+          // ========================
+          // STRICT LOGIN FLOW
+          // ========================
+          // 1. Verify user exists in Firestore first
           const existing = await findUserByPhone(cleanPhone);
-          const targetEmail = (existing?.email && existing.email.includes('@'))
-            ? existing.email.toLowerCase()
-            : `${cleanPhone}@onebuddy.app`;
+          if (!existing || existing.accountStatus === 'deleted') {
+            throw new Error('No registered account found with this number. Please signup first.');
+          }
 
+          // 2. Authenticate with Firebase Auth
           let credUser: User;
           try {
             const cred = await signInWithEmailAndPassword(auth, targetEmail, deterministicPassword);
             credUser = cred.user;
           } catch (err: any) {
             if (err?.code === 'auth/user-not-found' || err?.code === 'auth/invalid-credential') {
-              const cred = await createUserWithEmailAndPassword(auth, targetEmail, deterministicPassword);
-              credUser = cred.user;
-            } else {
-              throw mapAuthError(err);
+              throw new Error('No registered account found with this number. Please signup first.');
             }
+            throw mapAuthError(err);
           }
-          await ensureUserDocument(credUser, existing?.name || credUser.displayName || undefined, {
-            phone: cleanPhone,
-            email: targetEmail,
-            dob: (existing as any)?.dob || undefined,
-          });
+
+          // 3. Double-check the profile record for this authenticated UID
+          const profileDoc = await getUserProfileByUid(credUser.uid);
+          if (!profileDoc || profileDoc.accountStatus === 'deleted') {
+            await firebaseSignOut(auth);
+            throw new Error('No registered account found with this number. Please signup first.');
+          }
+
           return credUser;
         }
       },
       async signOut() {
-        await firebaseSignOut(auth);
+        try {
+          await AsyncStorage.multiRemove([
+            'onebuddy:otpToken',
+            'onebuddy:otpIdentifier',
+            'onebuddy:profile',
+            'onebuddy:userProfile',
+          ]);
+        } catch {}
+        if (auth) {
+          try {
+            await firebaseSignOut(auth);
+          } catch (err) {
+            console.warn('Firebase signOut error:', err);
+          }
+        }
+        setUser(null);
+      },
+      async deleteAccount() {
+        const currentUser = auth.currentUser || user;
+        if (currentUser) {
+          const uid = currentUser.uid;
+          try {
+            await deleteUserAccountFromFirestore(uid);
+          } catch (e) {
+            console.warn('Error cleaning Firestore user data:', e);
+          }
+          try {
+            await deleteUser(currentUser);
+          } catch (err: any) {
+            console.warn('Firebase deleteUser error (may require re-auth):', err);
+          }
+        }
+        try {
+          await AsyncStorage.multiRemove([
+            'onebuddy:otpToken',
+            'onebuddy:otpIdentifier',
+            'onebuddy:profile',
+            'onebuddy:userProfile',
+          ]);
+        } catch {}
+        try {
+          if (auth) await firebaseSignOut(auth);
+        } catch {}
+        setUser(null);
       },
       async resetPassword(email) {
         try {
