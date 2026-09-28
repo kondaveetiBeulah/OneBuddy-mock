@@ -18,8 +18,9 @@ import {
   updateProfile,
 } from 'firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { auth, firebaseConfigured } from '../config';
-import { deleteUserAccountFromFirestore, ensureUserDocument, findUserByPhone } from '../services/userService';
+import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { auth, db, firebaseConfigured } from '../config';
+import { deleteUserAccountFromFirestore, ensureUserDocument, findUserByPhone, getUserProfileByUid } from '../services/userService';
 
 interface AuthContextValue {
   user: User | null;

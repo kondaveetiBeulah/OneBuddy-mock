@@ -23,7 +23,7 @@ export function secureCallable<Schema extends z.ZodTypeAny, Return>(
   handler: Handler<z.infer<Schema>, Return>,
   options?: CallableOptions
 ) {
-  return onCall(options || {}, async (request: CallableRequest) => {
+  return onCall({ region: 'asia-south1', ...options }, async (request: CallableRequest) => {
     // 1. Enforce Authentication
     if (!request.auth || !request.auth.uid) {
       throwError('unauthenticated', 'You must be signed in to perform this action.');

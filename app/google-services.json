@@ -1,42 +1,49 @@
 {
   "project_info": {
-    "project_number": "923658815455",
-    "project_id": "onebuddyuser",
-    "storage_bucket": "onebuddyuser.firebasestorage.app"
+    "project_number": "919781335156",
+    "project_id": "one-buddy-4e0d7",
+    "storage_bucket": "one-buddy-4e0d7.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:923658815455:android:ebd8c179c923401583a66a",
+        "mobilesdk_app_id": "1:919781335156:android:b834e9a7bd433f60b83121",
         "android_client_info": {
           "package_name": "com.onebuddy.app"
         }
       },
       "oauth_client": [
         {
-          "client_id": "923658815455-el8hl5ju0asajs94h85mcur1hf9r4bo6.apps.googleusercontent.com",
+          "client_id": "919781335156-9bd3t7sqqm4jendd7ida3sn9htdv5uhs.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.onebuddy.app",
-            "certificate_hash": "21d9c5682ed0b9c85d85f80c42612ca1491240a5"
+            "certificate_hash": "a789e505c817a122ea906ea6eaa3d48b3a30ab18"
           }
         },
         {
-          "client_id": "923658815455-1ob3vjdp63o32hpfmjht00boqoqhqndf.apps.googleusercontent.com",
+          "client_id": "919781335156-p8jq266j64p9t5ikn8s5rrdva2v0vu3v.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyC0i2PsCmk0H1pBYcF_cl5EYIrgFMHXY3Q"
+          "current_key": "AIzaSyA7ZZ57wnJQKMURr1fRuM9AKRRpIGUn_gs"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "923658815455-1ob3vjdp63o32hpfmjht00boqoqhqndf.apps.googleusercontent.com",
+              "client_id": "919781335156-p8jq266j64p9t5ikn8s5rrdva2v0vu3v.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "919781335156-ap1vuaurq0dq8r0ofeauuod6dsmnqlg9.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.onebuddy.app"
+              }
             }
           ]
         }

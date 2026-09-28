@@ -123,7 +123,7 @@ export default function AddressHost({
         <StatusBar barStyle={scheme === 'dark' ? 'light-content' : 'dark-content'} />
         {cloudAddresses === undefined ? (
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-            <ActivityIndicator size="large" color={themeColors.lavender} />
+            <ActivityIndicator size="large" color={themeColors.accentStart} />
           </View>
         ) : (
           <AddressScreen

@@ -1,4 +1,4 @@
-import * as functionsV1 from 'firebase-functions/v1';
+import { onUserCreated as onUserCreatedV2 } from 'firebase-functions/v2/identity';
 import { z } from 'zod';
 import { db } from '../core/firebase';
 import { secureCallable } from '../core/callable';
@@ -6,9 +6,11 @@ import { log } from '../core/logger';
 
 /**
  * TRIGGER: Automatically creates a profile document when a user signs up.
- * This runs in the background instantly after Firebase Auth creates the account.
+ * This runs in the background (2nd Gen) instantly after Firebase Auth creates the account.
  */
-export const onUserCreated = functionsV1.auth.user().onCreate(async (user) => {
+export const onUserCreated = onUserCreatedV2(async (event) => {
+  const user = event.data;
+  if (!user || !user.uid) return;
   log.info(`Creating profile for new user: ${user.uid}`);
 
   const profileRef = db.collection('users').doc(user.uid);

@@ -10,7 +10,7 @@ import {
 } from 'firebase/firestore';
 import { Order } from '../../categories/groceries/types/order.types';
 import { httpsCallable } from 'firebase/functions';
-import { db, functions } from '../config';
+import { db, functions, auth } from '../config';
 
 /* ─────────────── Defensive Mapper ─────────────── */
 
@@ -125,6 +125,7 @@ export async function saveOrder(order: Order): Promise<void> {
     items: formattedItems,
     deliveryAddress: order.deliveryAddress,
     paymentMethod: order.paymentMethod,
+    category: 'groceries',
     type: 'grocery'
   });
 }
@@ -140,8 +141,14 @@ export function subscribeOrders(
     onData([]);
     return () => {};
   }
+  const effectiveUid = userId || auth?.currentUser?.uid;
+  if (!effectiveUid) {
+    onData([]);
+    return () => {};
+  }
+
   const ordersColl = collection(db, 'orders');
-  const q = userId ? query(ordersColl, where('userId', '==', userId)) : ordersColl;
+  const q = query(ordersColl, where('userId', '==', effectiveUid));
 
   return onSnapshot(
     q,

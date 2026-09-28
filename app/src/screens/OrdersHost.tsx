@@ -6,7 +6,7 @@ import OrdersAndBookings from '../native/screens/OrdersAndBookings';
 import type { OrderCard } from '../native/screens/OrdersAndBookings/types';
 import { useAuth } from '../firebase/context/AuthContext';
 import { useAppTheme } from '../theme/ThemeContext';
-import { listOrders, runOrderAction } from '../firebase/services/ordersService';
+import { listOrders, runOrderAction, subscribeUserOrders } from '../firebase/services/ordersService';
 
 interface OrdersHostProps {
   visible?: boolean;
@@ -18,12 +18,11 @@ interface OrdersHostProps {
 /**
  * Opens the Orders & Bookings project's screen full-screen over the WebView.
  *
- * When signed in, orders are loaded from `users/{uid}/orders` on open
+ * When signed in, orders are loaded from `users/{uid}/orders` in real-time
  * (falling back to the screen's own mock `ORDERS` for a brand-new account
  * with nothing yet). Card actions (Track, Reorder, Cancel, Reschedule,
  * Invoice) run through the `runOrderAction` Cloud Function so status
- * changes are applied server-side, then the returned order patches local
- * state before the action is relayed up to the document for its toast.
+ * changes are applied server-side.
  */
 export default function OrdersHost({
   visible = true,
@@ -40,12 +39,11 @@ export default function OrdersHost({
       setOrders(undefined);
       return;
     }
-    let cancelled = false;
-    listOrders(user.uid).then((fetched) => {
-      if (!cancelled) setOrders(fetched);
+    const unsubscribe = subscribeUserOrders(user.uid, (fetched) => {
+      setOrders(fetched);
     });
     return () => {
-      cancelled = true;
+      unsubscribe();
     };
   }, [visible, enabled, user]);
 

@@ -15,7 +15,7 @@ import * as commerceOrders from './commerce/orders';
 
 // Set global options for all v2 functions (like region, memory, concurrency)
 setGlobalOptions({
-  region: 'us-central1',
+  region: 'asia-south1',
   maxInstances: 10,
 });
 
@@ -40,5 +40,8 @@ export const chargeWallet = payments.chargeWallet;
 // COMMERCE MODULE
 // ============================================================================
 export const placeOrder = commerceOrders.placeOrder;
+export const cancelOrder = commerceOrders.cancelOrder;
+export const reorder = commerceOrders.reorder;
+export const runOrderAction = commerceOrders.runOrderAction;
 
 

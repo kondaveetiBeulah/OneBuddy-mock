@@ -26,7 +26,7 @@ export const log = {
  * Throws a standardized Firebase HttpsError and logs it automatically.
  */
 export function throwError(
-  code: 'unauthenticated' | 'permission-denied' | 'invalid-argument' | 'internal' | 'not-found' | 'already-exists',
+  code: 'unauthenticated' | 'permission-denied' | 'invalid-argument' | 'internal' | 'not-found' | 'already-exists' | 'failed-precondition',
   message: string,
   details?: unknown
 ): never {

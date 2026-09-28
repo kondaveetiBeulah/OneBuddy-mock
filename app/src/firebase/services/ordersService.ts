@@ -1,4 +1,4 @@
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, onSnapshot } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { db, functions } from '../config';
 import { OrderDoc } from '../types';
@@ -8,12 +8,53 @@ function stripOrder({ updatedAt: _u, ...rest }: OrderDoc): OrderCard {
   return rest;
 }
 
-/** Reads the signed-in user's orders. Falls back to an empty list (the
- *  screen's own `ORDERS` mock is used by the host when this comes back
- *  empty, e.g. a brand-new account) rather than throwing. */
+/** Reads the signed-in user's orders once. */
 export async function listOrders(uid: string): Promise<OrderCard[]> {
   const snap = await getDocs(collection(db, 'users', uid, 'orders'));
-  return snap.docs.map((d) => stripOrder(d.data() as OrderDoc));
+  const docs = snap.docs.map((d) => ({ ...d.data(), id: d.id } as OrderDoc));
+  docs.sort((a, b) => {
+    const tA = (a.updatedAt && typeof (a.updatedAt as any).toMillis === 'function')
+      ? (a.updatedAt as any).toMillis()
+      : (typeof a.updatedAt === 'number' ? a.updatedAt : 0);
+    const tB = (b.updatedAt && typeof (b.updatedAt as any).toMillis === 'function')
+      ? (b.updatedAt as any).toMillis()
+      : (typeof b.updatedAt === 'number' ? b.updatedAt : 0);
+    return tB - tA;
+  });
+  return docs.map((d) => stripOrder(d));
+}
+
+/** Subscribes in real-time to the signed-in user's orders projection. */
+export function subscribeUserOrders(
+  uid: string,
+  onData: (orders: OrderCard[]) => void,
+  onError?: (err: Error) => void
+): () => void {
+  if (!db) {
+    onData([]);
+    return () => {};
+  }
+  const q = collection(db, 'users', uid, 'orders');
+  return onSnapshot(
+    q,
+    (snap) => {
+      const docs = snap.docs.map((d) => ({ ...d.data(), id: d.id } as OrderDoc));
+      docs.sort((a, b) => {
+        const tA = (a.updatedAt && typeof (a.updatedAt as any).toMillis === 'function')
+          ? (a.updatedAt as any).toMillis()
+          : (typeof a.updatedAt === 'number' ? a.updatedAt : 0);
+        const tB = (b.updatedAt && typeof (b.updatedAt as any).toMillis === 'function')
+          ? (b.updatedAt as any).toMillis()
+          : (typeof b.updatedAt === 'number' ? b.updatedAt : 0);
+        return tB - tA;
+      });
+      onData(docs.map((d) => stripOrder(d)));
+    },
+    (err) => {
+      console.warn('[ordersService] Real-time orders subscription error:', err);
+      onError?.(err);
+    }
+  );
 }
 
 /**

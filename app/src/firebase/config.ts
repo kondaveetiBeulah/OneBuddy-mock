@@ -109,5 +109,5 @@ export const storage =
 
 export const functions =
   firebaseConfigured && app
-    ? getFunctions(app)
+    ? getFunctions(app, 'asia-south1')
     : (null as unknown as ReturnType<typeof getFunctions>);

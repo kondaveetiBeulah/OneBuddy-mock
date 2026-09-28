@@ -3,6 +3,8 @@ import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CartItem, MenuItem, Order, Restaurant } from '../types';
 import { useFoodData } from './FoodDataContext';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '../../../firebase/config';
 
 const safeStorage = {
   getItem: async (key: string) => {
@@ -46,7 +48,7 @@ interface CartContextType {
   removeCoupon: () => void;
   isCartDrawerOpen: boolean;
   setIsCartDrawerOpen: (open: boolean) => void;
-  placeOrder: (deliveryAddress: string) => Order;
+  placeOrder: (deliveryAddress: string, paymentMethod?: string) => Order;
   orders: Order[];
   activeOrder: Order | null;
   setActiveOrder: (order: Order | null) => void;
@@ -304,7 +306,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const isFavoriteItem = (itemId: string) => favoriteItems.includes(itemId);
 
-  const placeOrder = (deliveryAddress: string): Order => {
+  const placeOrder = (deliveryAddress: string, paymentMethod: string = 'cash_on_delivery'): Order => {
     if (!currentRestaurant || cart.length === 0) {
       throw new Error('Cart is empty');
     }
@@ -327,6 +329,31 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     setOrders((prev) => [newOrder, ...prev]);
     setActiveOrder(newOrder);
+
+    // Save to Cloud Functions backend
+    if (functions) {
+      try {
+        const call = httpsCallable(functions, 'placeOrder');
+        const formattedItems = cart.map((ci) => ({
+          productId: ci.item.id,
+          quantity: ci.quantity,
+        }));
+        void call({
+          id: newOrder.orderId,
+          category: 'food',
+          merchantId: currentRestaurant.id,
+          items: formattedItems,
+          deliveryAddress: typeof deliveryAddress === 'string' ? { line1: deliveryAddress } : deliveryAddress,
+          paymentMethod: paymentMethod === 'wallet' ? 'wallet' : 'cash_on_delivery',
+          promotionCode: couponCode || undefined,
+        }).catch((err) => {
+          console.warn('[CartContext] Backend placeOrder failed:', err);
+        });
+      } catch (err) {
+        console.warn('[CartContext] Could not invoke placeOrder callable:', err);
+      }
+    }
+
     clearCart();
     setIsCartDrawerOpen(false);
 

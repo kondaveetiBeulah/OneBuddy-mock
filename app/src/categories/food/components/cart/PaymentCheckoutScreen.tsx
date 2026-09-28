@@ -321,7 +321,8 @@ export default function PaymentCheckoutScreen({
                 
                 if (cartContext && typeof cartContext.placeOrder === 'function') {
                     try {
-                        const placed = cartContext.placeOrder('Selected Address');
+                        const paymentMethod = activeMode === 'wallet' ? 'wallet' : (activeMode === 'cod' ? 'cash_on_delivery' : 'upi');
+                        const placed = cartContext.placeOrder('Selected Address', paymentMethod);
                         if (placed && placed.orderId) {
                             newOrder.txnId = placed.orderId;
                         }
