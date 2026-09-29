@@ -31,6 +31,7 @@ export const deleteUserAccount = authFunctions.deleteUserAccount;
 // IDENTITY & PROFILE MODULE
 // ============================================================================
 export const updateProfile = profile.updateProfile;
+export const requestAccountDeletion = profile.requestAccountDeletion;
 export const replaceAddresses = addresses.replaceAddresses;
 export const deleteAddress = addresses.deleteAddress;
 export const setDefaultAddress = addresses.setDefaultAddress;

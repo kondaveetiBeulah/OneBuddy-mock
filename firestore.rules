@@ -7,7 +7,9 @@ service cloud.firestore {
 
     match /users/{uid} {
       allow read: if owns(uid);
-      allow create, update: if owns(uid);
+      allow create: if owns(uid) && request.resource.data.accountStatus == 'active';
+      allow update: if owns(uid)
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['accountStatus', 'uid', 'createdAt']));
       allow delete: if false;
 
       match /preferences/{kind} {

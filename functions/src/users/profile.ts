@@ -50,8 +50,8 @@ export const onUserCreated = onUserCreatedV2(async (event) => {
 
 /**
  * CALLABLE: Allows a user to securely update their own profile from the app.
- * Note: Privileged accountStatus values ('active', 'suspended', 'deleted') cannot be changed by clients.
- * Users are only permitted to set 'deletion_requested'.
+ * Only customer-editable attributes (displayName, phoneNumber, photoURL) can be updated.
+ * Privileged lifecycle fields (accountStatus, uid, createdAt) cannot be modified here.
  */
 const updateProfileSchema = z.object({
   displayName: z.string().min(2).max(100).optional(),
@@ -59,7 +59,7 @@ const updateProfileSchema = z.object({
   phoneNumber: z.string().optional(),
   phone: z.string().optional(),
   phoneE164: z.string().optional(),
-  accountStatus: z.enum(['deletion_requested']).optional(),
+  photoURL: z.string().url().optional(),
 });
 
 export const updateProfile = secureCallable(
@@ -79,12 +79,40 @@ export const updateProfile = secureCallable(
 
     if (displayName !== undefined) updates.displayName = displayName;
     if (phone !== undefined) updates.phoneNumber = phone;
-    if (data.accountStatus === 'deletion_requested') {
-      updates.accountStatus = 'deletion_requested';
-    }
+    if (data.photoURL !== undefined) updates.photoURL = data.photoURL;
 
     await profileRef.set(updates, { merge: true });
 
     return { success: true, message: 'Profile updated successfully' };
   }
 );
+
+/**
+ * CALLABLE: Dedicated privileged endpoint for requesting account deletion.
+ * Sets accountStatus to 'deletion_requested' under controlled server flow.
+ */
+export const requestAccountDeletion = secureCallable(
+  z.object({
+    reason: z.string().max(500).optional(),
+  }),
+  async (data, context) => {
+    const uid = context.auth.uid;
+    log.info(`User ${uid} requested account deletion: ${data.reason || 'No reason provided'}`);
+
+    await db.collection('users').doc(uid).set(
+      {
+        accountStatus: 'deletion_requested',
+        deletionRequestedAt: FieldValue.serverTimestamp(),
+        deletionReason: data.reason || null,
+        updatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+
+    return {
+      success: true,
+      message: 'Account deletion request submitted successfully.',
+    };
+  }
+);
+
