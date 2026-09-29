@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { Timestamp } from 'firebase/firestore';
 import { Doctor, DaySlot, TimeSlot, PatientDetails, BookingSummary } from '../types/doctor';
 import { MOCK_DOCTORS } from '../data/mockData';
 
@@ -58,7 +59,8 @@ const initialSampleBookings: BookingSummary[] = [
     },
     paymentMethod: 'UPI (GPAY)',
     meetingLink: 'https://meet.onebuddy.health/onebuddy-meet-ob-med-849201',
-    createdAt: new Date().toISOString(),
+    createdAt: Timestamp.now(),
+    updatedAt: Timestamp.now(),
     status: 'confirmed',
   },
 ];
@@ -122,7 +124,8 @@ export const BookingProvider = ({
       },
       paymentMethod,
       meetingLink,
-      createdAt: new Date().toISOString(),
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now(),
       status: 'confirmed',
     };
 

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { FieldValue } from 'firebase-admin/firestore';
 import { db } from '../core/firebase';
 import { secureCallable } from '../core/callable';
 import { log } from '../core/logger';
@@ -33,7 +34,7 @@ export const replaceAddresses = secureCallable(
     
     data.addresses.forEach((a) => {
       const docRef = colRef.doc(a.id);
-      batch.set(docRef, { ...a, updatedAt: new Date().toISOString() });
+      batch.set(docRef, { ...a, updatedAt: FieldValue.serverTimestamp() });
     });
     
     await batch.commit();
@@ -61,7 +62,7 @@ export const setDefaultAddress = secureCallable(
       snap.docs.forEach((d) => {
         t.update(d.ref, { 
           isDefault: d.id === data.addressId, 
-          updatedAt: new Date().toISOString() 
+          updatedAt: FieldValue.serverTimestamp() 
         });
       });
     });

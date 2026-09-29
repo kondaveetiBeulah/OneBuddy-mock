@@ -1,3 +1,4 @@
+import { Timestamp } from 'firebase/firestore';
 import { CartItem } from './cart.types';
 import { Address } from './user.types';
 
@@ -49,7 +50,8 @@ export interface Order {
   deliverySlot: DeliverySlot;
   paymentMethod: PaymentMethod;
   paymentStatus: 'pending' | 'completed' | 'failed';
-  createdAt: string;
+  createdAt: Timestamp | string;
+  updatedAt?: Timestamp | string;
   estimatedDelivery: string;
   trackingSteps?: {
     status: OrderStatus;

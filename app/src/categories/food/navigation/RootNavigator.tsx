@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Platform, InteractionManager } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { Timestamp } from 'firebase/firestore';
 import * as Device from 'expo-device';
 import type { FoodStackParamList } from '../types/navigation.types';
 import { BottomTabNavigator } from './BottomTabNavigator';
@@ -198,7 +199,9 @@ export const RootNavigator: React.FC = () => {
                       minute: 'numeric',
                       hour12: true,
                     }),
-                    orderDate: new Date().toISOString(),
+                    orderDate: Timestamp.now(),
+                    createdAt: Timestamp.now(),
+                    updatedAt: Timestamp.now(),
                   },
                 });
               }}

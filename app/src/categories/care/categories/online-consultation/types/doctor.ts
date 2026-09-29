@@ -58,6 +58,8 @@ export interface PatientDetails {
   selectedSymptomTags: string[];
 }
 
+import { Timestamp } from 'firebase/firestore';
+
 export interface BookingSummary {
   bookingId: string;
   doctor: Doctor;
@@ -73,6 +75,8 @@ export interface BookingSummary {
   };
   paymentMethod: string;
   meetingLink: string;
-  createdAt: string;
+  createdAt: Timestamp | string;
+  updatedAt?: Timestamp | string;
   status: 'confirmed' | 'completed' | 'cancelled';
 }
+

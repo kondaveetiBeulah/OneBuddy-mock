@@ -13,6 +13,8 @@ export interface Address {
   isDefault: boolean;
 }
 
+import { Timestamp } from 'firebase/firestore';
+
 export interface User {
   id: string;
   name: string;
@@ -21,7 +23,8 @@ export interface User {
   avatar?: string;
   addresses: Address[];
   defaultAddressId?: string;
-  createdAt: string;
+  createdAt: Timestamp | string;
+  updatedAt?: Timestamp | string;
 }
 
 export interface UserPreferences {

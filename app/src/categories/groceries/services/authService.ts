@@ -1,3 +1,4 @@
+import { Timestamp } from 'firebase/firestore';
 import { User } from '../types/user.types';
 import { storageHelper, STORAGE_KEYS } from '../utils/helpers';
 
@@ -9,7 +10,8 @@ const DEMO_USER: User = {
   avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&q=80',
   addresses: [],
   defaultAddressId: undefined,
-  createdAt: new Date().toISOString(),
+  createdAt: Timestamp.now(),
+  updatedAt: Timestamp.now(),
 };
 
 export const authService = {

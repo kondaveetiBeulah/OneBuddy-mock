@@ -1,5 +1,6 @@
 import { logger } from 'firebase-functions/v2';
 import { HttpsError } from 'firebase-functions/v2/https';
+import { Timestamp } from 'firebase-admin/firestore';
 
 /**
  * Standardized logging for OneBuddy.
@@ -7,17 +8,17 @@ import { HttpsError } from 'firebase-functions/v2/https';
  */
 export const log = {
   info: (message: string, payload?: any) => {
-    logger.info(message, { ...(typeof payload === 'object' ? payload : { detail: payload }), timestamp: new Date().toISOString() });
+    logger.info(message, { ...(typeof payload === 'object' ? payload : { detail: payload }), timestamp: Timestamp.now() });
   },
   warn: (message: string, payload?: any) => {
-    logger.warn(message, { ...(typeof payload === 'object' ? payload : { detail: payload }), timestamp: new Date().toISOString() });
+    logger.warn(message, { ...(typeof payload === 'object' ? payload : { detail: payload }), timestamp: Timestamp.now() });
   },
   error: (message: string, error?: unknown, payload?: any) => {
     logger.error(message, {
       ...(typeof payload === 'object' ? payload : { detail: payload }),
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
-      timestamp: new Date().toISOString(),
+      timestamp: Timestamp.now(),
     });
   },
 };

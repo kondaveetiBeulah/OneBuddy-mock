@@ -1,3 +1,4 @@
+import { Timestamp } from 'firebase/firestore';
 import { Order, OrderStatus, DeliverySlot, PaymentMethod } from '../types/order.types';
 import { CartItem } from '../types/cart.types';
 import { Address } from '../types/user.types';
@@ -76,7 +77,8 @@ export const orderService = {
       deliverySlot: params.deliverySlot,
       paymentMethod: params.paymentMethod,
       paymentStatus: params.paymentMethod === 'cash_on_delivery' ? 'pending' : 'completed',
-      createdAt: new Date().toISOString(),
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now(),
       estimatedDelivery: `${params.deliverySlot.date}, ${params.deliverySlot.startTime} - ${params.deliverySlot.endTime}`,
       trackingSteps: [
         {

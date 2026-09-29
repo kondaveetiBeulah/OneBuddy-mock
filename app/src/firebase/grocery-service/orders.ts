@@ -7,6 +7,7 @@ import {
   query,
   setDoc,
   where,
+  Timestamp,
 } from 'firebase/firestore';
 import { Order } from '../../categories/groceries/types/order.types';
 import { httpsCallable } from 'firebase/functions';
@@ -57,7 +58,8 @@ export function mapOrder(docId: string, data: any): Order {
     },
     paymentMethod: data.paymentMethod || 'cash_on_delivery',
     paymentStatus: data.paymentStatus || 'pending',
-    createdAt: data.createdAt || new Date().toISOString(),
+    createdAt: data.createdAt || Timestamp.now(),
+    updatedAt: data.updatedAt || Timestamp.now(),
     estimatedDelivery: data.estimatedDelivery || '',
     trackingSteps: Array.isArray(data.trackingSteps)
       ? data.trackingSteps.map((st: any) => ({
@@ -69,6 +71,14 @@ export function mapOrder(docId: string, data: any): Order {
         }))
       : undefined,
   };
+}
+
+function getTimeMs(ts: any): number {
+  if (!ts) return 0;
+  if (typeof ts.toMillis === 'function') return ts.toMillis();
+  if (typeof ts.toDate === 'function') return ts.toDate().getTime();
+  if (ts.seconds) return ts.seconds * 1000;
+  return new Date(ts).getTime() || 0;
 }
 
 /* ─────────────── One-Time Fetchers ─────────────── */
@@ -88,7 +98,7 @@ export async function fetchOrders(userId?: string): Promise<Order[]> {
     }
     const orders = snap.docs.map((d) => mapOrder(d.id, d.data()));
     // Sort orders by createdAt descending
-    orders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    orders.sort((a, b) => getTimeMs(b.createdAt) - getTimeMs(a.createdAt));
     return orders;
   } catch (err) {
     console.error('[GroceryBackend] Error fetching orders:', err);
@@ -154,7 +164,7 @@ export function subscribeOrders(
     q,
     (snap) => {
       const orders = snap.docs.map((d) => mapOrder(d.id, d.data()));
-      orders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      orders.sort((a, b) => getTimeMs(b.createdAt) - getTimeMs(a.createdAt));
       onData(orders);
     },
     (err) => {

@@ -176,43 +176,40 @@ export const placeOrder = secureCallable(
       if (data.paymentMethod === 'wallet') {
         const walletRef = db.collection('wallets').doc(uid);
         const walletSnap = await t.get(walletRef);
-        if (!walletSnap.exists) {
-          throwError('not-found', 'Wallet record not found. Please initialize wallet.');
-        }
+        const wData = walletSnap.exists ? walletSnap.data() || {} : {};
 
-        const walletData = walletSnap.data();
-        const currentBalanceMinor = typeof walletData?.balanceMinor === 'number'
-          ? walletData.balanceMinor
-          : Math.round((walletData?.balance || 0) * 100);
+        const currentBalMinor = typeof wData.balanceMinor === 'number'
+          ? wData.balanceMinor
+          : Math.round((wData.balance || 0) * 100);
 
-        if (currentBalanceMinor < totalMinor) {
+        if (currentBalMinor < totalMinor) {
           throwError(
             'invalid-argument',
-            `Insufficient wallet balance. Total is ₹${(totalMinor / 100).toFixed(2)}, but wallet has ₹${(currentBalanceMinor / 100).toFixed(2)}.`
+            `Insufficient wallet balance. Total is ₹${(totalMinor / 100).toFixed(2)}, but wallet has ₹${(currentBalMinor / 100).toFixed(2)}.`
           );
         }
 
-        const newBalanceMinor = currentBalanceMinor - totalMinor;
-        const newBalanceRupees = newBalanceMinor / 100;
+        const newBalMinor = currentBalMinor - totalMinor;
+        const newBalanceRupees = newBalMinor / 100;
 
         // Update Wallet Balance
         t.update(walletRef, {
           balance: newBalanceRupees,
-          balanceMinor: newBalanceMinor,
+          balanceMinor: newBalMinor,
           updatedAt: now,
         });
 
         // Write Immutable Ledger Entry
-        const entryRef = walletRef.collection('entries').doc();
+        const entryRef = walletRef.collection('entries').doc(`entry_order_${orderId}`);
         t.set(entryRef, {
           id: entryRef.id,
-          amount: totalMinor / 100,
-          amountMinor: totalMinor,
           direction: 'debit',
           type: 'order_payment',
-          orderId,
+          amount: totalMinor / 100,
+          amountMinor: totalMinor,
           title: `${category === 'food' ? 'Food' : 'Grocery'} Order #${orderId.slice(-6)}`,
           description: `Payment for order at ${merchantName}`,
+          idempotencyKey: `order_${orderId}`,
           createdAt: now,
         });
 
