@@ -5,34 +5,71 @@ import { secureCallable } from './core/callable';
 import { log, throwError } from './core/logger';
 
 // ----------------------------------------------------------------------------
-// PAYMENT METHODS
+// PAYMENT METHODS (Strict PCI-DSS Compliant Schemas — No PAN, CVV, or PIN)
 // ----------------------------------------------------------------------------
 
-const paymentMethodSchema = z.object({
-  id: z.string(),
-  type: z.enum(['card', 'upi']),
-}).passthrough();
+const cardPaymentMethodSchema = z.object({
+  id: z.string().min(1).max(100),
+  type: z.literal('card'),
+  brand: z.string().min(1).max(50),
+  last4: z.string().regex(/^\d{4}$/, 'last4 must be exactly 4 digits'),
+  expiry: z.string().min(4).max(7),
+  isDefault: z.boolean().optional(),
+  providerToken: z.string().optional(),
+}).strict();
+
+const upiPaymentMethodSchema = z.object({
+  id: z.string().min(1).max(100),
+  type: z.literal('upi'),
+  vpa: z.string().min(3).max(100),
+  isDefault: z.boolean().optional(),
+}).strict();
+
+const paymentMethodSchema = z.discriminatedUnion('type', [
+  cardPaymentMethodSchema,
+  upiPaymentMethodSchema,
+]);
 
 export const savePaymentMethod = secureCallable(paymentMethodSchema, async (data, context) => {
   const uid = context.auth.uid;
   const methodRef = db.collection('users').doc(uid).collection('paymentMethods').doc(data.id);
   
+  const safeData = data.type === 'card'
+    ? {
+        id: data.id,
+        type: 'card' as const,
+        brand: data.brand,
+        last4: data.last4,
+        expiry: data.expiry,
+        isDefault: data.isDefault ?? false,
+        ...(data.providerToken ? { providerToken: data.providerToken } : {}),
+      }
+    : {
+        id: data.id,
+        type: 'upi' as const,
+        vpa: data.vpa,
+        isDefault: data.isDefault ?? false,
+      };
+
   await methodRef.set({
-    ...data,
+    ...safeData,
     createdAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
-  });
+  }, { merge: true });
   
-  log.info(`User ${uid} saved payment method ${data.id}`);
+  log.info(`User ${uid} saved payment method ${data.id} (${data.type})`);
   return { success: true };
 });
 
-export const removePaymentMethod = secureCallable(z.object({ id: z.string() }), async (data, context) => {
-  const uid = context.auth.uid;
-  await db.collection('users').doc(uid).collection('paymentMethods').doc(data.id).delete();
-  log.info(`User ${uid} removed payment method ${data.id}`);
-  return { success: true };
-});
+export const removePaymentMethod = secureCallable(
+  z.object({ id: z.string().min(1) }).strict(),
+  async (data, context) => {
+    const uid = context.auth.uid;
+    await db.collection('users').doc(uid).collection('paymentMethods').doc(data.id).delete();
+    log.info(`User ${uid} removed payment method ${data.id}`);
+    return { success: true };
+  }
+);
 
 // ----------------------------------------------------------------------------
 // WALLET TRANSACTIONS (Using Firestore Transactions for safety & Idempotency)

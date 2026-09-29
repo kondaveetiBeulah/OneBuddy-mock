@@ -15,9 +15,12 @@ export const calculateDiscount = (
   return Math.round(((originalPrice - discountPrice) / originalPrice) * 100);
 };
 
-export const formatDate = (dateString: string): string => {
-  const date = new Date(dateString);
-  if (isNaN(date.getTime())) return dateString;
+export const formatDate = (dateInput: string | { toDate?: () => Date } | Date | number): string => {
+  if (!dateInput) return '';
+  const date = typeof (dateInput as any)?.toDate === 'function'
+    ? (dateInput as any).toDate()
+    : new Date(dateInput as any);
+  if (isNaN(date.getTime())) return String(dateInput);
 
   return date.toLocaleDateString('en-IN', {
     day: 'numeric',

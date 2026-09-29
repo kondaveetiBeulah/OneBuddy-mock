@@ -21,6 +21,7 @@ import {
   FoodRoute,
   GroceriesRoute,
   HelpSupportRoute,
+  HomeRoute,
   NotificationsRoute,
   OrdersRoute,
   PaymentsRoute,
@@ -134,6 +135,7 @@ export default function RootNavigator() {
               <Stack.Screen name="Groceries" component={GroceriesRoute} />
               <Stack.Screen name="Rides" component={RidesRoute} />
               <Stack.Screen name="Care" component={CareRoute} />
+              <Stack.Screen name="Home" component={HomeRoute} />
             </Stack.Group>
 
             {/* Settings destinations — push transition (slide_from_right) */}

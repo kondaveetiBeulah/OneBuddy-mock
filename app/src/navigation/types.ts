@@ -19,6 +19,7 @@ export type RootStackParamList = {
   Groceries: undefined;
   Rides: undefined;
   Care: undefined;
+  Home: undefined;
 
   /** Settings destinations — previously `openAppSettings` and friends. */
   AppSettings: undefined;
@@ -42,11 +43,11 @@ export type TabParamList = {
 export type RootScreenProps<T extends keyof RootStackParamList> =
   NativeStackScreenProps<RootStackParamList, T>;
 
-/** Dashboard card -> route. Food, Groceries, Rides, and Care have real native sub-apps. */
+/** Dashboard card -> route. Food, Groceries, Rides, Care, and Home have real native sub-apps. */
 export const SERVICE_ROUTE: Record<ServiceId, keyof RootStackParamList | null> = {
   food: 'Food',
   grocery: 'Groceries',
   ride: 'Rides',
-  home: null,
+  home: 'Home',
   care: 'Care',
 };

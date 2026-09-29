@@ -12,6 +12,7 @@ import GroceriesHost from './GroceriesHost';
 import FoodHost from './FoodHost';
 import RidesHost from './RidesHost';
 import CareHost from './CareHost';
+import HomeHost from './HomeHost';
 import ServicePreferencesHost from './ServicePreferencesHost';
 import EditProfileSheet from '@/components/EditProfileSheet';
 
@@ -72,6 +73,10 @@ export function RidesRoute() {
 
 export function CareRoute() {
   return <CareHost visible onClose={useDismiss()} />;
+}
+
+export function HomeRoute() {
+  return <HomeHost visible onClose={useDismiss()} />;
 }
 
 export function ServicePreferencesRoute() {
