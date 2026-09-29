@@ -11,7 +11,7 @@ import type { ServiceId } from '@/design/tokens';
 export type RootStackParamList = {
   Splash: undefined;
   /** Combined login + sign-up screen with internal OTP step. */
-  Auth: undefined;
+  Auth: { initialTab?: 'login' | 'signup' } | undefined;
   Tabs: undefined;
 
   /** Category sub-apps, opened from the dashboard cards. */

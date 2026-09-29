@@ -1,5 +1,5 @@
 import { User } from 'firebase/auth';
-import { collection, doc, getDoc, getDocs, onSnapshot, query, serverTimestamp, setDoc, where } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDoc, getDocs, onSnapshot, query, serverTimestamp, setDoc, where } from 'firebase/firestore';
 import { db } from '../config';
 import { SecurityDoc, UserProfile } from '../types';
 import { SecurityPrivacyValues } from '../../native/types';
@@ -13,7 +13,8 @@ const DEFAULT_SECURITY: Omit<SecurityDoc, 'updatedAt'> = {
 
 function normalizeUserProfile(raw: any, fallbackUid: string): UserProfile {
   const displayName = raw.displayName || raw.name || 'OneBuddy user';
-  const phone = raw.phoneNumber || raw.phoneE164 || raw.phone || null;
+  const rawPhone = raw.phoneNumber || raw.phoneE164 || raw.phone || null;
+  const phone = rawPhone ? rawPhone.replace(/\D/g, '').slice(-10) : null;
   return {
     uid: raw.uid || fallbackUid,
     displayName,
@@ -50,16 +51,17 @@ export async function ensureUserDocument(
   const existing = await getDoc(userRef);
   const resolvedEmail = extra?.email || user.email || null;
   const resolvedName = deriveDisplayName(user, name, resolvedEmail || undefined);
-  const resolvedPhone = extra?.phone || user.phoneNumber || null;
+  const rawPhone = extra?.phone || user.phoneNumber || null;
+  const resolvedPhone = rawPhone ? rawPhone.replace(/\D/g, '').slice(-10) : null;
 
   if (!existing.exists()) {
     const profileData: Record<string, any> = {
-      uid: user.uid,
+      accountStatus: 'active',
+      createdAt: serverTimestamp(),
       displayName: resolvedName,
       email: resolvedEmail,
       phoneNumber: resolvedPhone,
-      accountStatus: 'active',
-      createdAt: serverTimestamp(),
+      uid: user.uid,
       updatedAt: serverTimestamp(),
     };
     try {
@@ -105,12 +107,14 @@ export async function deleteUserAccountFromFirestore(uid: string): Promise<void>
     const secRef = doc(db, 'users', uid, 'privacy', 'security');
     const walletRef = doc(db, 'wallets', uid);
 
-    // Delete subdocuments and main profile document
+    // Delete subdocuments and main profile document completely (no deletedAt / leftover fields)
     await Promise.allSettled([
-      setDoc(userRef, { accountStatus: 'deleted', deletedAt: serverTimestamp() }, { merge: true }),
+      deleteDoc(secRef),
+      deleteDoc(walletRef),
+      deleteDoc(userRef),
     ]);
   } catch (err) {
-    console.warn('[Firestore] Error marking user as deleted:', err);
+    console.warn('[Firestore] Error deleting user document:', err);
   }
 }
 

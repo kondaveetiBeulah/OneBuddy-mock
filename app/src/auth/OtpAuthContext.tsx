@@ -15,55 +15,42 @@ const TOKEN_KEY = 'onebuddy:otpToken';
 const IDENT_KEY = 'onebuddy:otpIdentifier';
 
 interface OtpAuthValue {
-  /** null while still reading storage — the navigator shows the splash then. */
+  /** null while still reading storage / waiting for auth */
   token: string | null;
   identifier: string | null;
   hydrated: boolean;
-  sendOtp: (identifier: string) => Promise<void>;
-  verifyOtp: (identifier: string, code: string) => Promise<void>;
+  sendOtp: (identifier: string, type?: 'signup' | 'login') => Promise<void>;
+  verifyOtp: (
+    identifier: string,
+    code: string,
+    options?: { type?: 'signup' | 'login'; fullName?: string; dob?: string }
+  ) => Promise<{ token: string; uid?: string; isNewUser?: boolean }>;
   signOut: () => Promise<void>;
 }
 
 const OtpAuthContext = createContext<OtpAuthValue | undefined>(undefined);
 
 /**
- * Holds the signed-in session for the native OTP flow.
- *
- * The token is kept in AsyncStorage so a restart stays signed in, matching
- * how `SettingsContext` persists settings. When a real backend issues a
- * long-lived token, move this to `expo-secure-store` — AsyncStorage is not
- * encrypted, and on a rooted device it is readable.
+ * Holds the signed-in session for the native OTP flow, synchronized with Firebase Auth.
  */
 export function OtpAuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [identifier, setIdentifier] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
 
+  // Synchronize with Firebase Auth as single source of truth
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const [storedToken, storedIdent] = await AsyncStorage.multiGet([
-          TOKEN_KEY,
-          IDENT_KEY,
-        ]);
-        if (cancelled) return;
-        setToken(storedToken[1]);
-        setIdentifier(storedIdent[1]);
-      } finally {
-        if (!cancelled) setHydrated(true);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    if (!auth) {
+      setHydrated(true);
+      return;
+    }
 
-  // Synchronize with Firebase Auth
-  useEffect(() => {
-    if (!auth) return;
     const unsubscribe = auth.onAuthStateChanged((fbUser) => {
-      if (!fbUser) {
+      if (fbUser) {
+        setToken(fbUser.uid);
+        const cleanPhone = (fbUser.phoneNumber || '').replace(/\D/g, '').slice(-10);
+        setIdentifier(cleanPhone || fbUser.uid);
+      } else {
         setToken(null);
         setIdentifier(null);
         AsyncStorage.multiRemove([
@@ -73,24 +60,37 @@ export function OtpAuthProvider({ children }: { children: React.ReactNode }) {
           'onebuddy:userProfile',
         ]).catch(() => {});
       }
+      setHydrated(true);
     });
+
     return unsubscribe;
   }, []);
 
   const sendOtp = useCallback(
-    (value: string) => provider.sendOtp(value),
+    async (value: string, type: 'signup' | 'login' = 'login') => {
+      await provider.sendOtp(value, type);
+    },
     []
   );
 
-  const verifyOtp = useCallback(async (value: string, code: string) => {
-    const { token: issued } = await provider.verifyOtp(value, code);
-    await AsyncStorage.multiSet([
-      [TOKEN_KEY, issued],
-      [IDENT_KEY, value.trim()],
-    ]);
-    setIdentifier(value.trim());
-    setToken(issued);
-  }, []);
+  const verifyOtp = useCallback(
+    async (
+      value: string,
+      code: string,
+      options?: { type?: 'signup' | 'login'; fullName?: string; dob?: string }
+    ) => {
+      const result = await provider.verifyOtp(value, code, options);
+      const cleanPhone = value.replace(/\D/g, '').slice(-10);
+      await AsyncStorage.multiSet([
+        [TOKEN_KEY, result.token],
+        [IDENT_KEY, cleanPhone],
+      ]);
+      setIdentifier(cleanPhone);
+      setToken(result.token);
+      return result;
+    },
+    []
+  );
 
   const signOut = useCallback(async () => {
     await AsyncStorage.multiRemove([

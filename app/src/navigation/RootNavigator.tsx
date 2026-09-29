@@ -79,11 +79,11 @@ function Tabs() {
 export default function RootNavigator() {
   const { scheme } = useAppTheme();
   const tokens = schemes[scheme];
-  const { token, hydrated } = useOtpAuth();
-  const { user, initializing } = useAuth();
+  const { user, initializing, initialAuthTab } = useAuth();
   const [hasLaunched, setHasLaunched] = useState(false);
 
-  const isAuthenticated = Boolean(token || user);
+  // Authenticated ONLY with a verified Firebase Auth user
+  const isAuthenticated = Boolean(user);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -103,7 +103,7 @@ export default function RootNavigator() {
     },
   };
 
-  if (!hydrated || initializing) {
+  if (initializing) {
     return (
       <View style={[styles.boot, { backgroundColor: tokens.bgDeep }]}>
         <ActivityIndicator size="large" color={brand.gold} />
@@ -161,7 +161,9 @@ export default function RootNavigator() {
                 />
               )}
             </Stack.Screen>
-            <Stack.Screen name="Auth" component={AuthScreen} />
+            <Stack.Screen name="Auth">
+              {(props) => <AuthScreen {...props} initialTab={initialAuthTab} />}
+            </Stack.Screen>
           </>
         )}
       </Stack.Navigator>

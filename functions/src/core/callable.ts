@@ -43,16 +43,43 @@ export function secureCallable<Schema extends z.ZodTypeAny, Return>(
       const result = await handler(data, context);
       return result;
     } catch (error: any) {
-      // If it's already an HttpsError, rethrow it (we already logged it in throwError)
       if (error.code && error.httpErrorCode) {
         throw error;
       }
-      // Otherwise, it's an unexpected internal error
       log.error('Unexpected error in secureCallable', error, {
         uid: request.auth.uid,
         data: request.data,
       });
-      throwError('internal', 'An unexpected error occurred. Please try again later.');
+      throwError('internal', error.message || 'An unexpected error occurred.');
+    }
+  });
+}
+
+/**
+ * A standardized wrapper for public/unauthenticated HTTPS Callable functions (e.g. OTP send/verify).
+ */
+export function publicCallable<Schema extends z.ZodTypeAny, Return>(
+  schema: Schema,
+  handler: (data: z.infer<Schema>, request: CallableRequest) => Promise<Return> | Return,
+  options?: CallableOptions
+) {
+  return onCall({ region: 'asia-south1', ...options }, async (request: CallableRequest) => {
+    const validation = schema.safeParse(request.data);
+    if (!validation.success) {
+      throwError('invalid-argument', 'Invalid request data', validation.error.format());
+    }
+
+    try {
+      const result = await handler(validation.data, request);
+      return result;
+    } catch (error: any) {
+      if (error.code && error.httpErrorCode) {
+        throw error;
+      }
+      log.error('Unexpected error in publicCallable', error, {
+        data: request.data,
+      });
+      throwError('internal', error.message || 'An unexpected error occurred.');
     }
   });
 }

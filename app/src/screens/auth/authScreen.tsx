@@ -32,14 +32,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Path } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '@/firebase/config';
-
-import { useOtpAuth } from '@/auth/OtpAuthContext';
 import { OTP_LENGTH, OTP_RESEND_SECONDS } from '@/auth/otpProvider';
 import { useAuth } from '@/firebase/context/AuthContext';
 import { useProfile } from '@/context/ProfileContext';
@@ -198,28 +191,6 @@ export function validateOtp(digits: string[]): string | null {
 
 /* ─────────────── sub-components ─────────────── */
 
-function GoogleIcon() {
-  return (
-    <Svg width={20} height={20} viewBox="0 0 24 24">
-      <Path
-        fill="#4285F4"
-        d="M23.7449 12.27C23.7449 11.48 23.6749 10.73 23.5549 10H12.2148V14.51H18.7248C18.4348 15.99 17.5848 17.24 16.3248 18.09V21.09H20.1848C22.4749 18.98 23.7449 15.92 23.7449 12.27Z"
-      />
-      <Path
-        fill="#34A853"
-        d="M12.2148 24C15.4648 24 18.1648 22.92 20.1848 21.09L16.3248 18.09C15.2448 18.82 13.8748 19.25 12.2148 19.25C9.00483 19.25 6.27483 17.09 5.32483 14.18H1.35483V17.26C3.35483 21.24 7.45483 24 12.2148 24Z"
-      />
-      <Path
-        fill="#FBBC05"
-        d="M5.32483 14.18C5.07483 13.45 4.94483 12.68 4.94483 11.9C4.94483 11.12 5.07483 10.35 5.32483 9.62001V6.54001H1.35483C0.534826 8.16001 0.0848255 10.01 0.0848255 11.9C0.0848255 13.79 0.534826 15.64 1.35483 17.26L5.32483 14.18Z"
-      />
-      <Path
-        fill="#EA4335"
-        d="M12.2148 4.54999C13.9848 4.54999 15.5648 5.15999 16.8148 6.35999L20.2648 2.90999C18.1548 0.949992 15.4548 -8.45464e-05 12.2148 -8.45464e-05C7.45483 -8.45464e-05 3.35483 2.75992 1.35483 6.54001L5.32483 9.62001C6.27483 6.71001 9.00483 4.54999 12.2148 4.54999Z"
-      />
-    </Svg>
-  );
-}
 
 function DatePickerModal({
   visible,
@@ -658,7 +629,6 @@ interface FaceProps {
   onVerify: () => void;
   onResend: () => void;
   onOpenDatePicker: () => void;
-  onGoogleSignIn?: () => void;
   digitRefs: React.MutableRefObject<Array<TextInput | null>>;
   fullNameInputRef: React.MutableRefObject<TextInput | null>;
   dobInputRef: React.MutableRefObject<TextInput | null>;
@@ -693,7 +663,6 @@ function CardFace({
   onVerify,
   onResend,
   onOpenDatePicker,
-  onGoogleSignIn,
   digitRefs,
   fullNameInputRef,
   dobInputRef,
@@ -1005,25 +974,14 @@ function CardFace({
           <ActivityIndicator color={C.greenInk} />
         ) : (
           <Text style={s.ctaLabel}>
-            {step === 'phone' ? 'Send OTP' : 'Verify & Continue'}
+            {step === 'phone'
+              ? 'Send OTP'
+              : isLogin
+              ? 'Verify & Sign In'
+              : 'Verify & Create Account'}
           </Text>
         )}
       </Pressable>
-
-      {/* Google Sign In (Only on Login screen) */}
-      {isLogin && (
-        <Pressable 
-          style={({ pressed }) => [
-            s.googleBtn,
-            pressed && { transform: [{ scale: 0.97 }] },
-            Platform.OS === 'web' && ({ cursor: 'pointer' } as any),
-          ]}
-          onPress={onGoogleSignIn}
-        >
-          <GoogleIcon />
-          <Text style={s.googleBtnText}>Sign in with Google</Text>
-        </Pressable>
-      )}
 
       {/* footer */}
       <View style={s.footerRow}>
@@ -1049,16 +1007,33 @@ function CardFace({
 
 /* ─────────────────── main screen ─────────────────── */
 
-export default function AuthScreen({ navigation }: RootScreenProps<'Auth'>) {
+export default function AuthScreen({
+  navigation,
+  route,
+  initialTab: propInitialTab,
+}: RootScreenProps<'Auth'> & { initialTab?: Tab }) {
   const insets = useSafeAreaInsets();
-  const { sendOtp, verifyOtp } = useOtpAuth();
-  const { signInWithGoogle, authenticateWithPhoneOrEmail } = useAuth();
+  const { sendOtp, verifyOtpAndSignIn } = useAuth();
   const { updateProfile } = useProfile();
 
   /* ── tab state ── */
-  const [activeTab, setActiveTab] = useState<Tab>('login');
-  const [visibleTab, setVisibleTab] = useState<Tab>('login');
+  const defaultTab = propInitialTab || route?.params?.initialTab || 'login';
+  const [activeTab, setActiveTab] = useState<Tab>(defaultTab);
+  const [visibleTab, setVisibleTab] = useState<Tab>(defaultTab);
   const [isAnimating, setIsAnimating] = useState(false);
+
+  useEffect(() => {
+    const nextTab = propInitialTab || route?.params?.initialTab;
+    if (nextTab && (nextTab === 'login' || nextTab === 'signup')) {
+      setActiveTab(nextTab);
+      setVisibleTab(nextTab);
+      setStep('phone');
+      setDigits(Array(OTP_LENGTH).fill(''));
+      setFieldErrors({});
+      setTouched({});
+      setGeneralError(null);
+    }
+  }, [propInitialTab, route?.params?.initialTab]);
 
   /* ── form state ── */
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -1213,6 +1188,7 @@ export default function AuthScreen({ navigation }: RootScreenProps<'Auth'>) {
     setGeneralError(null);
   }, []);
 
+
   const handleChangePhone = useCallback((val: string) => {
     const clean = cleanPhoneNumber(val);
     setPhone(clean);
@@ -1272,10 +1248,31 @@ export default function AuthScreen({ navigation }: RootScreenProps<'Auth'>) {
       return;
     }
 
+    if (activeTab === 'signup') {
+      const nameErr = validateFullName(fullName);
+      const dobErr = validateDob(dob);
+      const emailErr = validateEmail(email);
+      if (nameErr || dobErr || emailErr) {
+        setTouched((prev) => ({ ...prev, fullName: true, dob: true, email: true }));
+        setFieldErrors((prev) => ({ ...prev, fullName: nameErr, dob: dobErr, email: emailErr }));
+        if (nameErr) {
+          fullNameInputRef.current?.focus();
+          setGeneralError(nameErr);
+        } else if (dobErr) {
+          dobInputRef.current?.focus();
+          setGeneralError(dobErr);
+        } else if (emailErr) {
+          emailInputRef.current?.focus();
+          setGeneralError(emailErr);
+        }
+        return;
+      }
+    }
+
     setGeneralError(null);
     setBusy(true);
     try {
-      await sendOtp(cleanPhone);
+      await sendOtp(cleanPhone, activeTab);
       lastSentPhone.current = cleanPhone;
       setDigits(Array(OTP_LENGTH).fill(''));
       setStep('otp');
@@ -1283,12 +1280,14 @@ export default function AuthScreen({ navigation }: RootScreenProps<'Auth'>) {
       setTouched((prev) => ({ ...prev, otp: false }));
       setFieldErrors((prev) => ({ ...prev, otp: null }));
       setTimeout(() => digitRefs.current[0]?.focus(), 250);
-    } catch (e) {
-      setGeneralError(e instanceof Error ? e.message : 'Could not send the verification code.');
+    } catch (e: any) {
+      const msg = e instanceof Error ? e.message : 'Could not send the verification code.';
+      setGeneralError(msg);
+      setFieldErrors((prev) => ({ ...prev, phone: msg }));
     } finally {
       setBusy(false);
     }
-  }, [phone, sendOtp]);
+  }, [phone, activeTab, fullName, dob, email, sendOtp]);
 
   const handleVerify = useCallback(async () => {
     const cleanPhone = cleanPhoneNumber(phone);
@@ -1355,101 +1354,39 @@ export default function AuthScreen({ navigation }: RootScreenProps<'Auth'>) {
     setFieldErrors((prev) => ({ ...prev, otp: null }));
     setGeneralError(null);
     setBusy(true);
+
     try {
-      // 1. Authenticate with Firebase Auth and write user profile directly to Firestore 'users' database
-      console.log('[Auth] Authenticating and saving user to Firestore database "users"...');
-      const fbUser = await authenticateWithPhoneOrEmail({
+      console.log(`[Auth] Verifying Fast2SMS OTP and authenticating for ${cleanPhone} (${activeTab})...`);
+      const user = await verifyOtpAndSignIn({
+        phone: cleanPhone,
+        otp: digits.join(''),
+        type: activeTab,
+        fullName: activeTab === 'signup' ? fullName.trim() : undefined,
+        dob: activeTab === 'signup' ? dob.trim() : undefined,
+        email: activeTab === 'signup' ? email.trim() : undefined,
+      });
+
+      console.log(`[Auth] User authenticated successfully:`, user.uid);
+      const resolvedName = activeTab === 'signup' && fullName.trim()
+        ? fullName.trim()
+        : user.displayName || 'OneBuddy User';
+
+      updateProfile({
+        name: resolvedName,
         phone: cleanPhone,
         email: email.trim(),
-        fullName: fullName.trim(),
-        dob: dob.trim(),
-        isSignUp: activeTab === 'signup',
       });
-      console.log('[Auth] Successfully created/authenticated user in Firestore:', fbUser.uid);
-
-      // 2. Persist profile data to AsyncStorage & ProfileContext for app-wide use
-      const resolvedName = (fullName && fullName.trim())
-        ? fullName.trim()
-        : (fbUser.displayName || (fbUser.email ? fbUser.email.split('@')[0] : 'User'));
-
-      if (activeTab === 'signup') {
-        const userProfile = {
-          name: resolvedName,
-          dob: dob.trim(),
-          email: email.trim() || fbUser.email || '',
-          phone: cleanPhone,
-          registeredAt: new Date().toISOString(),
-        };
-        try {
-          await AsyncStorage.setItem('onebuddy:userProfile', JSON.stringify(userProfile));
-        } catch (err) {
-          console.warn('Could not save user profile to AsyncStorage:', err);
-        }
-        updateProfile({
-          name: resolvedName,
-          phone: cleanPhone,
-          email: email.trim() || fbUser.email || '',
-        });
-      } else {
-        updateProfile({
-          name: resolvedName,
-          phone: cleanPhone,
-          email: fbUser.email || '',
-        });
-      }
-
-      // Direct write to Firestore to 100% guarantee data is populated
-      try {
-        if (db && fbUser?.uid) {
-          const userDocRef = doc(db, 'users', fbUser.uid);
-          const cleanRecord: Record<string, any> = {
-            uid: fbUser.uid,
-            displayName: resolvedName,
-            email: email.trim() || fbUser.email || null,
-            phoneNumber: cleanPhone,
-            accountStatus: 'active',
-            updatedAt: serverTimestamp(),
-          };
-          await setDoc(userDocRef, cleanRecord, { merge: true });
-          console.log('[Auth] Confirmed clean write to Firestore for UID:', fbUser.uid);
-        }
-      } catch (writeErr) {
-        console.warn('[Auth] Direct setDoc fallback note:', writeErr);
-      }
-
-      // 3. Now verify OTP and issue the session token so the app transitions to HomeScreen
-      await verifyOtp(cleanPhone, digits.join(''));
+      // RootNavigator will react to onAuthStateChanged and navigate to Home automatically!
     } catch (e: any) {
-      console.error('[Auth] Verification / save error:', e);
+      console.error('[Auth] Verification / sign-in error:', e);
       const message = e instanceof Error ? e.message : 'Verification failed. Please try again.';
       setTouched((prev) => ({ ...prev, otp: true }));
       setFieldErrors((prev) => ({ ...prev, otp: message }));
       setGeneralError(message);
+    } finally {
       setBusy(false);
     }
-  }, [activeTab, digits, email, fullName, dob, phone, verifyOtp, authenticateWithPhoneOrEmail, updateProfile]);
-
-  const handleGoogleSignIn = useCallback(async () => {
-    setGeneralError(null);
-    setBusy(true);
-    try {
-      const googleUser = await signInWithGoogle();
-      const identifier = googleUser.phoneNumber || googleUser.email || cleanPhoneNumber(phone) || 'google_user';
-      await verifyOtp(identifier, 'GOOGLE_SSO');
-      const resolvedGoogleName = googleUser.displayName || (googleUser.email ? googleUser.email.split('@')[0] : 'Google User');
-      updateProfile({
-        name: resolvedGoogleName,
-        email: googleUser.email || '',
-        phone: googleUser.phoneNumber || cleanPhoneNumber(phone) || '',
-      });
-    } catch (e: any) {
-      console.warn('Google sign-in error:', e);
-      if (e?.code !== 'auth/popup-closed-by-user') {
-        setGeneralError(e?.message || 'Google sign-in failed. Please try again.');
-      }
-      setBusy(false);
-    }
-  }, [signInWithGoogle, verifyOtp, updateProfile, phone]);
+  }, [activeTab, digits, fullName, dob, email, phone, verifyOtpAndSignIn, updateProfile]);
 
   const setDigit = useCallback((index: number, value: string) => {
     const clean = value.replace(/\D/g, '');
@@ -1485,7 +1422,6 @@ export default function AuthScreen({ navigation }: RootScreenProps<'Auth'>) {
 
   const handleResend = useCallback(async () => {
     const cleanPhone = cleanPhoneNumber(phone);
-    // Only enforce cooldown if resending to the EXACT same number as last sent
     if (cleanPhone === lastSentPhone.current && secondsLeft > 0) return;
 
     const phoneErr = validatePhone(cleanPhone);
@@ -1500,19 +1436,19 @@ export default function AuthScreen({ navigation }: RootScreenProps<'Auth'>) {
     setBusy(true);
     setGeneralError(null);
     try {
-      await sendOtp(cleanPhone);
+      await sendOtp(cleanPhone, activeTab);
       lastSentPhone.current = cleanPhone;
       setDigits(Array(OTP_LENGTH).fill(''));
       setSecondsLeft(OTP_RESEND_SECONDS);
       setFieldErrors((prev) => ({ ...prev, otp: null }));
       setStep('otp');
       digitRefs.current[0]?.focus();
-    } catch (e) {
+    } catch (e: any) {
       setGeneralError(e instanceof Error ? e.message : 'Could not resend the code.');
     } finally {
       setBusy(false);
     }
-  }, [phone, secondsLeft, sendOtp]);
+  }, [phone, activeTab, secondsLeft, sendOtp]);
 
   const handleBack = useCallback(() => {
     if (step === 'otp') {
@@ -1566,7 +1502,6 @@ export default function AuthScreen({ navigation }: RootScreenProps<'Auth'>) {
     onVerify: handleVerify,
     onResend: handleResend,
     onOpenDatePicker: () => setShowDatePicker(true),
-    onGoogleSignIn: handleGoogleSignIn,
     digitRefs,
     fullNameInputRef,
     dobInputRef,

@@ -1,6 +1,8 @@
 import React from 'react';
-import { StatusBar } from 'react-native';
+import { ActivityIndicator, StatusBar, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { useFonts } from 'expo-font';
+import { Ionicons } from '@expo/vector-icons';
 
 import { AuthProvider } from './src/firebase/context/AuthContext';
 import { ToastProvider } from './src/context/ToastContext';
@@ -10,7 +12,7 @@ import { OtpAuthProvider } from './src/auth/OtpAuthContext';
 import { ProfileProvider } from './src/context/ProfileContext';
 import { ServicePreferencesProvider } from './src/native/screens/ServicePreferences';
 import RootNavigator from './src/navigation/RootNavigator';
-import { schemes } from './src/design/tokens';
+import { brand, schemes } from './src/design/tokens';
 import { initDynamicRefreshRate } from './src/utils/dynamicRefreshRate';
 
 /**
@@ -36,9 +38,19 @@ function Shell() {
 }
 
 export default function App() {
+  const [fontsLoaded] = useFonts(Ionicons.font);
+
   React.useEffect(() => {
     initDynamicRefreshRate({ minRate: 60, maxRate: 120 });
   }, []);
+
+  if (!fontsLoaded) {
+    return (
+      <View style={{ flex: 1, backgroundColor: '#EFF2E8', alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator size="large" color={brand.gold} />
+      </View>
+    );
+  }
 
   return (
     <SafeAreaProvider>

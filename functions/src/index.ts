@@ -8,6 +8,7 @@
  */
 
 import { setGlobalOptions } from 'firebase-functions/v2';
+import * as authFunctions from './users/auth';
 import * as profile from './users/profile';
 import * as addresses from './users/addresses';
 import * as payments from './payments';
@@ -20,9 +21,15 @@ setGlobalOptions({
 });
 
 // ============================================================================
+// AUTHENTICATION & OTP MODULE (Fast2SMS)
+// ============================================================================
+export const sendMobileOtp = authFunctions.sendMobileOtp;
+export const verifyMobileOtp = authFunctions.verifyMobileOtp;
+export const deleteUserAccount = authFunctions.deleteUserAccount;
+
+// ============================================================================
 // IDENTITY & PROFILE MODULE
 // ============================================================================
-export const onUserCreated = profile.onUserCreated;
 export const updateProfile = profile.updateProfile;
 export const replaceAddresses = addresses.replaceAddresses;
 export const deleteAddress = addresses.deleteAddress;

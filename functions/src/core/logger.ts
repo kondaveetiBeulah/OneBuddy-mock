@@ -6,15 +6,15 @@ import { HttpsError } from 'firebase-functions/v2/https';
  * Wraps Firebase v2 structured logger to enforce consistent log payloads.
  */
 export const log = {
-  info: (message: string, payload?: Record<string, unknown>) => {
-    logger.info(message, { ...payload, timestamp: new Date().toISOString() });
+  info: (message: string, payload?: any) => {
+    logger.info(message, { ...(typeof payload === 'object' ? payload : { detail: payload }), timestamp: new Date().toISOString() });
   },
-  warn: (message: string, payload?: Record<string, unknown>) => {
-    logger.warn(message, { ...payload, timestamp: new Date().toISOString() });
+  warn: (message: string, payload?: any) => {
+    logger.warn(message, { ...(typeof payload === 'object' ? payload : { detail: payload }), timestamp: new Date().toISOString() });
   },
-  error: (message: string, error?: unknown, payload?: Record<string, unknown>) => {
+  error: (message: string, error?: unknown, payload?: any) => {
     logger.error(message, {
-      ...payload,
+      ...(typeof payload === 'object' ? payload : { detail: payload }),
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
       timestamp: new Date().toISOString(),
@@ -26,7 +26,7 @@ export const log = {
  * Throws a standardized Firebase HttpsError and logs it automatically.
  */
 export function throwError(
-  code: 'unauthenticated' | 'permission-denied' | 'invalid-argument' | 'internal' | 'not-found' | 'already-exists' | 'failed-precondition',
+  code: 'unauthenticated' | 'permission-denied' | 'invalid-argument' | 'internal' | 'not-found' | 'already-exists' | 'failed-precondition' | 'resource-exhausted',
   message: string,
   details?: unknown
 ): never {

@@ -1,51 +1,7 @@
-import { onUserCreated as onUserCreatedV2 } from 'firebase-functions/v2/identity';
 import { z } from 'zod';
-import { db } from '../core/firebase';
+import { db, admin } from '../core/firebase';
 import { secureCallable } from '../core/callable';
 import { log } from '../core/logger';
-
-/**
- * TRIGGER: Automatically creates a profile document when a user signs up.
- * This runs in the background (2nd Gen) instantly after Firebase Auth creates the account.
- */
-export const onUserCreated = onUserCreatedV2(async (event) => {
-  const user = event.data;
-  if (!user || !user.uid) return;
-  log.info(`Creating profile for new user: ${user.uid}`);
-
-  const profileRef = db.collection('users').doc(user.uid);
-  const now = new Date().toISOString();
-  
-  const initialData: Record<string, any> = {
-    uid: user.uid,
-    displayName: user.displayName || null,
-    email: user.email || null,
-    phoneNumber: user.phoneNumber || null,
-    accountStatus: 'active',
-    createdAt: now,
-    updatedAt: now,
-  };
-
-  await profileRef.set(initialData, { merge: true });
-
-  // Create default security preferences
-  await profileRef.collection('privacy').doc('security').set({
-    biometric: true,
-    verifiedProfile: true,
-    familySharing: false,
-    emergencyContact: '',
-    updatedAt: now,
-  }, { merge: true });
-
-  // Create default wallet
-  await db.collection('wallets').doc(user.uid).set({
-    balance: 0,
-    currency: 'INR',
-    updatedAt: now,
-  }, { merge: true });
-
-  log.info(`Successfully created profile and defaults for ${user.uid}`);
-});
 
 /**
  * CALLABLE: Allows a user to securely update their own profile from the app.
@@ -71,7 +27,7 @@ export const updateProfile = secureCallable(
     const phone = data.phoneNumber || data.phone || data.phoneE164;
 
     const updates: Record<string, any> = {
-      updatedAt: new Date().toISOString(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     };
 
     if (displayName !== undefined) updates.displayName = displayName;

@@ -96,10 +96,9 @@ export default function SettingsSheet({
             onClose();
             try {
               await firebaseSignOut();
-            } catch {}
-            try {
-              await signOut();
-            } catch {}
+            } catch (err) {
+              console.warn('Logout error:', err);
+            }
           },
         },
       ]
@@ -119,10 +118,9 @@ export default function SettingsSheet({
             onClose();
             try {
               await deleteAccount();
-            } catch {}
-            try {
-              await signOut();
-            } catch {}
+            } catch (err) {
+              console.warn('Delete account error:', err);
+            }
           },
         },
       ]

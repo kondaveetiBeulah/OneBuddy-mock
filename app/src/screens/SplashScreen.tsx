@@ -61,9 +61,8 @@ export default function SplashScreen({
   const { scheme } = useAppTheme();
   const tokens = schemes[scheme];
   const { width, height } = useWindowDimensions();
-  const { token } = useOtpAuth();
   const { user } = useAuth();
-  const isAuthenticated = propIsAuthenticated !== undefined ? propIsAuthenticated : Boolean(token || user);
+  const isAuthenticated = propIsAuthenticated !== undefined ? propIsAuthenticated : Boolean(user);
 
   // --field: min(360px, 78vw, 41vh)
   const field = Math.min(360, width * 0.78, height * 0.41);
