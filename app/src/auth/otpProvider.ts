@@ -120,11 +120,11 @@ export class BackendOtpProvider implements OtpProvider {
 
       const res = await verifyCallable({
         phone: cleanPhone,
-        otp: payload.otp,
+        otp: payload.otp.trim(),
         isSignUp: Boolean(payload.isSignUp),
-        fullName: payload.fullName,
-        email: payload.email,
-        dob: payload.dob,
+        fullName: payload.fullName ? payload.fullName.trim() : '',
+        email: payload.email ? payload.email.trim() : '',
+        dob: payload.dob ? payload.dob.trim() : '',
       });
 
       const { customToken, uid, isSignUp } = res.data;
@@ -139,8 +139,7 @@ export class BackendOtpProvider implements OtpProvider {
         isSignUp,
       };
     } catch (err: any) {
-      const code = err?.code || '';
-      let msg = err?.message || 'Verification failed. Please try again.';
+      const msg = err?.message || 'Verification failed. Please try again.';
       throw new OtpError(msg);
     }
   }

@@ -70,7 +70,8 @@ function sanitizePhone(raw: string): string {
  * Generates an OTP, stores it in Firestore & memory with expiration, and sends SMS via Fast2SMS.
  */
 const sendMobileOtpSchema = z.object({
-  phone: z.string().min(10).max(15),
+  phone: z.string().min(10).max(20),
+  type: z.string().optional().nullable(),
 });
 
 export const sendMobileOtp = publicCallable(
@@ -153,12 +154,12 @@ export const sendMobileOtp = publicCallable(
  * sets up profile in Firestore with ONLY standard fields, and returns Custom Auth Token.
  */
 const verifyMobileOtpSchema = z.object({
-  phone: z.string().min(10).max(15),
-  otp: z.string().min(6).max(6),
-  isSignUp: z.boolean(),
-  fullName: z.string().optional(),
-  email: z.string().email().optional().or(z.literal('')).optional(),
-  dob: z.string().optional(),
+  phone: z.string().min(10).max(20),
+  otp: z.string().min(4).max(10),
+  isSignUp: z.boolean().optional().default(false),
+  fullName: z.string().optional().nullable(),
+  email: z.string().optional().nullable(),
+  dob: z.string().optional().nullable(),
 });
 
 export const verifyMobileOtp = publicCallable(
