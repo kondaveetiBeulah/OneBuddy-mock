@@ -1,5 +1,5 @@
 import { User } from 'firebase/auth';
-import { collection, deleteDoc, doc, getDoc, getDocs, onSnapshot, query, serverTimestamp, setDoc, where } from 'firebase/firestore';
+import { deleteDoc, doc, getDoc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore';
 import { db } from '../config';
 import { SecurityDoc, UserProfile } from '../types';
 import { SecurityPrivacyValues } from '../../native/types';
@@ -15,12 +15,14 @@ function normalizeUserProfile(raw: any, fallbackUid: string): UserProfile {
   const displayName = raw.displayName || raw.name || 'OneBuddy user';
   const rawPhone = raw.phoneNumber || raw.phoneE164 || raw.phone || null;
   const phone = rawPhone ? rawPhone.replace(/\D/g, '').slice(-10) : null;
+  const phoneE164 = raw.phoneE164 || (phone ? `+91${phone}` : null);
   return {
     uid: raw.uid || fallbackUid,
     displayName,
     name: displayName, // helper for UI
     email: raw.email || null,
     phoneNumber: phone,
+    phoneE164,
     phone: phone, // helper for UI
     photoURL: raw.photoURL || null,
     accountStatus: raw.accountStatus || 'active',
@@ -53,6 +55,7 @@ export async function ensureUserDocument(
   const resolvedName = deriveDisplayName(user, name, resolvedEmail || undefined);
   const rawPhone = extra?.phone || user.phoneNumber || null;
   const resolvedPhone = rawPhone ? rawPhone.replace(/\D/g, '').slice(-10) : null;
+  const resolvedPhoneE164 = resolvedPhone ? `+91${resolvedPhone}` : null;
 
   if (!existing.exists()) {
     const profileData: Record<string, any> = {
@@ -61,6 +64,7 @@ export async function ensureUserDocument(
       displayName: resolvedName,
       email: resolvedEmail,
       phoneNumber: resolvedPhone,
+      phoneE164: resolvedPhoneE164,
       uid: user.uid,
       updatedAt: serverTimestamp(),
     };
@@ -82,6 +86,7 @@ export async function ensureUserDocument(
     }
     if (resolvedPhone) {
       updates.phoneNumber = resolvedPhone;
+      updates.phoneE164 = resolvedPhoneE164;
     }
     if (resolvedEmail && (!existingData.email || existingData.email === '')) {
       updates.email = resolvedEmail;
@@ -118,40 +123,6 @@ export async function deleteUserAccountFromFirestore(uid: string): Promise<void>
   }
 }
 
-/** Look up an existing registered user by their 10-digit mobile number. */
-export async function findUserByPhone(phone: string): Promise<UserProfile | null> {
-  try {
-    const cleanPhone = phone.replace(/\D/g, '').slice(-10);
-    // Query standard phone fields
-    const q1 = query(collection(db, 'users'), where('phone', '==', cleanPhone));
-    const snap1 = await getDocs(q1);
-    if (!snap1.empty) {
-      const docData = snap1.docs[0].data();
-      if (docData.accountStatus !== 'deleted') {
-        return normalizeUserProfile(docData, snap1.docs[0].id);
-      }
-    }
-    const q2 = query(collection(db, 'users'), where('phoneNumber', '==', cleanPhone));
-    const snap2 = await getDocs(q2);
-    if (!snap2.empty) {
-      const docData = snap2.docs[0].data();
-      if (docData.accountStatus !== 'deleted') {
-        return normalizeUserProfile(docData, snap2.docs[0].id);
-      }
-    }
-    const q3 = query(collection(db, 'users'), where('phoneE164', '==', cleanPhone));
-    const snap3 = await getDocs(q3);
-    if (!snap3.empty) {
-      const docData = snap3.docs[0].data();
-      if (docData.accountStatus !== 'deleted') {
-        return normalizeUserProfile(docData, snap3.docs[0].id);
-      }
-    }
-  } catch (err) {
-    console.warn('findUserByPhone query note:', err);
-  }
-  return null;
-}
 
 /** Look up a user profile by UID directly. */
 export async function getUserProfileByUid(uid: string): Promise<UserProfile | null> {
@@ -179,19 +150,29 @@ export function subscribeToProfile(
 
 export async function updateProfileFields(
   uid: string,
-  fields: Partial<Pick<UserProfile, 'displayName' | 'name' | 'phoneNumber' | 'phone'>>
+  fields: Partial<Pick<UserProfile, 'displayName' | 'name' | 'phoneNumber' | 'phone' | 'phoneE164' | 'photoURL'>>
 ): Promise<void> {
   const updates: Record<string, any> = {
     updatedAt: serverTimestamp(),
   };
   const name = fields.displayName || fields.name;
-  const phone = fields.phoneNumber || fields.phone;
+  const phone = fields.phoneNumber || fields.phone || fields.phoneE164;
 
   if (name !== undefined) {
     updates.displayName = name;
   }
   if (phone !== undefined) {
-    updates.phoneNumber = phone;
+    if (phone === null) {
+      updates.phoneNumber = null;
+      updates.phoneE164 = null;
+    } else {
+      const clean = phone.replace(/\D/g, '').slice(-10);
+      updates.phoneNumber = clean;
+      updates.phoneE164 = clean ? `+91${clean}` : null;
+    }
+  }
+  if (fields.photoURL !== undefined) {
+    updates.photoURL = fields.photoURL;
   }
 
   await setDoc(doc(db, 'users', uid), updates, { merge: true });

@@ -88,14 +88,14 @@ export async function fetchOrders(userId?: string): Promise<Order[]> {
     console.warn('[GroceryBackend] db is not initialized.');
     return [];
   }
+  const effectiveUid = userId || auth?.currentUser?.uid;
+  if (!effectiveUid) {
+    console.warn('[GroceryBackend] fetchOrders requires an authenticated user.');
+    return [];
+  }
   try {
-    let snap;
-    if (userId) {
-      const q = query(collection(db, 'orders'), where('userId', '==', userId));
-      snap = await getDocs(q);
-    } else {
-      snap = await getDocs(collection(db, 'orders'));
-    }
+    const q = query(collection(db, 'orders'), where('userId', '==', effectiveUid));
+    const snap = await getDocs(q);
     const orders = snap.docs.map((d) => mapOrder(d.id, d.data()));
     // Sort orders by createdAt descending
     orders.sort((a, b) => getTimeMs(b.createdAt) - getTimeMs(a.createdAt));
@@ -108,11 +108,21 @@ export async function fetchOrders(userId?: string): Promise<Order[]> {
 
 export async function fetchOrderById(orderId: string): Promise<Order | null> {
   if (!db) return null;
+  const currentUser = auth?.currentUser;
+  if (!currentUser) {
+    console.warn('[GroceryBackend] fetchOrderById requires an authenticated user.');
+    return null;
+  }
   try {
     const ref = doc(db, 'orders', orderId);
     const snap = await getDoc(ref);
     if (snap.exists()) {
-      return mapOrder(snap.id, snap.data());
+      const data = snap.data();
+      if (data.userId && data.userId !== currentUser.uid) {
+        console.warn(`[GroceryBackend] Unauthorized access attempt to order ${orderId}`);
+        return null;
+      }
+      return mapOrder(snap.id, data);
     }
   } catch (err) {
     console.error(`[GroceryBackend] Error fetching order ${orderId}:`, err);

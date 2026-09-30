@@ -78,7 +78,11 @@ export const updateProfile = secureCallable(
     };
 
     if (displayName !== undefined) updates.displayName = displayName;
-    if (phone !== undefined) updates.phoneNumber = phone;
+    if (phone !== undefined) {
+      const clean = phone.replace(/\D/g, '').slice(-10);
+      updates.phoneNumber = clean;
+      updates.phoneE164 = `+91${clean}`;
+    }
     if (data.photoURL !== undefined) updates.photoURL = data.photoURL;
 
     await profileRef.set(updates, { merge: true });

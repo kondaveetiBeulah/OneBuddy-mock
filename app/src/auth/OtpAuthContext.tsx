@@ -9,6 +9,7 @@ import React, {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { provider } from './otpProvider';
+import { signInWithCustomToken } from 'firebase/auth';
 import { auth } from '@/firebase/config';
 
 const TOKEN_KEY = 'onebuddy:otpToken';
@@ -81,6 +82,15 @@ export function OtpAuthProvider({ children }: { children: React.ReactNode }) {
     ) => {
       const result = await provider.verifyOtp(value, code, options);
       const cleanPhone = value.replace(/\D/g, '').slice(-10);
+
+      if (auth && result.customToken) {
+        try {
+          await signInWithCustomToken(auth, result.customToken);
+        } catch (authErr) {
+          console.warn('[OtpAuthContext] Firebase signInWithCustomToken note:', authErr);
+        }
+      }
+
       await AsyncStorage.multiSet([
         [TOKEN_KEY, result.token],
         [IDENT_KEY, cleanPhone],

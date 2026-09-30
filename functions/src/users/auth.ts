@@ -241,12 +241,18 @@ export const verifyMobileOtp = publicCallable(
         throwError('invalid-argument', 'Full name is required to complete signup.');
       }
 
-      // 2. Check if user already exists in Firestore by phoneNumber
+      // 2. Check if user already exists in Firestore by phoneNumber or phoneE164
       try {
         const existingByPhone = await db.collection('users')
           .where('phoneNumber', '==', cleanPhone)
           .get();
-        const activeDoc = existingByPhone.docs.find(d => d.data().accountStatus === 'active');
+        let activeDoc = existingByPhone.docs.find(d => d.data().accountStatus === 'active');
+        if (!activeDoc) {
+          const existingByE164 = await db.collection('users')
+            .where('phoneE164', '==', formattedPhone)
+            .get();
+          activeDoc = existingByE164.docs.find(d => d.data().accountStatus === 'active');
+        }
         if (activeDoc) {
           throwError('already-exists', 'An account with this mobile number already exists. Please login instead.');
         }
@@ -308,6 +314,7 @@ export const verifyMobileOtp = publicCallable(
           displayName,
           email: cleanEmail,
           phoneNumber: cleanPhone,
+          phoneE164: formattedPhone,
           uid: targetUid,
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
@@ -351,9 +358,18 @@ export const verifyMobileOtp = publicCallable(
         const existingByPhone = await db.collection('users')
           .where('phoneNumber', '==', cleanPhone)
           .get();
-        const activeDoc = existingByPhone.docs.find(d => d.data().accountStatus === 'active');
+        let activeDoc = existingByPhone.docs.find(d => d.data().accountStatus === 'active');
+        if (!activeDoc) {
+          const existingByE164 = await db.collection('users')
+            .where('phoneE164', '==', formattedPhone)
+            .get();
+          activeDoc = existingByE164.docs.find(d => d.data().accountStatus === 'active');
+        }
         if (activeDoc) {
           targetUid = activeDoc.id;
+          if (!activeDoc.data().phoneE164) {
+            activeDoc.ref.set({ phoneE164: formattedPhone }, { merge: true }).catch(() => {});
+          }
         }
       } catch (e) {
         log.warn('[Auth] Firestore login check note:', e);

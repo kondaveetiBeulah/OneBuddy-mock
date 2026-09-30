@@ -328,118 +328,154 @@ const cancelOrderSchema = z.object({
   reason: z.string().optional(),
 });
 
+const CANCELLABLE_STATUSES = ['placed', 'confirmed', 'preparing'];
+
+const ALLOWED_ORDER_ACTIONS = [
+  'cancel',
+  'cancel order',
+  'track',
+  'reorder',
+  'invoice',
+  'reschedule',
+  'rebook',
+  'book again',
+] as const;
+
+interface CancellationParams {
+  orderRef: FirebaseFirestore.DocumentReference;
+  userOrderRef: FirebaseFirestore.DocumentReference;
+  uid: string;
+  orderId: string;
+  reason?: string;
+  now: Timestamp;
+}
+
+async function performOrderCancellation(
+  t: FirebaseFirestore.Transaction,
+  params: CancellationParams
+) {
+  const { orderRef, userOrderRef, uid, orderId, reason, now } = params;
+  const orderSnap = await t.get(orderRef);
+  if (!orderSnap.exists) {
+    throwError('not-found', 'Order not found.');
+  }
+
+  const orderData = orderSnap.data();
+  if (orderData?.userId !== uid) {
+    throwError('permission-denied', 'You do not have permission to cancel this order.');
+  }
+
+  const currentStatus = orderData?.status;
+  if (!CANCELLABLE_STATUSES.includes(currentStatus)) {
+    throwError(
+      'failed-precondition',
+      `Order cannot be cancelled because it is already "${currentStatus}". Only orders in [${CANCELLABLE_STATUSES.join(', ')}] can be cancelled.`
+    );
+  }
+
+  // 1. Update Canonical Order Status
+  t.update(orderRef, {
+    status: 'cancelled',
+    cancelledAt: now,
+    cancellationReason: reason || 'Cancelled by customer',
+    updatedAt: now,
+  });
+
+  // 2. Append Order Lifecycle Event
+  const eventRef = orderRef.collection('events').doc();
+  t.set(eventRef, {
+    eventId: eventRef.id,
+    fromStatus: currentStatus,
+    toStatus: 'cancelled',
+    actorType: 'user',
+    actorId: uid,
+    note: reason || 'Cancelled by customer',
+    createdAt: now,
+  });
+
+  // 3. Refund to Wallet if paid via wallet
+  if (orderData?.paymentMethod === 'wallet' && orderData?.paymentStatus === 'paid') {
+    const refundAmountMinor = orderData.totalMinor || Math.round((orderData.total || 0) * 100);
+    const walletRef = db.collection('wallets').doc(uid);
+    const walletSnap = await t.get(walletRef);
+
+    if (walletSnap.exists) {
+      const walletData = walletSnap.data();
+      const currentBalMinor = typeof walletData?.balanceMinor === 'number'
+        ? walletData.balanceMinor
+        : Math.round((walletData?.balance || 0) * 100);
+
+      const newBalMinor = currentBalMinor + refundAmountMinor;
+      t.update(walletRef, {
+        balance: newBalMinor / 100,
+        balanceMinor: newBalMinor,
+        updatedAt: now,
+      });
+
+      const refundEntryRef = walletRef.collection('entries').doc();
+      t.set(refundEntryRef, {
+        id: refundEntryRef.id,
+        amount: refundAmountMinor / 100,
+        amountMinor: refundAmountMinor,
+        direction: 'credit',
+        type: 'refund',
+        orderId,
+        title: `Refund for Order #${orderId.slice(-6)}`,
+        description: 'Order cancelled. Refunded to wallet.',
+        createdAt: now,
+      });
+    }
+  }
+
+  // 4. Update User Screen Projection
+  const userOrderSnap = await t.get(userOrderRef);
+  if (userOrderSnap.exists) {
+    t.update(userOrderRef, {
+      status: 'Cancelled',
+      statusKind: 'done',
+      group: 'Completed',
+      actions: ['Reorder'],
+      updatedAt: now,
+    });
+  }
+
+  // 5. Append Outbox Job
+  const outboxRef = db.collection('outbox').doc();
+  t.set(outboxRef, {
+    eventId: outboxRef.id,
+    eventType: 'order.cancelled',
+    aggregateType: 'order',
+    aggregateId: orderId,
+    payload: { userId: uid, reason: reason || 'Cancelled by customer' },
+    createdAt: now,
+    availableAt: now,
+    attempts: 0,
+  });
+}
+
 export const cancelOrder = secureCallable(
   cancelOrderSchema,
   async (data, context) => {
     const uid = context.auth.uid;
     const now = Timestamp.now();
     const orderRef = db.collection('orders').doc(data.orderId);
+    const userOrderRef = db.collection('users').doc(uid).collection('orders').doc(data.orderId);
 
     log.info(`[cancelOrder] User ${uid} requesting cancellation for order ${data.orderId}`);
 
-    const result = await db.runTransaction(async (t) => {
-      const orderSnap = await t.get(orderRef);
-      if (!orderSnap.exists) {
-        throwError('not-found', 'Order not found.');
-      }
-
-      const orderData = orderSnap.data();
-      if (orderData?.userId !== uid) {
-        throwError('permission-denied', 'You do not have permission to cancel this order.');
-      }
-
-      const currentStatus = orderData?.status;
-      // Allowed cancellation states: only before delivery dispatch
-      const cancellableStatuses = ['placed', 'confirmed', 'preparing'];
-      if (!cancellableStatuses.includes(currentStatus)) {
-        throwError(
-          'failed-precondition',
-          `Order cannot be cancelled because it is already "${currentStatus}".`
-        );
-      }
-
-      // 1. Update Canonical Order Status
-      t.update(orderRef, {
-        status: 'cancelled',
-        cancelledAt: now,
-        cancellationReason: data.reason || 'Cancelled by customer',
-        updatedAt: now,
+    await db.runTransaction(async (t) => {
+      await performOrderCancellation(t, {
+        orderRef,
+        userOrderRef,
+        uid,
+        orderId: data.orderId,
+        reason: data.reason,
+        now,
       });
-
-      // 2. Append Order Lifecycle Event
-      const eventRef = orderRef.collection('events').doc();
-      t.set(eventRef, {
-        eventId: eventRef.id,
-        fromStatus: currentStatus,
-        toStatus: 'cancelled',
-        actorType: 'user',
-        actorId: uid,
-        note: data.reason || 'Cancelled by customer',
-        createdAt: now,
-      });
-
-      // 3. Refund to Wallet if paid via wallet
-      if (orderData?.paymentMethod === 'wallet' && orderData?.paymentStatus === 'paid') {
-        const refundAmountMinor = orderData.totalMinor || Math.round((orderData.total || 0) * 100);
-        const walletRef = db.collection('wallets').doc(uid);
-        const walletSnap = await t.get(walletRef);
-
-        if (walletSnap.exists) {
-          const walletData = walletSnap.data();
-          const currentBalMinor = typeof walletData?.balanceMinor === 'number'
-            ? walletData.balanceMinor
-            : Math.round((walletData?.balance || 0) * 100);
-
-          const newBalMinor = currentBalMinor + refundAmountMinor;
-          t.update(walletRef, {
-            balance: newBalMinor / 100,
-            balanceMinor: newBalMinor,
-            updatedAt: now,
-          });
-
-          const refundEntryRef = walletRef.collection('entries').doc();
-          t.set(refundEntryRef, {
-            id: refundEntryRef.id,
-            amount: refundAmountMinor / 100,
-            amountMinor: refundAmountMinor,
-            direction: 'credit',
-            type: 'refund',
-            orderId: data.orderId,
-            title: `Refund for Order #${data.orderId.slice(-6)}`,
-            description: `Order cancelled. Refunded to wallet.`,
-            createdAt: now,
-          });
-        }
-      }
-
-      // 4. Update User Screen Projection
-      const userOrderRef = db.collection('users').doc(uid).collection('orders').doc(data.orderId);
-      t.update(userOrderRef, {
-        status: 'Cancelled',
-        statusKind: 'done',
-        group: 'Completed',
-        actions: ['Reorder'],
-        updatedAt: now,
-      });
-
-      // 5. Append Outbox Job
-      const outboxRef = db.collection('outbox').doc();
-      t.set(outboxRef, {
-        eventId: outboxRef.id,
-        eventType: 'order.cancelled',
-        aggregateType: 'order',
-        aggregateId: data.orderId,
-        payload: { userId: uid, reason: data.reason },
-        createdAt: now,
-        availableAt: now,
-        attempts: 0,
-      });
-
-      return { success: true, message: 'Order cancelled successfully' };
     });
 
     log.info(`[cancelOrder] Order ${data.orderId} successfully cancelled for user ${uid}`);
-    return result;
+    return { success: true, message: 'Order cancelled successfully' };
   }
 );
 
@@ -480,13 +516,21 @@ export const reorder = secureCallable(
 
 export const runOrderAction = secureCallable(
   z.object({
-    orderId: z.string(),
-    action: z.string(),
+    orderId: z.string().min(1),
+    action: z.string().min(1),
   }),
   async (data, context) => {
     const uid = context.auth.uid;
     const now = Timestamp.now();
-    const action = data.action.toLowerCase().trim();
+    const normalizedAction = data.action.toLowerCase().trim();
+
+    if (!ALLOWED_ORDER_ACTIONS.includes(normalizedAction as any)) {
+      throwError(
+        'invalid-argument',
+        `Action "${data.action}" is not supported. Allowed actions: ${ALLOWED_ORDER_ACTIONS.join(', ')}`
+      );
+    }
+
     const userOrderRef = db.collection('users').doc(uid).collection('orders').doc(data.orderId);
     const userOrderSnap = await userOrderRef.get();
 
@@ -496,58 +540,16 @@ export const runOrderAction = secureCallable(
 
     const currentCard = userOrderSnap.data() as any;
 
-    if (action === 'cancel') {
+    if (normalizedAction === 'cancel' || normalizedAction === 'cancel order') {
       const orderRef = db.collection('orders').doc(data.orderId);
       await db.runTransaction(async (t) => {
-        const orderSnap = await t.get(orderRef);
-        if (orderSnap.exists) {
-          const oData = orderSnap.data();
-          const currentStatus = oData?.status;
-          if (['delivered', 'cancelled'].includes(currentStatus)) {
-            throwError('failed-precondition', `Order cannot be cancelled in '${currentStatus}' status.`);
-          }
-          t.update(orderRef, {
-            status: 'cancelled',
-            updatedAt: now,
-          });
-
-          if (oData?.paymentMethod === 'wallet' && oData?.paymentStatus === 'paid') {
-            const refundMinor = oData.totalMinor || Math.round((oData.total || 0) * 100);
-            const walletRef = db.collection('wallets').doc(uid);
-            const walletSnap = await t.get(walletRef);
-            if (walletSnap.exists) {
-              const wData = walletSnap.data();
-              const curBalMinor = typeof wData?.balanceMinor === 'number'
-                ? wData.balanceMinor
-                : Math.round((wData?.balance || 0) * 100);
-              const newBalMinor = curBalMinor + refundMinor;
-              t.update(walletRef, {
-                balance: newBalMinor / 100,
-                balanceMinor: newBalMinor,
-                updatedAt: now,
-              });
-              const refundEntryRef = walletRef.collection('entries').doc();
-              t.set(refundEntryRef, {
-                id: refundEntryRef.id,
-                amount: refundMinor / 100,
-                amountMinor: refundMinor,
-                direction: 'credit',
-                type: 'refund',
-                orderId: data.orderId,
-                title: `Refund for Order #${data.orderId.slice(-6)}`,
-                description: 'Order cancelled via Orders & Bookings.',
-                createdAt: now,
-              });
-            }
-          }
-        }
-
-        t.update(userOrderRef, {
-          status: 'Cancelled',
-          statusKind: 'done',
-          group: 'Completed',
-          actions: ['Reorder'],
-          updatedAt: now,
+        await performOrderCancellation(t, {
+          orderRef,
+          userOrderRef,
+          uid,
+          orderId: data.orderId,
+          reason: 'Cancelled via Orders & Bookings',
+          now,
         });
       });
 
@@ -564,6 +566,7 @@ export const runOrderAction = secureCallable(
       };
     }
 
+    // For other recognized actions (Track, Reorder, Invoice, Reschedule, Rebook, etc.)
     return {
       id: currentCard.id,
       category: currentCard.category,
