@@ -5,6 +5,12 @@ import { CartItem, MenuItem, Order, Restaurant } from '../types';
 import { useFoodData } from './FoodDataContext';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../../../firebase/config';
+import {
+  syncServerCartItem,
+  removeServerCartItem,
+  clearServerCart,
+  fetchServerCart,
+} from '../../../firebase/services/cartService';
 
 const safeStorage = {
   getItem: async (key: string) => {
@@ -220,9 +226,24 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     setCurrentRestaurantId(restaurant.id);
+    const existing = cart.find((ci) => ci.item.id === item.id);
+    const nextQty = (existing ? existing.quantity : 0) + quantity;
+
+    // Optimistic background sync to Cloud Functions cart
+    syncServerCartItem({
+      service: 'food',
+      merchantId: restaurant.id,
+      merchantName: restaurant.name,
+      merchantImage: restaurant.featuredImage || restaurant.bannerImage || '',
+      productId: item.id,
+      quantity: nextQty,
+    }).catch((err) => {
+      console.warn('[CartContext] Background syncServerCartItem note:', err);
+    });
+
     setCart((prev) => {
-      const existing = prev.find((ci) => ci.item.id === item.id);
-      if (existing) {
+      const exist = prev.find((ci) => ci.item.id === item.id);
+      if (exist) {
         return prev.map((ci) =>
           ci.item.id === item.id ? { ...ci, quantity: ci.quantity + quantity } : ci
         );
@@ -251,11 +272,39 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         },
       ]);
       setCurrentRestaurantId(pendingRestaurant.id);
+
+      syncServerCartItem({
+        service: 'food',
+        merchantId: pendingRestaurant.id,
+        merchantName: pendingRestaurant.name,
+        merchantImage: pendingRestaurant.featuredImage || pendingRestaurant.bannerImage || '',
+        productId: pendingItem.id,
+        quantity: 1,
+        clearExistingIfConflict: true,
+      }).catch((err) => {
+        console.warn('[CartContext] Background resolveConflict sync note:', err);
+      });
     }
     setConflictModalState({ isOpen: false });
   };
 
   const updateQuantity = (itemId: string, delta: number) => {
+    const existing = cart.find((ci) => ci.item.id === itemId);
+    if (existing) {
+      const nextQty = existing.quantity + delta;
+      if (nextQty <= 0) {
+        removeServerCartItem(itemId, 'food').catch(() => {});
+      } else {
+        syncServerCartItem({
+          service: 'food',
+          merchantId: existing.restaurantId,
+          merchantName: existing.restaurantName,
+          productId: itemId,
+          quantity: nextQty,
+        }).catch(() => {});
+      }
+    }
+
     setCart((prev) => {
       const updated = prev
         .map((ci) => {
@@ -270,12 +319,14 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (updated.length === 0) {
         setCurrentRestaurantId(null);
         removeCoupon();
+        clearServerCart('food').catch(() => {});
       }
       return updated;
     });
   };
 
   const removeFromCart = (itemId: string) => {
+    removeServerCartItem(itemId, 'food').catch(() => {});
     updateQuantity(itemId, -999);
   };
 
@@ -283,6 +334,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setCart([]);
     setCurrentRestaurantId(null);
     removeCoupon();
+    clearServerCart('food').catch(() => {});
   };
 
   const getItemQuantity = (itemId: string) => {

@@ -15,15 +15,21 @@ const orderItemInputSchema = z.object({
 });
 
 const addressSnapshotSchema = z.object({
+  id: z.string().optional(),
+  label: z.string().optional(),
   receiverName: z.string().default('Customer'),
   phone: z.string().default(''),
   line1: z.string().default(''),
   line2: z.string().nullish(),
+  landmark: z.string().nullish(),
   city: z.string().default(''),
   state: z.string().default(''),
   postalCode: z.string().default(''),
-  label: z.string().optional(),
-}).passthrough();
+  pincode: z.string().optional(),
+  latitude: z.number().nullish(),
+  longitude: z.number().nullish(),
+  isDefault: z.boolean().optional(),
+});
 
 const placeOrderSchema = z.object({
   id: z.string().optional(), // Idempotency key / custom order ID
@@ -31,7 +37,14 @@ const placeOrderSchema = z.object({
   type: z.enum(['food', 'grocery', 'groceries', 'pharmacy']).optional(), // Backwards compatibility
   merchantId: z.string().optional(), // Required for food (restaurantId)
   items: z.array(orderItemInputSchema).min(1, 'Order must contain at least one item'),
-  deliveryAddress: z.union([addressSnapshotSchema, z.record(z.string(), z.any())]).default({}),
+  deliveryAddress: addressSnapshotSchema.optional().default({
+    receiverName: 'Customer',
+    phone: '',
+    line1: '',
+    city: '',
+    state: '',
+    postalCode: '',
+  }),
   paymentMethod: z.enum(['wallet', 'cash_on_delivery', 'upi', 'card']).default('cash_on_delivery'),
   promotionCode: z.string().optional(),
   tipMinor: z.number().int().nonnegative().optional().default(0),
@@ -315,6 +328,29 @@ export const placeOrder = secureCallable(
     });
 
     log.info(`[placeOrder] Successfully placed order ${orderId} for user ${uid}`);
+
+    // Clean up server cart for this category after successful order placement
+    try {
+      const cartId = `${uid}_${category === 'food' ? 'food' : 'grocery'}`;
+      const cartRef = db.collection('carts').doc(cartId);
+      const itemsSnap = await cartRef.collection('items').get();
+      if (!itemsSnap.empty) {
+        const cleanupBatch = db.batch();
+        itemsSnap.docs.forEach((d) => cleanupBatch.delete(d.ref));
+        cleanupBatch.set(cartRef, {
+          userId: uid,
+          service: category === 'food' ? 'food' : 'grocery',
+          merchantId: null,
+          merchantSnapshot: null,
+          itemCount: 0,
+          updatedAt: now,
+        }, { merge: true });
+        await cleanupBatch.commit();
+      }
+    } catch (cleanupErr) {
+      log.warn(`[placeOrder] Post-order cart cleanup note:`, cleanupErr);
+    }
+
     return result;
   }
 );
@@ -331,8 +367,6 @@ const cancelOrderSchema = z.object({
 const CANCELLABLE_STATUSES = ['placed', 'confirmed', 'preparing'];
 
 const ALLOWED_ORDER_ACTIONS = [
-  'cancel',
-  'cancel order',
   'track',
   'reorder',
   'invoice',
@@ -440,13 +474,21 @@ async function performOrderCancellation(
   }
 
   // 5. Append Outbox Job
+  const wasRefunded = orderData?.paymentMethod === 'wallet' && orderData?.paymentStatus === 'paid';
+  const refundAmountMinor = wasRefunded ? (orderData.totalMinor || Math.round((orderData.total || 0) * 100)) : null;
+
   const outboxRef = db.collection('outbox').doc();
   t.set(outboxRef, {
     eventId: outboxRef.id,
     eventType: 'order.cancelled',
     aggregateType: 'order',
     aggregateId: orderId,
-    payload: { userId: uid, reason: reason || 'Cancelled by customer' },
+    payload: {
+      userId: uid,
+      reason: reason || 'Cancelled by customer',
+      refunded: wasRefunded,
+      refundAmountMinor: refundAmountMinor,
+    },
     createdAt: now,
     availableAt: now,
     attempts: 0,
@@ -521,7 +563,6 @@ export const runOrderAction = secureCallable(
   }),
   async (data, context) => {
     const uid = context.auth.uid;
-    const now = Timestamp.now();
     const normalizedAction = data.action.toLowerCase().trim();
 
     if (!ALLOWED_ORDER_ACTIONS.includes(normalizedAction as any)) {
@@ -540,33 +581,7 @@ export const runOrderAction = secureCallable(
 
     const currentCard = userOrderSnap.data() as any;
 
-    if (normalizedAction === 'cancel' || normalizedAction === 'cancel order') {
-      const orderRef = db.collection('orders').doc(data.orderId);
-      await db.runTransaction(async (t) => {
-        await performOrderCancellation(t, {
-          orderRef,
-          userOrderRef,
-          uid,
-          orderId: data.orderId,
-          reason: 'Cancelled via Orders & Bookings',
-          now,
-        });
-      });
-
-      return {
-        id: currentCard.id,
-        category: currentCard.category,
-        icon: currentCard.icon,
-        title: currentCard.title,
-        subtitle: currentCard.subtitle,
-        status: 'Cancelled',
-        statusKind: 'done',
-        group: 'Completed',
-        actions: ['Reorder'],
-      };
-    }
-
-    // For other recognized actions (Track, Reorder, Invoice, Reschedule, Rebook, etc.)
+    // For recognized actions (Track, Reorder, Invoice, Reschedule, Rebook, etc.)
     return {
       id: currentCard.id,
       category: currentCard.category,
@@ -578,6 +593,77 @@ export const runOrderAction = secureCallable(
       group: currentCard.group,
       actions: currentCard.actions || ['Track'],
     };
+  }
+);
+
+// ----------------------------------------------------------------------------
+// RESCHEDULE ORDER (Update delivery / service schedule)
+// ----------------------------------------------------------------------------
+
+const rescheduleOrderSchema = z.object({
+  orderId: z.string().min(1),
+  scheduledAt: z.string().min(1),
+  reason: z.string().optional(),
+});
+
+export const rescheduleOrder = secureCallable(
+  rescheduleOrderSchema,
+  async (data, context) => {
+    const uid = context.auth.uid;
+    const now = Timestamp.now();
+    const orderRef = db.collection('orders').doc(data.orderId);
+    const userOrderRef = db.collection('users').doc(uid).collection('orders').doc(data.orderId);
+
+    log.info(`[rescheduleOrder] User ${uid} requesting reschedule for order ${data.orderId} to ${data.scheduledAt}`);
+
+    return await db.runTransaction(async (t) => {
+      const snap = await t.get(orderRef);
+      if (!snap.exists) {
+        throwError('not-found', 'Order not found.');
+      }
+      const orderData = snap.data();
+      if (orderData?.userId !== uid) {
+        throwError('permission-denied', 'You do not have permission to reschedule this order.');
+      }
+      if (!CANCELLABLE_STATUSES.includes(orderData?.status)) {
+        throwError(
+          'failed-precondition',
+          `Cannot reschedule order in status "${orderData?.status}". Only [${CANCELLABLE_STATUSES.join(', ')}] can be rescheduled.`
+        );
+      }
+
+      t.update(orderRef, {
+        scheduledAt: data.scheduledAt,
+        rescheduledAt: now,
+        updatedAt: now,
+      });
+
+      const eventRef = orderRef.collection('events').doc();
+      t.set(eventRef, {
+        eventId: eventRef.id,
+        fromStatus: orderData?.status,
+        toStatus: orderData?.status,
+        actorType: 'user',
+        actorId: uid,
+        note: `Order delivery rescheduled to ${data.scheduledAt}${data.reason ? ` (${data.reason})` : ''}`,
+        createdAt: now,
+      });
+
+      const userOrderSnap = await t.get(userOrderRef);
+      if (userOrderSnap.exists) {
+        t.update(userOrderRef, {
+          scheduledAt: data.scheduledAt,
+          updatedAt: now,
+        });
+      }
+
+      return {
+        success: true,
+        orderId: data.orderId,
+        scheduledAt: data.scheduledAt,
+        message: 'Order rescheduled successfully.',
+      };
+    });
   }
 );
 

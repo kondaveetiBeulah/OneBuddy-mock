@@ -2,6 +2,12 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { CartItem, PriceSummaryData } from '../types/cart.types';
 import { Product } from '../types/product.types';
 import { storageHelper, STORAGE_KEYS } from '../utils/helpers';
+import {
+  syncServerCartItem,
+  removeServerCartItem,
+  clearServerCart,
+  fetchServerCart,
+} from '../../../firebase/services/cartService';
 
 interface CartContextType {
   cartItems: CartItem[];
@@ -23,6 +29,36 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   useEffect(() => {
     loadCartFromStorage();
+    // Reconcile with server cart
+    fetchServerCart('grocery')
+      .then((serverCart) => {
+        if (serverCart && serverCart.items && serverCart.items.length > 0) {
+          const restored: CartItem[] = serverCart.items.map((it) => ({
+            product: {
+              id: it.productId,
+              name: it.name,
+              brand: 'OneBuddy Fresh',
+              price: it.price,
+              discountPrice: it.discountPrice,
+              discountPercentage: it.price > it.discountPrice ? Math.round(((it.price - it.discountPrice) / it.price) * 100) : 0,
+              image: it.image,
+              unit: '1 unit',
+              rating: 4.5,
+              reviewCount: 50,
+              stock: 100,
+              isAvailable: true,
+              isFeatured: false,
+              categoryId: 'general',
+              categoryName: 'Groceries',
+              description: '',
+            },
+            quantity: it.quantity,
+          }));
+          setCartItems(restored);
+          storageHelper.setItem(STORAGE_KEYS.CART_ITEMS, restored).catch(() => {});
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const loadCartFromStorage = async () => {
@@ -40,11 +76,13 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const addToCart = (product: Product, quantity: number = 1) => {
     const existingIndex = cartItems.findIndex((item) => item.product.id === product.id);
     let updated: CartItem[];
+    let nextQty = quantity;
 
     if (existingIndex > -1) {
+      nextQty = cartItems[existingIndex].quantity + quantity;
       updated = cartItems.map((item, index) =>
         index === existingIndex
-          ? { ...item, quantity: item.quantity + quantity }
+          ? { ...item, quantity: nextQty }
           : item
       );
     } else {
@@ -52,20 +90,37 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
 
     saveCartToStorage(updated);
+
+    // Optimistic background sync with Cloud Functions
+    syncServerCartItem({
+      service: 'grocery',
+      productId: product.id,
+      quantity: nextQty,
+    }).catch((err) => {
+      console.warn('[Grocery CartContext] Background sync note:', err);
+    });
   };
 
   const removeFromCart = (productId: string) => {
     const updated = cartItems.filter((item) => item.product.id !== productId);
     saveCartToStorage(updated);
+    removeServerCartItem(productId, 'grocery').catch(() => {});
   };
 
   const increaseQuantity = (productId: string) => {
-    const updated = cartItems.map((item) =>
-      item.product.id === productId
-        ? { ...item, quantity: item.quantity + 1 }
-        : item
+    const item = cartItems.find((i) => i.product.id === productId);
+    const nextQty = (item ? item.quantity : 0) + 1;
+    const updated = cartItems.map((i) =>
+      i.product.id === productId
+        ? { ...i, quantity: nextQty }
+        : i
     );
     saveCartToStorage(updated);
+    syncServerCartItem({
+      service: 'grocery',
+      productId,
+      quantity: nextQty,
+    }).catch(() => {});
   };
 
   const decreaseQuantity = (productId: string) => {
@@ -75,17 +130,24 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (existingItem.quantity <= 1) {
       removeFromCart(productId);
     } else {
+      const nextQty = existingItem.quantity - 1;
       const updated = cartItems.map((item) =>
         item.product.id === productId
-          ? { ...item, quantity: item.quantity - 1 }
+          ? { ...item, quantity: nextQty }
           : item
       );
       saveCartToStorage(updated);
+      syncServerCartItem({
+        service: 'grocery',
+        productId,
+        quantity: nextQty,
+      }).catch(() => {});
     }
   };
 
   const clearCart = () => {
     saveCartToStorage([]);
+    clearServerCart('grocery').catch(() => {});
   };
 
   const getCartCount = (): number => {
