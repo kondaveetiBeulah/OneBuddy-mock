@@ -18,6 +18,10 @@ service firebase.storage {
       allow create, update: if owns(uid) && imageUpload();
       allow delete: if owns(uid);
     }
+    match /users/{uid}/exports/{fileName} {
+      allow read: if owns(uid);
+      allow write: if false; // generated exclusively by authenticated Cloud Functions
+    }
     match /medical/{uid}/{fileName=**} {
       allow read: if owns(uid);
       allow write: if false; // upload through authenticated backend after appointment ownership checks

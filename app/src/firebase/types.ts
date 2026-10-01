@@ -51,8 +51,11 @@ export interface SecurityDoc {
 }
 
 export interface WalletDoc {
-  balance: number;
-  updatedAt: number;
+  userId?: string;
+  balanceMinor: number;
+  balance?: number;
+  currency?: string;
+  updatedAt: any;
 }
 
 export type AddressLabel = 'Home' | 'Work' | 'Other';

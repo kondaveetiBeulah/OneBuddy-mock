@@ -209,11 +209,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // 1. Backend deletion via Cloud Function
           if (functions) {
             try {
-              const deleteFn = httpsCallable<{ uid: string }, { success: boolean }>(
+              const deleteFn = httpsCallable<Record<string, never>, { success: boolean }>(
                 functions,
                 'deleteUserAccount'
               );
-              await deleteFn({ uid });
+              await deleteFn({});
               console.log('[Auth] Backend deleteUserAccount succeeded.');
             } catch (err) {
               console.warn('[Auth] Backend deleteUserAccount fallback:', err);

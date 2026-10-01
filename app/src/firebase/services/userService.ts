@@ -1,8 +1,10 @@
 import { User } from 'firebase/auth';
 import { deleteDoc, doc, getDoc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore';
-import { db } from '../config';
+import { httpsCallable } from 'firebase/functions';
+import { db, functions } from '../config';
 import { SecurityDoc, UserProfile } from '../types';
 import { SecurityPrivacyValues } from '../../native/types';
+import { SettingsState } from '../../types';
 
 const DEFAULT_SECURITY: Omit<SecurityDoc, 'updatedAt'> = {
   biometric: true,
@@ -16,6 +18,7 @@ function normalizeUserProfile(raw: any, fallbackUid: string): UserProfile {
   const rawPhone = raw.phoneNumber || raw.phoneE164 || raw.phone || null;
   const phone = rawPhone ? rawPhone.replace(/\D/g, '').slice(-10) : null;
   const phoneE164 = raw.phoneE164 || (phone ? `+91${phone}` : null);
+  const dob = raw.dateOfBirth || raw.dob || null;
   return {
     uid: raw.uid || fallbackUid,
     displayName,
@@ -25,6 +28,8 @@ function normalizeUserProfile(raw: any, fallbackUid: string): UserProfile {
     phoneE164,
     phone: phone, // helper for UI
     photoURL: raw.photoURL || null,
+    dob,
+    dateOfBirth: dob,
     accountStatus: raw.accountStatus || 'active',
     createdAt: raw.createdAt || Date.now(),
     updatedAt: raw.updatedAt || Date.now(),
@@ -46,63 +51,73 @@ function deriveDisplayName(user: User, explicitName?: string, email?: string): s
 export async function ensureUserDocument(
   user: User,
   name?: string,
-  extra?: { phone?: string; email?: string }
+  extra?: { phone?: string; email?: string; dob?: string; dateOfBirth?: string }
 ): Promise<UserProfile> {
+  // 1. Invoke server-authoritative ensureProfile Cloud Function
+  if (functions) {
+    try {
+      const call = httpsCallable<
+        {
+          displayName?: string;
+          name?: string;
+          email?: string;
+          phoneNumber?: string;
+          phone?: string;
+          photoURL?: string;
+          dateOfBirth?: string;
+          dob?: string;
+        },
+        any
+      >(functions, 'ensureProfile');
+
+      const res = await call({
+        displayName: name,
+        email: extra?.email || user.email || undefined,
+        phoneNumber: extra?.phone || user.phoneNumber || undefined,
+        photoURL: user.photoURL || undefined,
+        dateOfBirth: extra?.dateOfBirth || extra?.dob || undefined,
+      });
+
+      if (res?.data) {
+        return normalizeUserProfile(res.data, user.uid);
+      }
+    } catch (err) {
+      console.warn('[userService] Server ensureProfile note (falling back to client read):', err);
+    }
+  }
+
+  // 2. Read-only client fallback (e.g. offline cache hit)
   const userRef = doc(db, 'users', user.uid);
-  console.log(`[Firestore] Fetching/ensuring user profile for UID: ${user.uid}`);
-  const existing = await getDoc(userRef);
+  try {
+    const existing = await getDoc(userRef);
+    if (existing.exists()) {
+      return normalizeUserProfile(existing.data(), user.uid);
+    }
+  } catch (err) {
+    console.warn('[userService] Offline read fallback failed:', err);
+  }
+
+  // 3. In-memory fallback if profile does not yet exist offline (preserves wallet and status invariants)
   const resolvedEmail = extra?.email || user.email || null;
   const resolvedName = deriveDisplayName(user, name, resolvedEmail || undefined);
   const rawPhone = extra?.phone || user.phoneNumber || null;
   const resolvedPhone = rawPhone ? rawPhone.replace(/\D/g, '').slice(-10) : null;
   const resolvedPhoneE164 = resolvedPhone ? `+91${resolvedPhone}` : null;
+  const resolvedDob = extra?.dateOfBirth || extra?.dob || null;
 
-  if (!existing.exists()) {
-    const profileData: Record<string, any> = {
-      accountStatus: 'active',
-      createdAt: serverTimestamp(),
-      displayName: resolvedName,
-      email: resolvedEmail,
-      phoneNumber: resolvedPhone,
-      phoneE164: resolvedPhoneE164,
-      uid: user.uid,
-      updatedAt: serverTimestamp(),
-    };
-    try {
-      console.log(`[Firestore] Writing user profile to Firestore for UID: ${user.uid}`, profileData);
-      await setDoc(userRef, profileData, { merge: true });
-    } catch (err) {
-      console.warn('[Firestore] Error writing initial user document:', err);
-    }
-    return normalizeUserProfile({ ...profileData, createdAt: Date.now(), updatedAt: Date.now() }, user.uid);
-  } else {
-    const existingData = existing.data() || {};
-    const updates: Record<string, unknown> = {
-      updatedAt: serverTimestamp(),
-    };
-
-    if (!existingData.displayName || existingData.displayName === 'null' || name) {
-      updates.displayName = resolvedName;
-    }
-    if (resolvedPhone) {
-      updates.phoneNumber = resolvedPhone;
-      updates.phoneE164 = resolvedPhoneE164;
-    }
-    if (resolvedEmail && (!existingData.email || existingData.email === '')) {
-      updates.email = resolvedEmail;
-    }
-    if (!existingData.accountStatus) {
-      updates.accountStatus = 'active';
-    }
-
-    try {
-      console.log(`[Firestore] Updating user profile in Firestore for UID: ${user.uid}`, updates);
-      await setDoc(userRef, updates, { merge: true });
-    } catch (err) {
-      console.warn('[Firestore] Error updating user document:', err);
-    }
-    return normalizeUserProfile({ ...existingData, ...updates }, user.uid);
-  }
+  return normalizeUserProfile({
+    uid: user.uid,
+    displayName: resolvedName,
+    email: resolvedEmail,
+    phoneNumber: resolvedPhone,
+    phoneE164: resolvedPhoneE164,
+    photoURL: user.photoURL || null,
+    dateOfBirth: resolvedDob,
+    dob: resolvedDob,
+    accountStatus: 'active',
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  }, user.uid);
 }
 
 /** Deletes all user documents and subcollections from Firestore. */
@@ -150,13 +165,14 @@ export function subscribeToProfile(
 
 export async function updateProfileFields(
   uid: string,
-  fields: Partial<Pick<UserProfile, 'displayName' | 'name' | 'phoneNumber' | 'phone' | 'phoneE164' | 'photoURL'>>
+  fields: Partial<Pick<UserProfile, 'displayName' | 'name' | 'phoneNumber' | 'phone' | 'phoneE164' | 'photoURL' | 'dateOfBirth' | 'dob'>>
 ): Promise<void> {
   const updates: Record<string, any> = {
     updatedAt: serverTimestamp(),
   };
   const name = fields.displayName || fields.name;
   const phone = fields.phoneNumber || fields.phone || fields.phoneE164;
+  const dob = fields.dateOfBirth || fields.dob;
 
   if (name !== undefined) {
     updates.displayName = name;
@@ -173,6 +189,9 @@ export async function updateProfileFields(
   }
   if (fields.photoURL !== undefined) {
     updates.photoURL = fields.photoURL;
+  }
+  if (dob !== undefined) {
+    updates.dateOfBirth = dob;
   }
 
   await setDoc(doc(db, 'users', uid), updates, { merge: true });
@@ -200,3 +219,57 @@ export async function saveSecurity(
     { merge: true }
   );
 }
+
+export interface MeResponse {
+  profile: UserProfile;
+  preferences: {
+    settings: SettingsState;
+    service: any;
+    notifications: any;
+  };
+  security: SecurityPrivacyValues & { familySharingEnabled?: boolean };
+  wallet: {
+    balanceMinor: number;
+    balance: number;
+    currency: string;
+  };
+  addressCount: number;
+}
+
+/**
+ * CALLABLE CLIENT WRAPPER: getMe
+ * Fetches consolidated profile, merged subcollection preferences,
+ * security, wallet summary, and aggregated address count in one round-trip.
+ */
+export async function fetchMe(): Promise<MeResponse | null> {
+  if (!functions) return null;
+  try {
+    const call = httpsCallable<void, MeResponse>(functions, 'getMe');
+    const res = await call();
+    return res.data;
+  } catch (err) {
+    console.warn('[userService] fetchMe call failed:', err);
+    return null;
+  }
+}
+
+export interface DataExportResponse {
+  success: boolean;
+  exportId: string;
+  downloadUrl: string;
+  expiresInDays: number;
+  message: string;
+}
+
+/**
+ * CALLABLE CLIENT WRAPPER: requestDataExport
+ * Requests a GDPR/DPDP-compliant data export archive compiled on the server.
+ */
+export async function requestDataExport(reason?: string): Promise<DataExportResponse> {
+  if (!functions) throw new Error('Cloud Functions service not available');
+  const call = httpsCallable<{ reason?: string }, DataExportResponse>(functions, 'requestDataExport');
+  const res = await call({ reason });
+  return res.data;
+}
+
+

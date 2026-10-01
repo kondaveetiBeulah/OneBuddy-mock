@@ -18,10 +18,10 @@ const addressSchema = z.object({
   latitude: z.number().nullish(),
   longitude: z.number().nullish(),
   isDefault: z.boolean(),
-}).passthrough();
+}).strict();
 
 export const replaceAddresses = secureCallable(
-  z.object({ addresses: z.array(addressSchema) }),
+  z.object({ addresses: z.array(addressSchema) }).strict(),
   async (data, context) => {
     const uid = context.auth.uid;
     const colRef = db.collection('users').doc(uid).collection('addresses');
@@ -44,7 +44,7 @@ export const replaceAddresses = secureCallable(
 );
 
 export const deleteAddress = secureCallable(
-  z.object({ addressId: z.string() }),
+  z.object({ addressId: z.string() }).strict(),
   async (data, context) => {
     const uid = context.auth.uid;
     await db.collection('users').doc(uid).collection('addresses').doc(data.addressId).delete();
@@ -53,7 +53,7 @@ export const deleteAddress = secureCallable(
 );
 
 export const setDefaultAddress = secureCallable(
-  z.object({ addressId: z.string() }),
+  z.object({ addressId: z.string() }).strict(),
   async (data, context) => {
     const uid = context.auth.uid;
     await db.runTransaction(async (t) => {

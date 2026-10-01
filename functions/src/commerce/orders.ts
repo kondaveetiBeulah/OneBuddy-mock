@@ -24,12 +24,12 @@ const addressSnapshotSchema = z.object({
   landmark: z.string().nullish(),
   city: z.string().default(''),
   state: z.string().default(''),
-  postalCode: z.string().default(''),
+  postalCode: z.string().optional(),
   pincode: z.string().optional(),
   latitude: z.number().nullish(),
   longitude: z.number().nullish(),
   isDefault: z.boolean().optional(),
-});
+}).strict();
 
 const placeOrderSchema = z.object({
   id: z.string().optional(), // Idempotency key / custom order ID
@@ -203,11 +203,9 @@ export const placeOrder = secureCallable(
         }
 
         const newBalMinor = currentBalMinor - totalMinor;
-        const newBalanceRupees = newBalMinor / 100;
 
         // Update Wallet Balance
         t.update(walletRef, {
-          balance: newBalanceRupees,
           balanceMinor: newBalMinor,
           updatedAt: now,
         });
@@ -441,7 +439,6 @@ async function performOrderCancellation(
 
       const newBalMinor = currentBalMinor + refundAmountMinor;
       t.update(walletRef, {
-        balance: newBalMinor / 100,
         balanceMinor: newBalMinor,
         updatedAt: now,
       });

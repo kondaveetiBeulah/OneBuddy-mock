@@ -33,12 +33,12 @@ function readExtra(key: string): string | undefined {
 }
 
 const firebaseConfig: FirebaseOptions = {
-  apiKey: readExtra('EXPO_PUBLIC_FIREBASE_API_KEY') || 'AIzaSyC0i2PsCmk0H1pBYcF_cl5EYIrgFMHXY3Q',
-  authDomain: readExtra('EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN') || 'onebuddyuser.firebaseapp.com',
-  projectId: readExtra('EXPO_PUBLIC_FIREBASE_PROJECT_ID') || 'onebuddyuser',
-  storageBucket: readExtra('EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET') || 'onebuddyuser.firebasestorage.app',
-  messagingSenderId: readExtra('EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID') || '923658815455',
-  appId: readExtra('EXPO_PUBLIC_FIREBASE_APP_ID') || '1:923658815455:android:ebd8c179c923401583a66a',
+  apiKey: readExtra('EXPO_PUBLIC_FIREBASE_API_KEY') || 'AIzaSyA7ZZ57wnJQKMURr1fRuM9AKRRpIGUn_gs',
+  authDomain: readExtra('EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN') || 'one-buddy-4e0d7.firebaseapp.com',
+  projectId: readExtra('EXPO_PUBLIC_FIREBASE_PROJECT_ID') || 'one-buddy-4e0d7',
+  storageBucket: readExtra('EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET') || 'one-buddy-4e0d7.firebasestorage.app',
+  messagingSenderId: readExtra('EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID') || '919781335156',
+  appId: readExtra('EXPO_PUBLIC_FIREBASE_APP_ID') || '1:919781335156:android:b834e9a7bd433f60b83121',
 };
 
 export const FIRESTORE_DATABASE_ID =

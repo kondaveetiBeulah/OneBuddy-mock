@@ -112,7 +112,6 @@ export const addMoney = secureCallable(
       const updatedBalance = updatedBalMinor / 100;
 
       t.update(walletRef, { 
-        balance: updatedBalance,
         balanceMinor: updatedBalMinor,
         updatedAt: FieldValue.serverTimestamp() 
       });
@@ -177,7 +176,6 @@ export const chargeWallet = secureCallable(
       const updatedBalance = updatedBalMinor / 100;
 
       t.update(walletRef, { 
-        balance: updatedBalance,
         balanceMinor: updatedBalMinor,
         updatedAt: FieldValue.serverTimestamp() 
       });
