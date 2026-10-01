@@ -22,6 +22,14 @@ import * as emailFunctions from './email';
 import * as auditFunctions from './common/audit';
 import * as adminSeedFunctions from './admin/seed';
 import * as careModule from './care';
+import * as carts from './modules/carts';
+import * as notifications from './modules/notifications';
+import * as catalog from './modules/catalog';
+import * as searchModule from './modules/search';
+import * as outboxJobs from './jobs/outboxWorker';
+import * as emailJobs from './jobs/emailDispatcher';
+import * as catalogSync from './jobs/catalogSearchSync';
+
 
 // Set global options for all v2 functions (like region, memory, concurrency)
 setGlobalOptions({
@@ -54,11 +62,12 @@ export const addMoney = payments.addMoney;
 export const chargeWallet = payments.chargeWallet;
 
 // ============================================================================
-// COMMERCE MODULE
+// COMMERCE & ORDERS MODULE
 // ============================================================================
 export const placeOrder = commerceOrders.placeOrder;
 export const cancelOrder = commerceOrders.cancelOrder;
 export const reorder = commerceOrders.reorder;
+export const rescheduleOrder = commerceOrders.rescheduleOrder;
 export const runOrderAction = commerceOrders.runOrderAction;
 
 // ============================================================================
@@ -178,4 +187,56 @@ export const getCareMedicines = careModule.getCareMedicines;
 export const getCareCatalog = careModule.getCareCatalog;
 export const syncCareCatalogToFirestore = careModule.syncCareCatalogToFirestore;
 
+// ============================================================================
+// CARTS MODULE
+// ============================================================================
+export const getCart = carts.getCart;
+export const setCartItem = carts.setCartItem;
+export const removeCartItem = carts.removeCartItem;
+export const clearCart = carts.clearCart;
+export const quoteCheckout = carts.quoteCheckout;
 
+
+// ============================================================================
+// NOTIFICATIONS & DEVICES MODULE
+// ============================================================================
+export const registerDevice = notifications.registerDevice;
+export const unregisterDevice = notifications.unregisterDevice;
+export const listNotifications = notifications.listNotifications;
+export const markNotificationRead = notifications.markNotificationRead;
+
+// ============================================================================
+// CATALOG MODULE (Admin & Public Query Callables)
+// ============================================================================
+export const publishRestaurant = catalog.publishRestaurant;
+export const publishMenuItem = catalog.publishMenuItem;
+export const publishGroceryProduct = catalog.publishGroceryProduct;
+export const publishOffer = catalog.publishOffer;
+export const listRestaurants = catalog.listRestaurants;
+export const getRestaurant = catalog.getRestaurant;
+export const listMenuItems = catalog.listMenuItems;
+export const listGroceryProducts = catalog.listGroceryProducts;
+export const listOffers = catalog.listOffers;
+export const searchCatalog = searchModule.searchCatalog;
+export const seedServiceCatalog = catalog.seedServiceCatalog;
+export const listServiceCatalog = catalog.listServiceCatalog;
+
+// ============================================================================
+// OUTBOX WORKER & BACKGROUND JOBS
+// ============================================================================
+export const onOutboxEventCreated = outboxJobs.onOutboxEventCreated;
+export const outboxScheduledWorker = outboxJobs.outboxScheduledWorker;
+
+// ============================================================================
+// EMAIL DISPATCH WORKER
+// ============================================================================
+export const onEmailOutboxCreated = emailJobs.onEmailOutboxCreated;
+export const emailOutboxScheduledWorker = emailJobs.emailOutboxScheduledWorker;
+
+// ============================================================================
+// CATALOG SEARCH PROJECTIONS SYNC WORKERS
+// ============================================================================
+export const onRestaurantWritten = catalogSync.onRestaurantWritten;
+export const onGroceryProductWritten = catalogSync.onGroceryProductWritten;
+export const onMenuItemWritten = catalogSync.onMenuItemWritten;
+export const catalogSearchSyncWorker = catalogSync.catalogSearchSyncWorker;

@@ -58,15 +58,57 @@ export function subscribeUserOrders(
 }
 
 /**
- * Runs a card action (Track / Reorder / Cancel / Reschedule / Invoice)
- * server-side via the `runOrderAction` Cloud Function, which applies the
- * matching status transition and returns the updated order so the screen
- * can patch its list without a full refetch.
+ * Cancels an order server-side via the `cancelOrder` Cloud Function,
+ * verifying ownership, initiating wallet refunds, and updating lifecycle trail.
+ */
+export async function cancelOrder(
+  orderId: string,
+  reason?: string
+): Promise<{ success: boolean; message?: string }> {
+  const call = httpsCallable<{ orderId: string; reason?: string }, { success: boolean; message?: string }>(
+    functions,
+    'cancelOrder'
+  );
+  const res = await call({ orderId, reason });
+  return res.data;
+}
+
+/**
+ * Reschedules an order server-side via the `rescheduleOrder` Cloud Function.
+ */
+export async function rescheduleOrder(
+  orderId: string,
+  scheduledAt: string,
+  reason?: string
+): Promise<{ success: boolean; orderId: string; scheduledAt: string }> {
+  const call = httpsCallable<{ orderId: string; scheduledAt: string; reason?: string }, any>(
+    functions,
+    'rescheduleOrder'
+  );
+  const res = await call({ orderId, scheduledAt, reason });
+  return res.data;
+}
+
+/**
+ * Runs a card action (Track / Reorder / Invoice / Reschedule / Rebook).
+ * If the user tapped Cancel, it automatically dispatches to the dedicated `cancelOrder` callable.
  */
 export async function runOrderAction(
   orderId: string,
   action: string
 ): Promise<OrderCard> {
+  const norm = action.toLowerCase().trim();
+  if (norm === 'cancel' || norm === 'cancel order') {
+    await cancelOrder(orderId, 'Cancelled via Orders & Bookings');
+    return {
+      id: orderId,
+      status: 'Cancelled',
+      statusKind: 'done',
+      group: 'Completed',
+      actions: ['Reorder'],
+    } as any;
+  }
+
   const call = httpsCallable<{ orderId: string; action: string }, OrderCard>(
     functions,
     'runOrderAction'
@@ -74,3 +116,4 @@ export async function runOrderAction(
   const res = await call({ orderId, action });
   return res.data;
 }
+
