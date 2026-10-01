@@ -1,11 +1,10 @@
 import { z } from 'zod';
+import { defineSecret } from 'firebase-functions/params';
 import { db, auth, admin } from '../core/firebase';
 import { publicCallable, secureCallable } from '../core/callable';
 import { log, throwError } from '../core/logger';
 
-const FAST2SMS_API_KEY =
-  process.env.FAST2SMS_API_KEY ||
-  'lLURDiSCnuAJzeFhPkgcm610dQHIVMKsbX9OBWwNq2ZGja45YrKMfJE8sXm3Ne9SvxwBiL6Z2lPgn01R';
+const fast2smsApiKey = defineSecret('FAST2SMS_API_KEY');
 
 /**
  * In-memory fallback OTP storage to guarantee SMS verification resilience
@@ -24,8 +23,13 @@ const inMemoryOtpStore = new Map<string, OtpEntry>();
  * Kept secure on backend/Cloud Functions only.
  */
 async function sendSmsViaFast2Sms(phone: string, message: string): Promise<void> {
+  const apiKey = fast2smsApiKey.value() || process.env.FAST2SMS_API_KEY || '';
+  if (!apiKey) {
+    log.warn('[Fast2SMS] Missing FAST2SMS_API_KEY secret.');
+  }
+
   const url = `https://www.fast2sms.com/dev/bulkV2?authorization=${encodeURIComponent(
-    FAST2SMS_API_KEY
+    apiKey
   )}&route=q&message=${encodeURIComponent(message)}&language=english&flash=0&numbers=${encodeURIComponent(
     phone
   )}&_t=${Date.now()}`;
@@ -72,7 +76,7 @@ function sanitizePhone(raw: string): string {
 const sendMobileOtpSchema = z.object({
   phone: z.string().min(10).max(20),
   type: z.string().optional().nullable(),
-});
+}).strict();
 
 export const sendMobileOtp = publicCallable(
   sendMobileOtpSchema,
@@ -92,7 +96,11 @@ export const sendMobileOtp = publicCallable(
       const existingSnap = await otpDocRef.get();
       if (existingSnap.exists) {
         const existing = existingSnap.data();
-        lastSent = existing?.sentAt ? new Date(existing.sentAt).getTime() : 0;
+        if (existing?.sentAt?.toMillis) {
+          lastSent = existing.sentAt.toMillis();
+        } else if (existing?.sentAt) {
+          lastSent = new Date(existing.sentAt).getTime();
+        }
       }
     } catch (e) {
       log.warn('[Auth] Firestore get note (using memory store):', e);
@@ -117,14 +125,14 @@ export const sendMobileOtp = publicCallable(
       expiresAt,
     });
 
-    // Save in Firestore
+    // Save in Firestore with serverTimestamp
     try {
       await otpDocRef.set({
         phone: cleanPhone,
         otp,
         attempts: 0,
-        sentAt: new Date(now).toISOString(),
-        expiresAt: new Date(expiresAt).toISOString(),
+        sentAt: admin.firestore.FieldValue.serverTimestamp(),
+        expiresAt: admin.firestore.Timestamp.fromMillis(expiresAt),
       });
     } catch (e) {
       log.warn('[Auth] Firestore otp write warning (memory store active):', e);
@@ -145,7 +153,8 @@ export const sendMobileOtp = publicCallable(
       message: 'Verification code sent successfully.',
       phone: cleanPhone,
     };
-  }
+  },
+  { secrets: [fast2smsApiKey] }
 );
 
 /**
@@ -160,7 +169,7 @@ const verifyMobileOtpSchema = z.object({
   fullName: z.string().optional().nullable(),
   email: z.string().optional().nullable(),
   dob: z.string().optional().nullable(),
-});
+}).strict();
 
 export const verifyMobileOtp = publicCallable(
   verifyMobileOtpSchema,
@@ -184,7 +193,11 @@ export const verifyMobileOtp = publicCallable(
         verification = {
           otp: d.otp,
           attempts: d.attempts || 0,
-          expiresAt: new Date(d.expiresAt).getTime(),
+          expiresAt: typeof d.expiresAt?.toMillis === 'function'
+            ? d.expiresAt.toMillis()
+            : typeof d.expiresAt === 'number'
+              ? d.expiresAt
+              : new Date(d.expiresAt).getTime(),
         };
       }
     } catch (e) {
@@ -218,7 +231,7 @@ export const verifyMobileOtp = publicCallable(
       throwError('resource-exhausted', 'Too many incorrect attempts. Please request a new OTP.');
     }
 
-    const isMatch = verification.otp === data.otp || data.otp === '123456';
+    const isMatch = verification.otp === data.otp;
     if (!isMatch) {
       const newAttempts = verification.attempts + 1;
       otpDocRef.update({ attempts: newAttempts }).catch(() => {});
@@ -321,7 +334,8 @@ export const verifyMobileOtp = publicCallable(
 
         // 5. Initialize wallet and security preferences
         await db.collection('wallets').doc(targetUid).set({
-          balance: 0,
+          userId: targetUid,
+          balanceMinor: 0,
           currency: 'INR',
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         }, { merge: true });
@@ -414,7 +428,7 @@ export const verifyMobileOtp = publicCallable(
  * Completely deletes the Firebase Authentication account and cleans related user data from Firestore.
  */
 export const deleteUserAccount = secureCallable(
-  z.object({}),
+  z.object({}).strict().optional(),
   async (_data, context) => {
     const uid = context.auth.uid;
     log.info(`[Auth] Completely deleting user account: ${uid}`);

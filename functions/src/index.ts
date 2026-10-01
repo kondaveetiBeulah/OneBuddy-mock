@@ -10,6 +10,7 @@
 import { setGlobalOptions } from 'firebase-functions/v2';
 import * as authFunctions from './users/auth';
 import * as profile from './users/profile';
+import * as preferences from './users/preferences';
 import * as addresses from './users/addresses';
 import * as payments from './payments';
 import * as commerceOrders from './commerce/orders';
@@ -47,8 +48,23 @@ export const deleteUserAccount = authFunctions.deleteUserAccount;
 // ============================================================================
 // IDENTITY & PROFILE MODULE
 // ============================================================================
+export const ensureProfile = profile.ensureProfile;
+export const getMe = profile.getMe;
 export const updateProfile = profile.updateProfile;
 export const requestAccountDeletion = profile.requestAccountDeletion;
+export const requestDataExport = profile.requestDataExport;
+
+// ============================================================================
+// PREFERENCES MODULE
+// ============================================================================
+export const getPreferences = preferences.getPreferences;
+export const updateSettings = preferences.updateSettings;
+export const updateServicePreferences = preferences.updateServicePreferences;
+export const updateNotificationPreferences = preferences.updateNotificationPreferences;
+
+// ============================================================================
+// ADDRESSES MODULE
+// ============================================================================
 export const replaceAddresses = addresses.replaceAddresses;
 export const deleteAddress = addresses.deleteAddress;
 export const setDefaultAddress = addresses.setDefaultAddress;

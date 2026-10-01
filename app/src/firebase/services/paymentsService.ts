@@ -39,7 +39,11 @@ export async function fetchPaymentsSnapshot(uid: string): Promise<PaymentsSnapsh
   ]);
 
   return {
-    walletBalance: walletSnap.exists() ? (walletSnap.data().balance as number) : 0,
+    walletBalance: walletSnap.exists()
+      ? typeof walletSnap.data().balanceMinor === 'number'
+        ? (walletSnap.data().balanceMinor as number) / 100
+        : (walletSnap.data().balance as number) || 0
+      : 0,
     cards: methodsSnap.docs.filter((d) => d.data().type === 'card').map((d) => stripCard(d.data() as CardDoc)),
     upiHandles: methodsSnap.docs.filter((d) => d.data().type === 'upi').map((d) => stripUpi(d.data() as UpiDoc)),
     transactions: txSnap.docs.map((d) => stripTx(d.data() as TransactionDoc)),
