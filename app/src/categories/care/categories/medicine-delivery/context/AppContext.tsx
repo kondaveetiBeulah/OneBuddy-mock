@@ -9,9 +9,10 @@ import React, {
 } from 'react';
 import { BackHandler, Platform, StatusBar } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { OrderHistoryItem, OrderItemRecord, PayMethod, Screen, Summary } from '../types';
+import { OrderHistoryItem, OrderItemRecord, PayMethod, Product, Screen, Summary } from '../types';
 import { PRODUCTS, CATEGORY_PRODUCT_MAP } from '../data/products';
 import { useMedColors } from '../theme/colors';
+import { careService } from '@/firebase';
 
 interface AppContextValue {
   // ---- state ----
@@ -33,6 +34,7 @@ interface AppContextValue {
   payMethod: PayMethod;
   toast: string | null;
   orders: OrderHistoryItem[];
+  products: Record<string, Product>;
 
   // ---- safe area insets ----
   bottomInset: number;
@@ -172,6 +174,44 @@ export function AppProvider({
   const [deliveryAddress, setDeliveryAddress] = useState<string | null>(null);
   const [orders, setOrders] = useState<OrderHistoryItem[]>(INITIAL_ORDERS);
   const [couponApplied, setCouponApplied] = useState(false);
+  const [productsMap, setProductsMap] = useState<Record<string, Product>>(PRODUCTS);
+
+  useEffect(() => {
+    let isMounted = true;
+    careService.fetchMedicines().then((backendMeds) => {
+      if (!isMounted || !backendMeds || backendMeds.length === 0) return;
+      const updated = { ...PRODUCTS };
+      backendMeds.forEach((med) => {
+        if (!med.id) return;
+        const productObj: Product = {
+          name: med.name,
+          generic: med.genericName || 'Verified Medicine',
+          price: med.price,
+          mrp: med.originalPrice || Math.round(med.price * 1.15),
+          rx: Boolean(med.rx),
+          icon: (med.icon as any) || 'pill',
+          category: med.category || 'medicines',
+          group: med.group,
+          subcat: med.subcat,
+          popular: med.popular ?? true,
+          diabetes: med.diabetes,
+          brandGroup: med.brandGroup,
+          manufacturer: med.manufacturer || 'Certified Pharmacy',
+          pack: med.packSize || med.dosageForm || 'Standard Pack',
+          desc: med.desc || `${med.name} - ${med.category || 'Pharmaceutical Care'}. Fast doorstep delivery.`,
+          image: med.image || 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400&q=80',
+        };
+        updated[med.id] = productObj;
+        PRODUCTS[med.id] = productObj;
+      });
+      setProductsMap(updated);
+    }).catch((err) => {
+      console.warn('[AppContext] Failed to sync catalogMedicines from backend:', err);
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
@@ -309,10 +349,13 @@ export function AppProvider({
     [cart]
   );
   const cartTotal = useMemo(
-    () => Object.entries(cart).reduce((sum, [id, qty]) => sum + PRODUCTS[id].price * qty, 0),
-    [cart]
+    () => Object.entries(cart).reduce((sum, [id, qty]) => {
+      const pPrice = productsMap[id]?.price ?? PRODUCTS[id]?.price ?? 0;
+      return sum + pPrice * qty;
+    }, 0),
+    [cart, productsMap]
   );
-  const cartHasRx = useMemo(() => Object.keys(cart).some((id) => PRODUCTS[id].rx), [cart]);
+  const cartHasRx = useMemo(() => Object.keys(cart).some((id) => (productsMap[id] || PRODUCTS[id])?.rx), [cart, productsMap]);
 
   const computeSummary = useCallback(
     (customTotal?: number): Summary => {
@@ -320,7 +363,7 @@ export function AppProvider({
       let itemTotal = 0;
 
       for (const [id, qty] of Object.entries(cart)) {
-        const p = PRODUCTS[id];
+        const p = productsMap[id] || PRODUCTS[id];
         if (p && qty > 0) {
           const mrp = p.mrp ?? p.price;
           mrpTotal += mrp * qty;
@@ -352,7 +395,7 @@ export function AppProvider({
         payable: Math.round(payable * 100) / 100,
       };
     },
-    [cart, couponApplied]
+    [cart, couponApplied, productsMap]
   );
 
   const placeOrder = useCallback(() => {
@@ -361,13 +404,16 @@ export function AppProvider({
     setLastOrder(cart);
     setLastOrderId(newId);
 
-    const itemsList: OrderItemRecord[] = Object.entries(cart).map(([id, qty]) => ({
-      id,
-      name: PRODUCTS[id].name,
-      qty,
-      price: PRODUCTS[id].price,
-      icon: PRODUCTS[id].icon,
-    }));
+    const itemsList: OrderItemRecord[] = Object.entries(cart).map(([id, qty]) => {
+      const p = productsMap[id] || PRODUCTS[id];
+      return {
+        id,
+        name: p?.name || 'Medicine Item',
+        qty,
+        price: p?.price || 0,
+        icon: p?.icon || 'pill',
+      };
+    });
 
     const s = computeSummary(cartTotal);
     const newOrder: OrderHistoryItem = {
@@ -380,57 +426,84 @@ export function AppProvider({
     };
 
     setOrders((prev) => [newOrder, ...prev]);
+
+    // Asynchronously create canonical medicine order in Firestore via Cloud Function
+    careService.placeMedicineOrder({
+      id: newId,
+      pharmacyId: 'pharmacy-central-hyd',
+      items: itemsList.map((it) => ({
+        medicineId: it.id,
+        name: it.name,
+        quantity: it.qty,
+        unitPriceMinor: Math.round(it.price * 100),
+      })),
+      deliveryAddress: {
+        receiverName: 'Customer',
+        phone: '',
+        line1: deliveryAddress || deliveryLocation || 'Plot 42, Madhapur, Hyderabad',
+        city: 'Hyderabad',
+        state: 'Telangana',
+        postalCode: '500081',
+      },
+      paymentMethod: payMethod === 'card' ? 'card' : 'upi',
+      prescriptionUri: rxUri || undefined,
+    }).catch((err) => {
+      console.warn('[AppContext] Server placeMedicineOrder warning:', err);
+    });
+
     if (onOrderPlaced) {
       onOrderPlaced(newOrder);
     }
     setCart({});
     setRxDetails(null);
     setNavHistory([{ screen: 'browse' }, { screen: 'confirm' }]);
-  }, [cart, cartCount, cartTotal, computeSummary, deliveryAddress, deliveryLocation, onOrderPlaced, setRxDetails]);
+  }, [cart, cartCount, cartTotal, computeSummary, deliveryAddress, deliveryLocation, onOrderPlaced, payMethod, productsMap, rxUri, setRxDetails]);
 
   const productsInCategory = useCallback((catId: string) => {
     // 1. If any of the 10 specific medicine categories, return exactly its 5 verified products
     if (CATEGORY_PRODUCT_MAP[catId]) {
       return CATEGORY_PRODUCT_MAP[catId];
     }
-    // 2. All medicines category: returns all 50 products across the 10 categories
+    // 2. All medicines category: returns all 50 products across the 10 categories + backend medicines
     if (catId === 'medicines') {
-      return Object.values(CATEGORY_PRODUCT_MAP).flat();
+      const topIds = Object.values(CATEGORY_PRODUCT_MAP).flat();
+      const extraIds = Object.keys(productsMap).filter((id) => productsMap[id]?.category === 'medicines' && !topIds.includes(id));
+      return [...topIds, ...extraIds];
     }
     // 3. All products view: prioritized 50 medicine items first, followed by others
     if (catId === 'all') {
       const topIds = Object.values(CATEGORY_PRODUCT_MAP).flat();
-      const otherIds = Object.keys(PRODUCTS).filter((id) => !topIds.includes(id));
+      const otherIds = Object.keys(productsMap).filter((id) => !topIds.includes(id));
       return [...topIds, ...otherIds];
     }
     // 4. Other specialized categories
     if (catId === 'diabetes') {
-      return Object.keys(PRODUCTS).filter(
-        (id) => PRODUCTS[id].diabetes || PRODUCTS[id].category === 'diabetes'
+      return Object.keys(productsMap).filter(
+        (id) => productsMap[id]?.diabetes || productsMap[id]?.category === 'diabetes'
       );
     }
     if (catId === 'devices') {
-      return Object.keys(PRODUCTS).filter(
+      return Object.keys(productsMap).filter(
         (id) =>
-          PRODUCTS[id].category === 'devices' ||
-          PRODUCTS[id].category === 'needles' ||
-          PRODUCTS[id].category === 'pens'
+          productsMap[id]?.category === 'devices' ||
+          productsMap[id]?.category === 'needles' ||
+          productsMap[id]?.category === 'pens'
       );
     }
     if (catId === 'homeopathy') {
-      return Object.keys(PRODUCTS).filter(
-        (id) => PRODUCTS[id].category === 'homeopathy' || PRODUCTS[id].subcat === 'homeopathy'
+      return Object.keys(productsMap).filter(
+        (id) => productsMap[id]?.category === 'homeopathy' || productsMap[id]?.subcat === 'homeopathy'
       );
     }
-    return Object.keys(PRODUCTS).filter((id) => PRODUCTS[id].category === catId);
-  }, []);
+    return Object.keys(productsMap).filter((id) => productsMap[id]?.category === catId);
+  }, [productsMap]);
 
   const productsInGroupSubcat = useCallback((groupId: string, subId: string) => {
-    if (subId === 'all') return Object.keys(PRODUCTS).filter((id) => PRODUCTS[id].group === groupId);
-    return Object.keys(PRODUCTS).filter(
-      (id) => PRODUCTS[id].group === groupId && PRODUCTS[id].subcat === subId
+    if (subId === 'all') return Object.keys(productsMap).filter((id) => productsMap[id]?.group === groupId);
+    return Object.keys(productsMap).filter(
+      (id) => productsMap[id]?.group === groupId && productsMap[id]?.subcat === subId
     );
-  }, []);
+  }, [productsMap]);
 
   const medColors = useMedColors();
   const isDark = medColors.isDark;
@@ -454,6 +527,7 @@ export function AppProvider({
     payMethod,
     toast,
     orders,
+    products: productsMap,
 
     bottomInset,
     topInset,

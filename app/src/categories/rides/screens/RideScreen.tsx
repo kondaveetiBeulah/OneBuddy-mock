@@ -34,6 +34,8 @@ import { CancelRideScreen } from './CancelRideScreen';
 import FeedbackScreen from './FeedbackScreen';
 import { RideAssigningScreen } from './RideAssigningScreen';
 import { useRideTheme } from '../theme';
+import { rideService } from '../../../firebase';
+
 
 const RECENT_DESTINATIONS_KEY = '@onebuddy_recent_destinations';
 
@@ -683,6 +685,58 @@ export default function RideScreen({
           const newBooking = { ...bookingData, vehicle, pickup, destination };
           setBookingData(newBooking);
           setBookingStep('assigning');
+
+          // Trigger real ride creation in Firestore (rides/{rideId})
+          const rawType = (
+            vehicle?.type ||
+            vehicle?.id ||
+            selectedVehicle ||
+            'auto'
+          ).toLowerCase();
+          const vehicleType: 'bike' | 'scooter' | 'auto' | 'cab' | 'xl' =
+            rawType === 'bike' || rawType === 'scooter'
+              ? 'bike'
+              : rawType === 'auto'
+              ? 'auto'
+              : rawType === 'xl4' || rawType === 'xl7'
+              ? 'xl'
+              : 'cab';
+
+          const pickupCoord = {
+            latitude: pickup?.latitude || pickupCoords?.latitude || 17.4483,
+            longitude: pickup?.longitude || pickupCoords?.longitude || 78.3915,
+            label: pickup?.title || pickup?.subtitle || pickupAddress || 'Pickup Location',
+          };
+
+          const destAny = destination as any;
+          const destCoord = {
+            latitude: typeof destAny === 'object' && destAny?.latitude ? destAny.latitude : 17.4359,
+            longitude: typeof destAny === 'object' && destAny?.longitude ? destAny.longitude : 78.3878,
+            label: typeof destAny === 'string' ? destAny : (destAny?.title || selectedDestination?.title || 'Destination'),
+          };
+
+
+          const farePaise = Math.round(Number(newBooking.price || vehicle?.baseFare || 89) * 100);
+
+          rideService.requestRide({
+            pickup: pickupCoord,
+            destination: destCoord,
+            vehicleType,
+            paymentMethod: 'cash',
+            offeredPricePaise: farePaise,
+          }).then((res) => {
+            console.log('[RideScreen] Successfully stored ride in Firestore:', res?.rideId);
+            if (res?.rideId) {
+              setBookingData((prev: any) => ({
+                ...prev,
+                rideId: res.rideId,
+                orderId: res.orderId,
+                startOtp: res.startOtp,
+              }));
+            }
+          }).catch((err) => {
+            console.warn('[RideScreen] Note: backend requestRide error:', err);
+          });
         }}
         onBack={() => {
           setBookingStep('none');
@@ -728,6 +782,11 @@ export default function RideScreen({
           setBookingStep('pickup');
         }}
         onCancelRide={() => {
+          if (bookingData?.rideId) {
+            rideService.cancelRide(bookingData.rideId, 'Cancelled by user').catch((err) => {
+              console.warn('[RideScreen] cancelRide error:', err);
+            });
+          }
           setActiveMinimizedTrip(null);
           setActiveTrip?.(null);
           setIsTrackingActive?.(false);

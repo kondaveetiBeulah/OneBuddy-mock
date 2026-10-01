@@ -58,6 +58,7 @@ function OCHomeTabScreen({
 }) {
   const oc = useOCColors();
   const {
+    doctors,
     searchQuery,
     setSearchQuery,
     selectedCategory,
@@ -84,7 +85,7 @@ function OCHomeTabScreen({
   };
 
   const displayedDoctors = useMemo(() => {
-    return MOCK_DOCTORS.filter((doc) => {
+    return (doctors || MOCK_DOCTORS).filter((doc) => {
       if (searchQuery.trim().length > 0) {
         const q = searchQuery.toLowerCase();
         const matchesName = doc.name.toLowerCase().includes(q);
@@ -371,6 +372,7 @@ function OCDoctorsListScreen({
 }) {
   const oc = useOCColors();
   const {
+    doctors,
     searchQuery,
     setSearchQuery,
     selectedMode,
@@ -380,7 +382,7 @@ function OCDoctorsListScreen({
   const [sortBy, setSortBy] = useState<'rating' | 'experience' | 'price_low'>('rating');
 
   const filteredDoctors = useMemo(() => {
-    return MOCK_DOCTORS.filter((doc) => {
+    return (doctors || MOCK_DOCTORS).filter((doc) => {
       if (searchQuery.trim().length > 0) {
         const q = searchQuery.toLowerCase();
         const matchesName = doc.name.toLowerCase().includes(q);

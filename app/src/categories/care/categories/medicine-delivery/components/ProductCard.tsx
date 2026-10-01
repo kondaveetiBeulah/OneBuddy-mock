@@ -14,9 +14,10 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ id, accent = COLORS.green }: ProductCardProps) {
-  const { cart, addToCart, openProduct, medColors } = useApp();
+  const { cart, addToCart, openProduct, medColors, products } = useApp();
   const [imgError, setImgError] = useState(false);
-  const p = PRODUCTS[id];
+  const p = (products && products[id]) || PRODUCTS[id];
+  if (!p) return null;
   const mrp = p.mrp ?? p.price;
   const pct = mrp > p.price ? Math.round((1 - p.price / mrp) * 100) : 0;
   const localImage = MEDICINE_IMAGES[id];

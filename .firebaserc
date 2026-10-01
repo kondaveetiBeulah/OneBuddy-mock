@@ -1,5 +1,7 @@
 {
   "projects": {
-    "default": "one-buddy-4e0d7"
+    "default": "one-buddy-4e0d7",
+    "one-buddy": "one-buddy-4e0d7",
+    "onebuddyuser": "onebuddyuser"
   }
 }

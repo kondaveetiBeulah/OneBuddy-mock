@@ -21,6 +21,8 @@ import {
   getUpcomingDays,
   isBookingSlotPast,
 } from '../data/mockData';
+import { db, auth } from '../../../firebase/config';
+import { collection, doc, setDoc, getDocs, query, where, limit, serverTimestamp } from 'firebase/firestore';
 
 const BOOKINGS_STORAGE_KEY = '@onebuddy_bookings_history';
 const FEEDBACK_STORAGE_KEY = '@onebuddy_feedback_list';
@@ -297,6 +299,58 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
       saveBookings(updated);
       return updated;
     });
+
+    // Write to Firestore serviceBookings collection in background
+    (async () => {
+      try {
+        if (db) {
+          const bookingRef = doc(db, 'serviceBookings', newBooking.bookingId);
+          await setDoc(
+            bookingRef,
+            {
+              id: newBooking.bookingId,
+              userId: auth?.currentUser?.uid || 'guest_user',
+              service: 'homeServices',
+              providerId: randomProvider.id || 'pro-1',
+              serviceType: selectedSubServices.map((s) => s.title).join(', ') || selectedCategory.title,
+              status: 'confirmed',
+              scheduledAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+              addressSnapshot: {
+                name: bookingAddress.type || 'Customer',
+                houseNo: bookingAddress.houseNo || 'Current Location',
+                landmarkAreaName: bookingAddress.landmark || bookingAddress.street || 'Main Road',
+                state: 'Telangana',
+                phoneNumber: '9876543210',
+                label: bookingAddress.label || 'Home',
+                pincode: bookingAddress.pincode || '500081',
+                line1: `${bookingAddress.houseNo || ''} ${bookingAddress.street || ''}`.trim(),
+                city: bookingAddress.city || 'Hyderabad',
+              },
+              quotedPriceMinor: Math.round(totalAmount * 100),
+              finalPriceMinor: null,
+              currency: 'INR',
+              notes: couponCode ? `Coupon applied: ${couponCode}` : null,
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+              providerNameSnapshot: randomProvider.name,
+            },
+            { merge: true }
+          );
+
+          const eventRef = doc(collection(db, 'serviceBookings', newBooking.bookingId, 'events'));
+          await setDoc(eventRef, {
+            fromStatus: null,
+            toStatus: 'confirmed',
+            actorId: auth?.currentUser?.uid || 'guest_user',
+            actorType: 'user',
+            note: `Home service booking placed for ${selectedCategory.title}`,
+            createdAt: serverTimestamp(),
+          });
+        }
+      } catch (err) {
+        console.warn('[BookingContext] Firestore booking sync warning:', err);
+      }
+    })();
 
     return newBooking;
   };

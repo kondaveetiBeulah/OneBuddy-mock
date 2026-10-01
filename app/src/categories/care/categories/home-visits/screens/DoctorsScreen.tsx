@@ -20,8 +20,9 @@ interface Props {
 }
 
 export function DoctorsScreen({ navigation, route }: Props) {
-  const { chooseDoctor } = useBooking();
+  const { chooseDoctor, doctorsList } = useBooking();
   const tc = useColors();
+  const currentDoctors = doctorsList && doctorsList.length > 0 ? doctorsList : doctors;
   const issue = healthIssues.find((item) => item.id === route.params?.issueId);
   const query = route.params?.query?.trim().toLowerCase() ?? '';
   const searchedIssue = healthIssues.find(
@@ -30,7 +31,7 @@ export function DoctorsScreen({ navigation, route }: Props) {
 
   const isNurseCategory = issue?.id === 'nursing' || query.includes('nurse');
 
-  const results = doctors
+  const results = currentDoctors
     .filter((doctor) => {
       if (issue) return doctor.issueIds.includes(issue.id);
       if (!query) return true;

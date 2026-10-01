@@ -6,4 +6,5 @@ admin.initializeApp();
 
 export const db = admin.firestore();
 export const auth = admin.auth();
+export const getRtdb = (): admin.database.Database => admin.database();
 export { admin };

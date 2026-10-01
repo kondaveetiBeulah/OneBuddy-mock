@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, useColors } from '../components/UI';
 import { doctors } from '../mockData';
+import { useBooking } from '../context/BookingContext';
 
 interface Props {
   navigation: {
@@ -204,7 +205,9 @@ const HEALTH_CATEGORIES = [
 export function HomeScreen({ navigation, onClose }: Props) {
   const [query, setQuery] = useState('');
   const [selectedCatId, setSelectedCatId] = useState<string | null>(null);
-  const topDoctors = doctors.slice(0, 6);
+  const { doctorsList } = useBooking();
+  const activeDoctors = doctorsList && doctorsList.length > 0 ? doctorsList : doctors;
+  const topDoctors = activeDoctors.slice(0, 6);
   const tc = useColors(); // theme-aware colors
 
   const handleCategoryPress = (catId: string, catQuery: string) => {

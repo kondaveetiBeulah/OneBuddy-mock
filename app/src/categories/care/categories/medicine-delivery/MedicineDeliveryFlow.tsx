@@ -120,6 +120,7 @@ export function BrowseScreen() {
     bottomInset,
     onClose,
     medColors,
+    products,
   } = useApp();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -128,7 +129,8 @@ export function BrowseScreen() {
   const searchResults = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     if (!q) return [];
-    return Object.entries(PRODUCTS).filter(([, p]) => {
+    const source = products || PRODUCTS;
+    return Object.entries(source).filter(([, p]) => {
       return (
         p.name.toLowerCase().includes(q) ||
         (p.generic && p.generic.toLowerCase().includes(q)) ||
@@ -137,7 +139,7 @@ export function BrowseScreen() {
         (p.desc && p.desc.toLowerCase().includes(q))
       );
     });
-  }, [searchQuery]);
+  }, [searchQuery, products]);
 
   const isSearching = searchQuery.trim().length > 0;
 
@@ -716,22 +718,24 @@ export function GroupCategoryScreen() {
 // =============================================================================
 
 export function ProductScreen() {
-  const { currentProduct, cart, addToCart, openProduct, cartCount, cartTotal, goBack, goTo, openCart, bottomInset, medColors } = useApp();
+  const { currentProduct, cart, addToCart, openProduct, cartCount, cartTotal, goBack, goTo, openCart, bottomInset, medColors, products } = useApp();
   const [heroImgError, setHeroImgError] = useState(false);
 
   if (!currentProduct) return null;
   const id = currentProduct;
-  const p = PRODUCTS[id];
+  const productCatalog = products || PRODUCTS;
+  const p = productCatalog[id] || PRODUCTS[id];
+  if (!p) return null;
   const mrp = p.mrp ?? p.price;
   const localImage = MEDICINE_IMAGES[id];
 
   const brandAlts = p.brandGroup
-    ? Object.keys(PRODUCTS).filter((pid) => pid !== id && PRODUCTS[pid].brandGroup === p.brandGroup)
+    ? Object.keys(productCatalog).filter((pid) => pid !== id && productCatalog[pid]?.brandGroup === p.brandGroup)
     : [];
   const similarIds = brandAlts.length
     ? brandAlts
-    : Object.keys(PRODUCTS)
-        .filter((pid) => pid !== id && p.category && PRODUCTS[pid].category === p.category)
+    : Object.keys(productCatalog)
+        .filter((pid) => pid !== id && p.category && productCatalog[pid]?.category === p.category)
         .slice(0, 3);
   const similarTitle = brandAlts.length ? 'Same formula, other brands' : 'Similar products';
   const qty = cart[id] || 0;

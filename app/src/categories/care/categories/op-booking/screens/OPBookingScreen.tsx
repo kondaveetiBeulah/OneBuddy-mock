@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppTheme } from '@/theme/ThemeContext';
+import { careService } from '@/firebase';
 import PaymentCheckoutScreen from '../../../../food/components/cart/PaymentCheckoutScreen';
 import {
   ChevronLeft,
@@ -126,10 +127,43 @@ export default function OPBookingScreen({
 
   // Step 2 Selection State
   const [hospitalSearch, setHospitalSearch] = useState<string>('');
+  const [hospitalsList, setHospitalsList] = useState<Hospital[]>(HOSPITALS);
   const [selectedHospital, setSelectedHospital] = useState<Hospital | null>(
     initialHospital || null
   );
   const [selectedDepartment, setSelectedDepartment] = useState<DepartmentItem | null>(null);
+
+  // Fetch Hospitals dynamically from Firebase Backend
+  React.useEffect(() => {
+    let isMounted = true;
+    async function loadBackendHospitals() {
+      try {
+        const fetched = await careService.fetchHospitals('hyderabad');
+        if (isMounted && fetched && fetched.length > 0) {
+          const mapped: Hospital[] = fetched.map((h: any) => ({
+            id: h.id,
+            name: h.name,
+            branch: typeof h.address === 'string' ? h.address : (h.address?.area || h.address?.line1 || 'Hyderabad'),
+            address: typeof h.address === 'string' ? h.address : `${h.address?.line1 || ''}, ${h.address?.area || ''}, ${h.address?.city || 'Hyderabad'}`,
+            rating: h.rating || 4.8,
+            departments: h.departments || ['General OPD', 'Cardiology', 'Orthopedics'],
+            consultationFee: h.opFee || 600,
+            distance: h.distance || '2.5 km away',
+            imageUrl: h.coverImagePath || 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=300&q=80',
+            description: h.description || '',
+            opFee: h.opFee || 600,
+          }));
+          setHospitalsList(mapped);
+        }
+      } catch (err) {
+        console.warn('[OPBookingScreen] Error fetching hospitals from backend:', err);
+      }
+    }
+    loadBackendHospitals();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Keep selectedHospital synced if prop changes, while ensuring patient details (Step 1) are collected first
   React.useEffect(() => {
@@ -255,7 +289,7 @@ export default function OPBookingScreen({
       primaryDept = REASON_TO_DEPARTMENT[reason];
     }
 
-    let result = [...HOSPITALS];
+    let result = [...hospitalsList];
 
     // Bring hospitals that match the primary department to the top
     if (primaryDept) {
@@ -274,7 +308,7 @@ export default function OPBookingScreen({
       );
     }
     return result;
-  }, [hospitalSearch, reason, isOtherReason, age, selectedDepartment]);
+  }, [hospitalSearch, reason, isOtherReason, age, selectedDepartment, hospitalsList]);
 
   // --- Step 1 Validation ---
   const validateStep1 = (): boolean => {
@@ -430,6 +464,26 @@ export default function OPBookingScreen({
 
     setConfirmedBookingData(bookingRecord);
     setIsConfirmationModalVisible(true);
+
+    // Asynchronously create canonical appointment in Firestore via Cloud Function
+    careService.bookAppointment({
+      hospitalId: selectedHospital?.id || 'hyd-apollo',
+      doctorId: selectedDepartment?.id ? `doc-${selectedDepartment.id}` : 'doc-general-opd',
+      departmentId: selectedDepartment?.name || 'General OPD',
+      slotId: selectedSlot?.id,
+      mode: 'in_person',
+      patientDetails: {
+        fullName: patientName || 'Patient',
+        phone: mobileNumber,
+        age: age || 25,
+        gender: (gender as any) || 'Other',
+      },
+      reasonForVisit: reason,
+      paymentMethod: 'UPI',
+      idempotencyKey: generatedApptId,
+    }).catch((err) => {
+      console.warn('[OPBookingScreen] Server bookAppointment warning:', err);
+    });
 
     if (onBookingSuccess) {
       onBookingSuccess(bookingRecord);

@@ -19,6 +19,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppTheme } from '@/theme/ThemeContext';
+import { useAuth, careService } from '@/firebase';
 import {
   MapPin,
   Bell,
@@ -131,7 +132,7 @@ export interface OrderRecord {
   title: string;
   subtitle: string;
   meta: string;
-  status: 'Confirmed' | 'Dispatched' | 'Delivered' | 'Assigned' | 'Scheduled' | 'Completed';
+  status: 'Confirmed' | 'Dispatched' | 'Delivered' | 'Assigned' | 'Scheduled' | 'Completed' | 'Cancelled';
   isActive: boolean;
   dateOrTime: string;
   price?: string;
@@ -2793,6 +2794,10 @@ const OrdersView: React.FC<OrdersViewProps> = ({ orders, onActionPress, onViewRe
         return { bg: '#E0E7FF', text: '#4338CA' };
       case 'Scheduled':
         return { bg: '#F3E8FF', text: '#6B21A8' };
+      case 'Cancelled':
+        return { bg: '#FEE2E2', text: '#DC2626' };
+      default:
+        return { bg: '#F1F5F9', text: '#64748B' };
     }
   };
 
@@ -3538,6 +3543,10 @@ export default function HomeScreen({
   const [selectedHospitalForOP, setSelectedHospitalForOP] = useState<any>(null);
   const [orders, setOrders] = useState<OrderRecord[]>(ALL_ORDERS_DATA);
 
+  const { user } = useAuth();
+  const [hospitalsList, setHospitalsList] = useState<SearchableHospital[]>(HYDERABAD_HOSPITALS);
+  const [medicinesList, setMedicinesList] = useState<SearchableMedicine[]>(HYDERABAD_MEDICINES);
+
   // Load persistent orders across all categories on mount/refresh
   useEffect(() => {
     let isMounted = true;
@@ -3546,10 +3555,67 @@ export default function HomeScreen({
         setOrders(saved);
       }
     });
+
+    // Fetch live catalog data from Firestore
+    careService.fetchHospitals().then((liveHospitals) => {
+      if (isMounted && liveHospitals && liveHospitals.length > 0) {
+        setHospitalsList((prev) => {
+          const map = new Map(prev.map((h) => [h.id, h]));
+          liveHospitals.forEach((h: any) => map.set(h.id, { ...map.get(h.id), ...h }));
+          return Array.from(map.values());
+        });
+      }
+    });
+
+    careService.fetchMedicines().then((liveMeds) => {
+      if (isMounted && liveMeds && liveMeds.length > 0) {
+        setMedicinesList((prev) => {
+          const map = new Map(prev.map((m) => [m.id, m]));
+          liveMeds.forEach((m: any) => map.set(m.id, { ...map.get(m.id), ...m }));
+          return Array.from(map.values());
+        });
+      }
+    });
+
     return () => {
       isMounted = false;
     };
   }, []);
+
+  // Real-time synchronization with Firestore hospital appointments if user is authenticated
+  useEffect(() => {
+    if (!user?.uid) return;
+    const unsubscribe = careService.subscribeUserAppointments(user.uid, (remoteAppts) => {
+      if (remoteAppts && remoteAppts.length > 0) {
+        setOrders((prev) => {
+          const existingIds = new Set(prev.map((o) => o.id));
+          const newRecords: OrderRecord[] = remoteAppts
+            .filter((a: any) => !existingIds.has(a.id))
+            .map((a: any) => ({
+              id: a.id,
+              category: 'OP',
+              title: `${a.doctorNameSnapshot || 'Doctor OPD'} • Token ${a.tokenNumber || '#1'}`,
+              subtitle: `${a.hospitalNameSnapshot || 'Hospital'} • ${a.mode === 'video' ? 'Video Consult' : 'In-Person OPD'}`,
+              meta: `Status: ${a.status} • Scheduled: ${new Date(a.startsAt?.toMillis ? a.startsAt.toMillis() : Date.now()).toLocaleDateString()}`,
+              status: a.status === 'confirmed' ? 'Confirmed' : (a.status === 'cancelled' ? 'Cancelled' : 'Completed'),
+              isActive: a.status === 'confirmed',
+              dateOrTime: 'Scheduled',
+              price: `₹${((a.feeMinor || 50000) / 100).toFixed(0)}`,
+              actionText: a.mode === 'video' ? 'Join Video' : 'View Token',
+              doctorName: a.doctorNameSnapshot,
+              hospitalName: a.hospitalNameSnapshot,
+            }));
+          if (newRecords.length > 0) {
+            const merged = [...newRecords, ...prev];
+            saveOrders(merged).catch(() => {});
+            return merged;
+          }
+          return prev;
+        });
+      }
+    });
+    return () => unsubscribe();
+  }, [user?.uid]);
   const [selectedOrderForReport, setSelectedOrderForReport] = useState<OrderRecord | null>(null);
   const [isDetectingLocation, setIsDetectingLocation] = useState<boolean>(false);
   const [liveCoords, setLiveCoords] = useState<{ latitude: number; longitude: number } | null>({
@@ -3836,33 +3902,33 @@ export default function HomeScreen({
   // Real-time Dynamic Hyderabad Hospital Search Filtering
   const filteredHospitals = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    if (!q) return HYDERABAD_HOSPITALS;
+    if (!q) return hospitalsList;
 
-    return HYDERABAD_HOSPITALS.filter((hosp) => {
+    return hospitalsList.filter((hosp) => {
       const matchName = hosp.name.toLowerCase().includes(q);
-      const matchBranch = hosp.branch.toLowerCase().includes(q);
-      const matchArea = hosp.area.toLowerCase().includes(q);
-      const matchSpecialtyTag = hosp.specialtyTag.toLowerCase().includes(q);
-      const matchDepartments = hosp.departments.some((dep) =>
+      const matchBranch = hosp.branch?.toLowerCase().includes(q);
+      const matchArea = hosp.area?.toLowerCase().includes(q);
+      const matchSpecialtyTag = hosp.specialtyTag?.toLowerCase().includes(q);
+      const matchDepartments = hosp.departments?.some((dep) =>
         dep.toLowerCase().includes(q)
       );
 
       return matchName || matchBranch || matchArea || matchSpecialtyTag || matchDepartments;
     });
-  }, [searchQuery]);
+  }, [searchQuery, hospitalsList]);
 
   // Real-time Dynamic Hyderabad Medicine Search Filtering
   const filteredMedicines = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    if (!q) return HYDERABAD_MEDICINES;
+    if (!q) return medicinesList;
 
-    return HYDERABAD_MEDICINES.filter((med) => {
+    return medicinesList.filter((med) => {
       const matchName = med.name.toLowerCase().includes(q);
-      const matchGeneric = med.genericName.toLowerCase().includes(q);
-      const matchCategory = med.category.toLowerCase().includes(q);
+      const matchGeneric = med.genericName?.toLowerCase().includes(q);
+      const matchCategory = med.category?.toLowerCase().includes(q);
       return matchName || matchGeneric || matchCategory;
     });
-  }, [searchQuery]);
+  }, [searchQuery, medicinesList]);
 
   // Handle hospital card click or Book OP CTA
   const handleSelectHospital = (hosp: SearchableHospital) => {

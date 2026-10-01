@@ -33,6 +33,8 @@ import { Button } from '../components/common/Button';
 import { AppLogo } from '../components/common/AppLogo';
 import { Badge } from '../components/common/Badge';
 import { useHomeTheme, COLORS, RADII, SPACING, SHADOWS } from '../theme';
+import { db } from '../../../firebase/config';
+import { collection, getDocs, query, where } from 'firebase/firestore';
 
 interface HomeScreenProps {
   navigation: any;
@@ -55,20 +57,61 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const [hasDismissedAddressPrompt, setHasDismissedAddressPrompt] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Dynamic Home Services Catalog state (with fallback to default)
+  const [categories, setCategories] = useState<ServiceCategory[]>(SERVICE_CATEGORIES);
+  const [banners, setBanners] = useState<OfferBanner[]>(OFFER_BANNERS);
+  const [subServices, setSubServices] = useState<SubService[]>(SUB_SERVICES);
+
+  // Fetch live home services data from Firestore on mount
+  React.useEffect(() => {
+    let isMounted = true;
+    async function loadFirestoreHomeData() {
+      try {
+        if (!db) return;
+        const [catSnap, banSnap, subSnap] = await Promise.all([
+          getDocs(query(collection(db, 'catalogHomeCategories'), where('active', '==', true))),
+          getDocs(query(collection(db, 'catalogHomeBanners'), where('active', '==', true))),
+          getDocs(query(collection(db, 'catalogHomeServices'), where('active', '==', true))),
+        ]);
+
+        if (isMounted) {
+          if (!catSnap.empty) {
+            const list = catSnap.docs.map((d) => ({ id: d.id, ...d.data() } as ServiceCategory));
+            setCategories(list);
+          }
+          if (!banSnap.empty) {
+            const list = banSnap.docs.map((d) => ({ id: d.id, ...d.data() } as OfferBanner));
+            setBanners(list);
+          }
+          if (!subSnap.empty) {
+            const list = subSnap.docs.map((d) => ({ id: d.id, ...d.data() } as SubService));
+            setSubServices(list);
+          }
+        }
+      } catch {
+        // Fallback silently to defaults
+      }
+    }
+    loadFirestoreHomeData();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   // Only show address prompt if there is NO ongoing service, NO address set, and NOT dismissed
   const isAddressPromptVisible = !hasDismissedAddressPrompt && !activeBooking && !currentAddress;
 
   // Filter services and subservices based on search query
   const searchResults = useMemo(() => {
     if (!searchQuery.trim()) return [];
-    const query = searchQuery.toLowerCase();
-    return SUB_SERVICES.filter(
+    const queryStr = searchQuery.toLowerCase();
+    return subServices.filter(
       (sub) =>
-        sub.title.toLowerCase().includes(query) ||
-        sub.description.toLowerCase().includes(query) ||
-        sub.features.some((f) => f.toLowerCase().includes(query))
+        sub.title.toLowerCase().includes(queryStr) ||
+        sub.description.toLowerCase().includes(queryStr) ||
+        sub.features.some((f) => f.toLowerCase().includes(queryStr))
     );
-  }, [searchQuery]);
+  }, [searchQuery, subServices]);
 
   const handleSelectCategory = (category: ServiceCategory) => {
     setSelectedCategory(category);
@@ -77,7 +120,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
   const handleSelectBanner = (banner: OfferBanner) => {
     if (banner.categoryId) {
-      const cat = SERVICE_CATEGORIES.find((c) => c.id === banner.categoryId);
+      const cat = categories.find((c) => c.id === banner.categoryId);
       if (cat) {
         setSelectedCategory(cat);
         navigation.navigate('SubServices', { categoryId: cat.id, categoryTitle: cat.title });
@@ -86,7 +129,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   };
 
   const handleSelectSubServiceFromSearch = (sub: SubService) => {
-    const parentCat = SERVICE_CATEGORIES.find((c) => c.id === sub.categoryId);
+    const parentCat = categories.find((c) => c.id === sub.categoryId);
     if (parentCat) {
       setSelectedCategory(parentCat);
       toggleSubService(sub);
@@ -245,7 +288,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           <Badge label="Limited" variant="warning" size="sm" />
         </View>
         <BannerCarousel
-          banners={OFFER_BANNERS}
+          banners={banners}
           onBannerPress={handleSelectBanner}
         />
 
@@ -257,7 +300,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           </View>
         </View>
         <CategoryGrid
-          categories={SERVICE_CATEGORIES}
+          categories={categories}
           onSelectCategory={handleSelectCategory}
         />
       </ScrollView>

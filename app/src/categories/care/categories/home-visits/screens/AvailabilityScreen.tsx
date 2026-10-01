@@ -27,9 +27,10 @@ interface Props {
 
 export function AvailabilityScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
-  const { selectedDoctor, chooseSlot } = useBooking();
+  const { selectedDoctor, chooseSlot, doctorsList } = useBooking();
   const tc = useColors();
-  const doctor = selectedDoctor ?? doctors.find((item) => item.id === route?.params?.doctorId) ?? doctors[0];
+  const currentDoctors = doctorsList && doctorsList.length > 0 ? doctorsList : doctors;
+  const doctor = selectedDoctor ?? currentDoctors.find((item) => item.id === route?.params?.doctorId) ?? currentDoctors[0];
   const [date, setDate] = useState(getDateKey(0));
   const [slotId, setSlotId] = useState<string>();
 
@@ -43,7 +44,7 @@ export function AvailabilityScreen({ navigation, route }: Props) {
     };
   });
 
-  const selected = doctor?.slots[date]?.find((slot) => slot.id === slotId);
+  const selected = doctor?.slots?.[date]?.find((slot) => slot.id === slotId);
 
   return (
     <View style={styles.layerContainer}>
