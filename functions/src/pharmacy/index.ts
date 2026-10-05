@@ -1,2 +1,1 @@
-export * from './types';
-export * from './orders';
+﻿export * from '../modules/pharmacy';

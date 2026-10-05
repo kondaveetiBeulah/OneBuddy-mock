@@ -1,2 +1,1 @@
-export * from './types';
-export * from './emailQueue';
+﻿export * from '../modules/email';
