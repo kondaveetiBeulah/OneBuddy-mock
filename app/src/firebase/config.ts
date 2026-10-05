@@ -22,6 +22,7 @@ import {
 } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getFunctions } from 'firebase/functions';
+import { Database, getDatabase } from 'firebase/database';
 import Constants from 'expo-constants';
 
 function readExtra(key: string): string | undefined {
@@ -111,3 +112,16 @@ export const functions =
   firebaseConfigured && app
     ? getFunctions(app, 'asia-south1')
     : (null as unknown as ReturnType<typeof getFunctions>);
+
+let rtdbInstance: Database | null = null;
+if (firebaseConfigured && app) {
+  try {
+    const customDbUrl = readExtra('EXPO_PUBLIC_FIREBASE_DATABASE_URL');
+    rtdbInstance = customDbUrl ? getDatabase(app, customDbUrl) : getDatabase(app);
+  } catch (err) {
+    console.warn('[Firebase] Error initializing Realtime Database:', err);
+    rtdbInstance = null;
+  }
+}
+
+export const rtdb: Database | null = rtdbInstance;

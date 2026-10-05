@@ -54,6 +54,10 @@ export const getMe = profile.getMe;
 export const updateProfile = profile.updateProfile;
 export const requestAccountDeletion = profile.requestAccountDeletion;
 export const requestDataExport = profile.requestDataExport;
+export const recordConsent = profile.recordConsent;
+export const getUserConsents = profile.getUserConsents;
+export const toggleFavorite = profile.toggleFavorite;
+export const listFavorites = profile.listFavorites;
 
 // ============================================================================
 // PREFERENCES MODULE
@@ -64,13 +68,16 @@ export const updateServicePreferences = preferences.updateServicePreferences;
 export const updateNotificationPreferences = preferences.updateNotificationPreferences;
 
 // ============================================================================
-// ADDRESSES MODULE
+// ADDRESSES & SAVED PLACES MODULE
 // ============================================================================
 export const createAddress = addresses.createAddress;
 export const updateAddress = addresses.updateAddress;
 export const replaceAddresses = addresses.replaceAddresses;
 export const deleteAddress = addresses.deleteAddress;
 export const setDefaultAddress = addresses.setDefaultAddress;
+export const savePlace = addresses.savePlace;
+export const listSavedPlaces = addresses.listSavedPlaces;
+export const deleteSavedPlace = addresses.deleteSavedPlace;
 
 // ============================================================================
 // PAYMENTS MODULE

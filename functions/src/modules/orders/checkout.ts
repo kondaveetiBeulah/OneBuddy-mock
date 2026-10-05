@@ -290,6 +290,22 @@ export const placeOrder = secureCallable(
         now
       );
 
+      // 8c. Write Subcollection: orders/{orderId}/fulfillments/{fulfillmentId}/events (Greenfield Sec. 4 Line 258)
+      OrdersRepository.addFulfillmentEvent(
+        t,
+        orderId,
+        'fulfillment_1',
+        {
+          fromStatus: null,
+          toStatus: 'accepted',
+          actorType: 'user',
+          actorId: uid,
+          note: 'Fulfillment initiated upon checkout',
+          createdAt: now,
+        },
+        now
+      );
+
       // 9. Write User Screen Projection: users/{uid}/orders/{orderId} via Repository
       // Matches the exact OrderCard interface expected by OrdersAndBookings screen!
       const totalDisplay = (totalMinor / 100).toFixed(2);

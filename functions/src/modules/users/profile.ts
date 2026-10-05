@@ -544,3 +544,100 @@ export const requestDataExport = secureCallable(
     };
   }
 );
+
+// ============================================================================
+// CALLABLE: recordConsent
+// Records or withdraws user privacy consent under DPDP Act 2023 & GDPR.
+// ============================================================================
+const recordConsentSchema = z.object({
+  purpose: z.enum([
+    'terms_of_service',
+    'privacy_policy',
+    'location_tracking',
+    'marketing_notifications',
+    'data_processing_dpdp',
+  ]),
+  granted: z.boolean(),
+  policyVersion: z.string().default('v1.0'),
+  source: z.enum(['mobile_app', 'web', 'checkout']).default('mobile_app'),
+}).strict();
+
+export const recordConsent = secureCallable(
+  recordConsentSchema,
+  async (data, context) => {
+    const uid = context.auth.uid;
+    const consentId = await UsersRepository.recordUserConsent(uid, data);
+
+    await UsersRepository.recordAuditEvent({
+      actorType: 'user',
+      actorId: uid,
+      action: data.granted ? 'privacy.consent_granted' : 'privacy.consent_withdrawn',
+      entityType: 'consent',
+      entityId: consentId,
+      outcome: 'success',
+      metadata: {
+        purpose: data.purpose,
+        policyVersion: data.policyVersion,
+        source: data.source,
+      },
+    });
+
+    return { success: true, consentId, granted: data.granted };
+  }
+);
+
+// ============================================================================
+// CALLABLE: getUserConsents
+// Returns active privacy consent records for the authenticated user.
+// ============================================================================
+export const getUserConsents = secureCallable(
+  z.object({}).strict().optional(),
+  async (_data, context) => {
+    const uid = context.auth.uid;
+    const consents = await UsersRepository.listUserConsents(uid);
+    return { success: true, consents };
+  }
+);
+
+// ============================================================================
+// CALLABLE: toggleFavorite
+// Toggles a saved favorite using a deterministic document ID (${service}_${targetId}).
+// ============================================================================
+const toggleFavoriteSchema = z.object({
+  service: z.enum(['food', 'grocery', 'rides', 'care', 'homeservices']),
+  targetId: z.string().min(1),
+}).strict();
+
+export const toggleFavorite = secureCallable(
+  toggleFavoriteSchema,
+  async (data, context) => {
+    const uid = context.auth.uid;
+    const res = await UsersRepository.toggleFavorite(uid, data.service, data.targetId);
+    return {
+      success: true,
+      isFavorite: res.isFavorite,
+      favoriteId: res.favoriteId,
+      service: data.service,
+      targetId: data.targetId,
+    };
+  }
+);
+
+// ============================================================================
+// CALLABLE: listFavorites
+// Lists the authenticated user's favorites, optionally filtered by service.
+// ============================================================================
+const listFavoritesSchema = z.object({
+  service: z.enum(['food', 'grocery', 'rides', 'care', 'homeservices']).optional(),
+}).strict().optional();
+
+export const listFavorites = secureCallable(
+  listFavoritesSchema,
+  async (data, context) => {
+    const uid = context.auth.uid;
+    const favorites = await UsersRepository.listFavorites(uid, data?.service);
+    return { success: true, favorites };
+  }
+);
+
+

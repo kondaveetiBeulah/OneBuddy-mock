@@ -116,11 +116,38 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setCurrentRestaurantId(data);
       }
     });
+    safeStorage.getItem('OB_FAVORITES').then(data => {
+      if (data) {
+        try {
+          setFavorites(JSON.parse(data));
+        } catch (e) {}
+      }
+    });
+    if (functions) {
+      const listFavs = httpsCallable<any, { success: boolean; favorites: Array<{ targetId: string }> }>(
+        functions,
+        'listFavorites'
+      );
+      listFavs({ service: 'food' })
+        .then(res => {
+          if (res.data?.favorites) {
+            const serverFavIds = res.data.favorites.map(f => f.targetId);
+            if (serverFavIds.length > 0) {
+              setFavorites(prev => Array.from(new Set([...prev, ...serverFavIds])));
+            }
+          }
+        })
+        .catch(() => {});
+    }
   }, []);
 
   useEffect(() => {
     safeStorage.setItem('OB_ORDERS', JSON.stringify(orders));
   }, [orders]);
+
+  useEffect(() => {
+    safeStorage.setItem('OB_FAVORITES', JSON.stringify(favorites));
+  }, [favorites]);
 
   useEffect(() => {
     safeStorage.setItem('OB_CART', JSON.stringify(cart));
@@ -346,6 +373,16 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setFavorites((prev) =>
       prev.includes(restaurantId) ? prev.filter((id) => id !== restaurantId) : [...prev, restaurantId]
     );
+
+    if (functions) {
+      const toggleCall = httpsCallable<{ service: string; targetId: string }, any>(
+        functions,
+        'toggleFavorite'
+      );
+      toggleCall({ service: 'food', targetId: restaurantId }).catch((err) => {
+        console.warn('[CartContext] Failed to sync favorite to server:', err);
+      });
+    }
   };
 
   const isFavorite = (restaurantId: string) => favorites.includes(restaurantId);

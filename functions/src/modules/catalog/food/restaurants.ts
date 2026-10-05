@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { FieldValue } from 'firebase-admin/firestore';
+import { FieldValue, GeoPoint } from 'firebase-admin/firestore';
 import { db } from '../../../common/firebase';
 import { secureCallable } from '../../../common/auth';
 import { log } from '../../../common/logging';
@@ -31,6 +31,8 @@ export const publishRestaurantSchema = z.object({
   imageUrl: z.string().optional(),
   dietaryType: z.enum(['pure-veg', 'non-veg', 'mixed']).optional().default('mixed'),
   address: z.string().optional(),
+  latitude: z.number().min(-90).max(90).nullish(),
+  longitude: z.number().min(-180).max(180).nullish(),
   promoted: z.boolean().optional().default(false),
   offerText: z.string().optional(),
   couponCode: z.string().optional(),
@@ -55,6 +57,10 @@ export const publishRestaurant = secureCallable(
     const cuisines = data.cuisine || data.cuisines || [];
     const imageUrl = data.featuredImage || data.imageUrl || '';
 
+    const location = (data.latitude !== undefined && data.longitude !== undefined && data.latitude !== null && data.longitude !== null)
+      ? new GeoPoint(data.latitude, data.longitude)
+      : null;
+
     const payload: Record<string, any> = {
       id: docRef.id,
       name: data.name,
@@ -72,6 +78,9 @@ export const publishRestaurant = secureCallable(
       imageUrl,
       dietaryType: data.dietaryType,
       address: data.address || '',
+      location,
+      latitude: data.latitude ?? null,
+      longitude: data.longitude ?? null,
       promoted: data.promoted,
       offerText: data.offerText || null,
       couponCode: data.couponCode || null,

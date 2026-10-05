@@ -82,4 +82,26 @@ export type PaymentStatus =
  */
 export type ActorType = 'user' | 'merchant' | 'driver' | 'system' | 'admin';
 
+/**
+ * Canonical user privacy consent purposes (DPDP Act 2023 & GDPR).
+ */
+export type ConsentPurpose =
+  | 'terms_of_service'
+  | 'privacy_policy'
+  | 'location_tracking'
+  | 'marketing_notifications'
+  | 'data_processing_dpdp';
+
+export interface ConsentRecord {
+  consentId?: string;
+  purpose: ConsentPurpose;
+  granted: boolean;
+  policyVersion: string;
+  source: 'mobile_app' | 'web' | 'checkout';
+  grantedAt?: any;
+  withdrawnAt?: any | null;
+  createdAt?: any;
+}
+
+
 

@@ -32,6 +32,15 @@ export interface OrderFulfillmentRecord {
   updatedAt?: any;
 }
 
+export interface FulfillmentEventRecord {
+  fromStatus?: string | null;
+  toStatus: string;
+  actorType: 'user' | 'merchant' | 'driver' | 'system' | 'admin';
+  actorId?: string | null;
+  note?: string | null;
+  createdAt?: any;
+}
+
 export interface OutboxEventRecord {
   eventId?: string;
   eventType: string;
@@ -244,6 +253,62 @@ export class OrdersRepository {
       createdAt: fulfillment.createdAt || now,
       updatedAt: fulfillment.updatedAt || now,
     });
+  }
+
+  /**
+   * Append an event to the nested fulfillment event trail:
+   * orders/{orderId}/fulfillments/{fulfillmentId}/events/{eventId}
+   */
+  static addFulfillmentEvent(
+    t: FirebaseFirestore.Transaction,
+    orderId: string,
+    fulfillmentId: string,
+    event: FulfillmentEventRecord,
+    now: Timestamp = Timestamp.now()
+  ): void {
+    const fulfillmentRef = db
+      .collection('orders')
+      .doc(orderId)
+      .collection('fulfillments')
+      .doc(fulfillmentId);
+
+    const eventRef = fulfillmentRef.collection('events').doc();
+    t.set(eventRef, {
+      eventId: eventRef.id,
+      fromStatus: event.fromStatus || null,
+      toStatus: event.toStatus,
+      actorType: event.actorType,
+      actorId: event.actorId || null,
+      note: event.note || null,
+      createdAt: event.createdAt || now,
+    });
+
+    t.set(
+      fulfillmentRef,
+      {
+        status: event.toStatus,
+        updatedAt: now,
+      },
+      { merge: true }
+    );
+  }
+
+  /**
+   * Fetch fulfillment event records for an order fulfillment.
+   */
+  static async getFulfillmentEvents(
+    orderId: string,
+    fulfillmentId: string
+  ): Promise<FirebaseFirestore.QueryDocumentSnapshot[]> {
+    const snap = await db
+      .collection('orders')
+      .doc(orderId)
+      .collection('fulfillments')
+      .doc(fulfillmentId)
+      .collection('events')
+      .orderBy('createdAt', 'asc')
+      .get();
+    return snap.docs;
   }
 
   /**

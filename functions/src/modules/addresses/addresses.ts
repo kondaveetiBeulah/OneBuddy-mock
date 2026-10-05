@@ -1,9 +1,10 @@
 import { z } from 'zod';
-import { FieldValue } from 'firebase-admin/firestore';
+import { FieldValue, GeoPoint } from 'firebase-admin/firestore';
 import { db } from '../../common/firebase';
 import { secureCallable } from '../../common/auth';
 import { log } from '../../common/logging';
 import { throwError } from '../../common/errors';
+import { UsersRepository } from '../../repositories';
 
 const addressSchema = z.object({
   id: z.string(),
@@ -98,6 +99,10 @@ export const createAddress = secureCallable(
         });
       }
 
+      const location = (data.latitude !== undefined && data.longitude !== undefined && data.latitude !== null && data.longitude !== null)
+        ? new GeoPoint(data.latitude, data.longitude)
+        : null;
+
       t.set(docRef, {
         id: addressId,
         label: data.label,
@@ -111,9 +116,11 @@ export const createAddress = secureCallable(
         state: data.state,
         pincode,
         postalCode,
-        latitude: data.latitude || null,
-        longitude: data.longitude || null,
+        location,
+        latitude: data.latitude ?? null,
+        longitude: data.longitude ?? null,
         isDefault: shouldBeDefault,
+        deletedAt: null,
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
       });
@@ -169,6 +176,14 @@ export const updateAddress = secureCallable(
         updates.pincode = data.updates.postalCode;
       }
 
+      if (data.updates.latitude !== undefined && data.updates.longitude !== undefined) {
+        if (data.updates.latitude !== null && data.updates.longitude !== null) {
+          updates.location = new GeoPoint(data.updates.latitude, data.updates.longitude);
+        } else {
+          updates.location = null;
+        }
+      }
+
       t.update(docRef, updates);
     });
 
@@ -201,11 +216,26 @@ export const replaceAddresses = secureCallable(
 );
 
 export const deleteAddress = secureCallable(
-  z.object({ addressId: z.string() }).strict(),
+  z.object({
+    addressId: z.string().min(1),
+    soft: z.boolean().default(true),
+  }).strict(),
   async (data, context) => {
     const uid = context.auth.uid;
-    await db.collection('users').doc(uid).collection('addresses').doc(data.addressId).delete();
-    return { success: true };
+    const docRef = db.collection('users').doc(uid).collection('addresses').doc(data.addressId);
+
+    if (data.soft) {
+      await docRef.update({
+        deletedAt: FieldValue.serverTimestamp(),
+        isDefault: false,
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+    } else {
+      await docRef.delete();
+    }
+
+    log.info(`[addresses] User ${uid} deleted address ${data.addressId} (soft: ${data.soft})`);
+    return { success: true, addressId: data.addressId };
   }
 );
 
@@ -226,4 +256,53 @@ export const setDefaultAddress = secureCallable(
     return { success: true };
   }
 );
+
+// ============================================================================
+// CALLABLE: savePlace
+// Saves a named place (Home, Work, Custom) with GeoPoint normalization.
+// ============================================================================
+const savePlaceSchema = z.object({
+  id: z.string().optional(),
+  label: z.string().min(1).max(50),
+  address: z.string().min(1).max(200),
+  icon: z.enum(['home', 'briefcase', 'pin']).default('pin'),
+  latitude: z.number().min(-90).max(90).optional().nullable(),
+  longitude: z.number().min(-180).max(180).optional().nullable(),
+}).strict();
+
+export const savePlace = secureCallable(
+  savePlaceSchema,
+  async (data, context) => {
+    const uid = context.auth.uid;
+    const placeId = await UsersRepository.savePlace(uid, data);
+    return { success: true, placeId };
+  }
+);
+
+// ============================================================================
+// CALLABLE: listSavedPlaces
+// Lists saved places for the authenticated user.
+// ============================================================================
+export const listSavedPlaces = secureCallable(
+  z.object({}).strict().optional(),
+  async (_data, context) => {
+    const uid = context.auth.uid;
+    const places = await UsersRepository.listSavedPlaces(uid);
+    return { success: true, places };
+  }
+);
+
+// ============================================================================
+// CALLABLE: deleteSavedPlace
+// Deletes a saved place.
+// ============================================================================
+export const deleteSavedPlace = secureCallable(
+  z.object({ placeId: z.string().min(1) }).strict(),
+  async (data, context) => {
+    const uid = context.auth.uid;
+    await UsersRepository.deleteSavedPlace(uid, data.placeId);
+    return { success: true, placeId: data.placeId };
+  }
+);
+
 

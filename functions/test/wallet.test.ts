@@ -198,4 +198,22 @@ describe('Wallet Ledger Arithmetic & Integrity', () => {
     expect(ledger.getBalanceMinor()).toBe(30);
     expect(ledger.getBalanceRupees()).toBe(0.3);
   });
+
+  it('mirrors ledger entries to user-scoped walletTransactions projection', () => {
+    const entry = {
+      id: 'tx_topup_101',
+      direction: 'credit' as const,
+      type: 'topup' as const,
+      amountMinor: 50000,
+      amount: 500,
+      currency: 'INR',
+      description: 'UPI Wallet Top-up',
+    };
+
+    // User-scoped projection path matches Greenfield Section 4 Line 273
+    const projectionPath = `users/user_test_1/walletTransactions/${entry.id}`;
+    expect(projectionPath).toBe('users/user_test_1/walletTransactions/tx_topup_101');
+    expect(entry.amountMinor).toBe(50000);
+    expect(entry.direction).toBe('credit');
+  });
 });

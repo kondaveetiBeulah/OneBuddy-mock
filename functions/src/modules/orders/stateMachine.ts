@@ -116,6 +116,22 @@ export async function performOrderCancellation(
     now
   );
 
+  // 2b. Append Fulfillment Lifecycle Event
+  OrdersRepository.addFulfillmentEvent(
+    t,
+    orderId,
+    'fulfillment_1',
+    {
+      fromStatus: currentStatus,
+      toStatus: 'cancelled',
+      actorType: 'user',
+      actorId: uid,
+      note: reason || 'Cancelled by customer',
+      createdAt: now,
+    },
+    now
+  );
+
   // 3. Refund to Wallet if paid via wallet
   if (orderData?.paymentMethod === 'wallet' && orderData?.paymentStatus === 'paid') {
     const refundAmountMinor = orderData.totalMinor || Math.round((orderData.total || 0) * 100);
@@ -266,6 +282,22 @@ export const updateOrderStatus = secureCallable(
           actorType: isAdmin ? 'admin' : 'system',
           actorId: uid,
           note: data.note || `Order status updated to ${targetStatus}`,
+          createdAt: now,
+        },
+        now
+      );
+
+      // Append Fulfillment Lifecycle Event
+      OrdersRepository.addFulfillmentEvent(
+        t,
+        data.orderId,
+        'fulfillment_1',
+        {
+          fromStatus: currentStatus,
+          toStatus: targetStatus,
+          actorType: isAdmin ? 'admin' : 'system',
+          actorId: uid,
+          note: data.note || `Fulfillment status transitioned to ${targetStatus}`,
           createdAt: now,
         },
         now

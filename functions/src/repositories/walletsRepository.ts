@@ -133,14 +133,25 @@ export class WalletsRepository {
   }
 
   /**
+   * Reference to user-scoped wallet transaction projection.
+   */
+  static getUserTransactionRef(userId: string, entryId?: string): FirebaseFirestore.DocumentReference {
+    const col = db.collection('users').doc(userId).collection('walletTransactions');
+    return entryId ? col.doc(entryId) : col.doc();
+  }
+
+  /**
    * Save a ledger entry within a transaction or directly.
+   * Atomically mirrors the entry to users/{userId}/walletTransactions/{entryId}
+   * satisfying Greenfield Spec Section 4 (User-scoped Wallet Query Projection).
    */
   static saveEntry(
     userId: string,
     entry: WalletEntryRecord,
     transaction?: FirebaseFirestore.Transaction
-  ): void | Promise<FirebaseFirestore.WriteResult> {
+  ): void | Promise<any> {
     const ref = this.getEntryRef(userId, entry.id);
+    const userTxRef = this.getUserTransactionRef(userId, entry.id);
     const payload = {
       ...entry,
       createdAt: entry.createdAt || FieldValue.serverTimestamp(),
@@ -148,9 +159,10 @@ export class WalletsRepository {
 
     if (transaction) {
       transaction.set(ref, payload);
+      transaction.set(userTxRef, payload);
       return;
     }
-    return ref.set(payload);
+    return Promise.all([ref.set(payload), userTxRef.set(payload)]);
   }
 
   /**
