@@ -173,6 +173,79 @@ export async function processOutboxEvent(eventId: string): Promise<boolean> {
         break;
       }
 
+      case 'order.status_updated': {
+        const userId = record.payload?.userId;
+        const toStatus = record.payload?.toStatus || 'updated';
+        const displayStatus = String(toStatus).replace(/_/g, ' ');
+        if (userId) {
+          await sendNotificationToUser(userId, {
+            title: `Order Update: ${displayStatus.toUpperCase()} 📦`,
+            body: `Your order #${record.aggregateId.slice(-6)} status is now ${displayStatus}.`,
+            category: 'orders',
+            data: {
+              orderId: record.aggregateId,
+              eventType: 'order.status_updated',
+              status: toStatus,
+            },
+          });
+        }
+        break;
+      }
+
+      case 'booking.created': {
+        const userId = record.payload?.userId;
+        const serviceType = record.payload?.serviceType || 'Service';
+        if (userId) {
+          await sendNotificationToUser(userId, {
+            title: 'Booking Confirmed! 🗓️',
+            body: `Your appointment for ${serviceType} has been scheduled.`,
+            category: 'homeServices',
+            data: {
+              bookingId: record.aggregateId,
+              eventType: 'booking.created',
+            },
+          });
+        }
+        break;
+      }
+
+      case 'booking.cancelled': {
+        const userId = record.payload?.userId;
+        const serviceType = record.payload?.serviceType || 'Booking';
+        if (userId) {
+          await sendNotificationToUser(userId, {
+            title: 'Booking Cancelled ❌',
+            body: `Your ${serviceType} appointment #${record.aggregateId.slice(-6)} was cancelled.`,
+            category: 'homeServices',
+            data: {
+              bookingId: record.aggregateId,
+              eventType: 'booking.cancelled',
+            },
+          });
+        }
+        break;
+      }
+
+      case 'ride.requested':
+      case 'ride.assigned':
+      case 'ride.completed':
+      case 'ride.cancelled': {
+        const userId = record.payload?.userId;
+        const rideStatus = (record.payload?.status || record.eventType.replace('ride.', '')).replace(/_/g, ' ');
+        if (userId) {
+          await sendNotificationToUser(userId, {
+            title: 'Ride Update 🚗',
+            body: `Your ride #${record.aggregateId.slice(-6)} is now ${rideStatus}.`,
+            category: 'rides',
+            data: {
+              rideId: record.aggregateId,
+              eventType: record.eventType,
+            },
+          });
+        }
+        break;
+      }
+
       default:
         log.warn(`[OutboxWorker] Unhandled outbox eventType: ${record.eventType}`);
         break;
