@@ -1,8 +1,9 @@
-﻿import { z } from 'zod';
+import { z } from 'zod';
 import { Timestamp } from 'firebase-admin/firestore';
-import { db } from '../../core/firebase';
-import { secureCallable, publicCallable } from '../../core/callable';
-import { log, throwError } from '../../core/logger';
+import { db } from '../../common/firebase';
+import { secureCallable, publicCallable } from '../../common/auth';
+import { log } from '../../common/logging';
+import { throwError } from '../../common/errors';
 
 // ----------------------------------------------------------------------------
 // REQUEST SCHEMAS
@@ -29,7 +30,7 @@ export const createCareBookingSchema = z.object({
   serviceType: z.string().min(1, 'Service type is required'),
   scheduledAt: z.string().or(z.number()), // ISO string or epoch ms
   addressSnapshot: z.union([careAddressSchema, z.record(z.string(), z.any())]).default({}),
-  quotedPriceMinor: z.number().int().nonnegative().default(69900), // Default â‚¹699 in paise
+  quotedPriceMinor: z.number().int().nonnegative().default(69900), // Default ₹699 in paise
   paymentMethod: z.string().optional().default('cash_on_service'),
   patientDetails: z.object({
     fullName: z.string().min(1),
@@ -164,12 +165,12 @@ export const createCareBooking = secureCallable(
         category: 'homeservices',
         icon: 'home',
         title: `Home Visit: ${data.serviceType}`,
-        subtitle: `${providerName} â€¢ Doorstep Visit`,
+        subtitle: `${providerName} • Doorstep Visit`,
         meta: `Scheduled: ${dateDisplay} at ${(data.addressSnapshot as any).line1 || 'Customer Address'}`,
         status: 'Confirmed',
         statusKind: 'upcoming',
         group: 'Upcoming',
-        price: `â‚¹${(data.quotedPriceMinor / 100).toFixed(0)}`,
+        price: `₹${(data.quotedPriceMinor / 100).toFixed(0)}`,
         actions: ['View Details', 'Cancel'],
         bookingId,
         providerName,

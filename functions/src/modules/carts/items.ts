@@ -1,8 +1,9 @@
 import { z } from 'zod';
-import { FieldValue } from 'firebase-admin/firestore';
-import { db } from '../../core/firebase';
-import { secureCallable } from '../../core/callable';
-import { log, throwError } from '../../core/logger';
+import { db } from '../../common/firebase';
+import { secureCallable } from '../../common/auth';
+import { log } from '../../common/logging';
+import { throwError } from '../../common/errors';
+import { CartsRepository } from '../../repositories';
 
 // ----------------------------------------------------------------------------
 // TYPES & SCHEMAS (Greenfield Sec. 4 Lines 238-240)
@@ -35,18 +36,14 @@ export const getCart = secureCallable(
     const uid = context.auth.uid;
     const service = normalizeService(data.service);
     const cartId = `${uid}_${service}`;
-    const cartRef = db.collection('carts').doc(cartId);
 
-    const [cartSnap, itemsSnap] = await Promise.all([
-      cartRef.get(),
-      cartRef.collection('items').get(),
-    ]);
+    const { cartDoc, itemDocs } = await CartsRepository.getCartWithItems(cartId);
 
-    const cartData = cartSnap.exists ? cartSnap.data() || {} : {};
+    const cartData = cartDoc.exists ? cartDoc.data() || {} : {};
     let subtotalMinor = 0;
     let itemCount = 0;
 
-    const items = itemsSnap.docs.map((docSnap) => {
+    const items = itemDocs.map((docSnap) => {
       const d = docSnap.data();
       const qty = d.quantity || 1;
       const unitPrice = d.unitPriceMinor || 0;
@@ -105,19 +102,17 @@ export const setCartItem = secureCallable(
     const uid = context.auth.uid;
     const service = normalizeService(data.service);
     const cartId = `${uid}_${service}`;
-    const cartRef = db.collection('carts').doc(cartId);
-    const itemRef = cartRef.collection('items').doc(data.productId);
 
     log.info(`[setCartItem] User ${uid} updating item ${data.productId} (qty: ${data.quantity}) in ${cartId}`);
 
     // If removing item (quantity == 0)
     if (data.quantity <= 0) {
-      await itemRef.delete();
-      const remainingSnap = await cartRef.collection('items').get();
+      await CartsRepository.deleteCartItem(cartId, data.productId);
+      const { itemDocs: remainingDocs } = await CartsRepository.getCartWithItems(cartId);
       let remainingQty = 0;
       let remainingSubtotalMinor = 0;
 
-      remainingSnap.docs.forEach((d) => {
+      remainingDocs.forEach((d) => {
         const item = d.data();
         const qty = item.quantity || 1;
         const price = item.discountUnitPriceMinor ?? item.unitPriceMinor ?? 0;
@@ -125,14 +120,12 @@ export const setCartItem = secureCallable(
         remainingSubtotalMinor += price * qty;
       });
 
-      await cartRef.set({
+      await CartsRepository.saveCartMeta(cartId, {
         userId: uid,
         service,
         itemCount: remainingQty,
-        subtotalMinor: remainingSubtotalMinor,
         ...(remainingQty === 0 ? { merchantId: null, merchantSnapshot: null } : {}),
-        updatedAt: FieldValue.serverTimestamp(),
-      }, { merge: true });
+      });
 
       return {
         success: true,
@@ -213,9 +206,9 @@ export const setCartItem = secureCallable(
     }
 
     // 2. Check Single-Merchant Conflict (Food Only)
-    const cartSnap = await cartRef.get();
-    if (service === 'food' && cartSnap.exists) {
-      const currentCart = cartSnap.data() || {};
+    const { cartDoc: currentCartSnap } = await CartsRepository.getCartWithItems(cartId);
+    if (service === 'food' && currentCartSnap.exists) {
+      const currentCart = currentCartSnap.data() || {};
       if (currentCart.merchantId && currentCart.merchantId !== targetMerchantId) {
         if (!data.clearExistingIfConflict) {
           throwError(
@@ -225,15 +218,12 @@ export const setCartItem = secureCallable(
         }
 
         // User confirmed clear: wipe old items
-        const oldItems = await cartRef.collection('items').get();
-        const batch = db.batch();
-        oldItems.docs.forEach((doc) => batch.delete(doc.ref));
-        await batch.commit();
+        await CartsRepository.clearCart(cartId, uid, service);
       }
     }
 
-    // 3. Write Item Document
-    await itemRef.set({
+    // 3. Write Item Document via CartsRepository
+    await CartsRepository.saveCartItem(cartId, data.productId, {
       catalogItemId: data.productId,
       name: nameSnapshot,
       image: imageSnapshot,
@@ -241,15 +231,14 @@ export const setCartItem = secureCallable(
       discountUnitPriceMinor,
       quantity: data.quantity,
       notes: data.notes || null,
-      updatedAt: FieldValue.serverTimestamp(),
     });
 
     // 4. Update Parent Document Summary
-    const updatedSnap = await cartRef.collection('items').get();
+    const { itemDocs: updatedDocs } = await CartsRepository.getCartWithItems(cartId);
     let totalQty = 0;
     let totalSubtotalMinor = 0;
 
-    updatedSnap.docs.forEach((d) => {
+    updatedDocs.forEach((d) => {
       const it = d.data();
       const q = it.quantity || 1;
       const p = it.discountUnitPriceMinor ?? it.unitPriceMinor ?? 0;
@@ -257,18 +246,16 @@ export const setCartItem = secureCallable(
       totalSubtotalMinor += p * q;
     });
 
-    await cartRef.set({
+    await CartsRepository.saveCartMeta(cartId, {
       userId: uid,
       service,
       merchantId: targetMerchantId,
       merchantSnapshot: {
         name: targetMerchantName,
-        imagePath: targetMerchantImage,
+        image: targetMerchantImage,
       },
       itemCount: totalQty,
-      subtotalMinor: totalSubtotalMinor,
-      updatedAt: FieldValue.serverTimestamp(),
-    }, { merge: true });
+    });
 
     return {
       success: true,
@@ -296,16 +283,15 @@ export const removeCartItem = secureCallable(
     const uid = context.auth.uid;
     const service = normalizeService(data.service);
     const cartId = `${uid}_${service}`;
-    const cartRef = db.collection('carts').doc(cartId);
 
-    await cartRef.collection('items').doc(data.productId).delete();
+    await CartsRepository.deleteCartItem(cartId, data.productId);
 
     // Recalculate parent totals
-    const remainingSnap = await cartRef.collection('items').get();
+    const { itemDocs: remainingDocs } = await CartsRepository.getCartWithItems(cartId);
     let remainingQty = 0;
     let remainingSubtotalMinor = 0;
 
-    remainingSnap.docs.forEach((d) => {
+    remainingDocs.forEach((d) => {
       const it = d.data();
       const q = it.quantity || 1;
       const p = it.discountUnitPriceMinor ?? it.unitPriceMinor ?? 0;
@@ -313,14 +299,12 @@ export const removeCartItem = secureCallable(
       remainingSubtotalMinor += p * q;
     });
 
-    await cartRef.set({
+    await CartsRepository.saveCartMeta(cartId, {
       userId: uid,
       service,
       itemCount: remainingQty,
-      subtotalMinor: remainingSubtotalMinor,
       ...(remainingQty === 0 ? { merchantId: null, merchantSnapshot: null } : {}),
-      updatedAt: FieldValue.serverTimestamp(),
-    }, { merge: true });
+    });
 
     return {
       success: true,
@@ -346,24 +330,8 @@ export const clearCart = secureCallable(
     const uid = context.auth.uid;
     const service = normalizeService(data.service);
     const cartId = `${uid}_${service}`;
-    const cartRef = db.collection('carts').doc(cartId);
 
-    const itemsSnap = await cartRef.collection('items').get();
-    if (!itemsSnap.empty) {
-      const batch = db.batch();
-      itemsSnap.docs.forEach((doc) => batch.delete(doc.ref));
-      await batch.commit();
-    }
-
-    await cartRef.set({
-      userId: uid,
-      service,
-      merchantId: null,
-      merchantSnapshot: null,
-      itemCount: 0,
-      subtotalMinor: 0,
-      updatedAt: FieldValue.serverTimestamp(),
-    }, { merge: true });
+    await CartsRepository.clearCart(cartId, uid, service);
 
     log.info(`[clearCart] User ${uid} cleared cart ${cartId}`);
     return { success: true, cartId };

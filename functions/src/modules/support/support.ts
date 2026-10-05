@@ -1,5 +1,5 @@
-﻿import { FieldValue } from 'firebase-admin/firestore';
-import { db } from '../../core/firebase';
+import { FieldValue } from 'firebase-admin/firestore';
+import { db } from '../../common/firebase';
 import { secureCallable } from '../../common/auth';
 import { NotFoundError, PermissionDeniedError, PreconditionFailedError } from '../../common/errors';
 import { log } from '../../common/logging';

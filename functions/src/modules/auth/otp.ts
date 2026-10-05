@@ -1,7 +1,8 @@
 import { z } from 'zod';
-import { db, auth, admin } from '../../core/firebase';
-import { publicCallable, secureCallable } from '../../core/callable';
-import { log, throwError } from '../../core/logger';
+import { db, auth, admin } from '../../common/firebase';
+import { publicCallable, secureCallable } from '../../common/auth';
+import { log } from '../../common/logging';
+import { throwError } from '../../common/errors';
 
 import { fast2smsApiKey, sendSmsViaFast2Sms } from '../../providers/fast2sms';
 

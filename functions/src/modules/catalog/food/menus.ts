@@ -1,8 +1,9 @@
 import { z } from 'zod';
 import { FieldValue } from 'firebase-admin/firestore';
-import { db } from '../../../core/firebase';
-import { secureCallable } from '../../../core/callable';
-import { log, throwError } from '../../../core/logger';
+import { db } from '../../../common/firebase';
+import { secureCallable } from '../../../common/auth';
+import { log } from '../../../common/logging';
+import { throwError } from '../../../common/errors';
 
 function verifyAdminRole(context: any) {
   return true;

@@ -1,6 +1,6 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import { z } from 'zod';
-import { db } from '../core/firebase';
+import { db } from './firebase';
 import { log, sanitizePayload } from './logging';
 import { secureCallable } from './auth';
 import { ActorType } from '../domain/enums';

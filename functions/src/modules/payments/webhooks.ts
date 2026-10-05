@@ -1,10 +1,12 @@
 import { onRequest } from 'firebase-functions/v2/https';
 import { FieldValue } from 'firebase-admin/firestore';
-import { db } from '../../core/firebase';
-import { log } from '../../core/logger';
+import { db } from '../../common/firebase';
+import { log } from '../../common/logging';
 import {
   verifyRazorpaySignature,
   verifyStripeSignature,
+  razorpayWebhookSecret,
+  stripeWebhookSecret,
 } from '../../providers';
 import { applyWalletCredit } from '../wallet/ledger';
 
@@ -16,6 +18,7 @@ export const paymentWebhook = onRequest(
   {
     region: 'asia-south1',
     cors: false,
+    secrets: [razorpayWebhookSecret, stripeWebhookSecret],
   },
   async (req, res) => {
     if (req.method !== 'POST') {
@@ -33,7 +36,7 @@ export const paymentWebhook = onRequest(
       // 1. Authenticate Provider & Verify Gateway Signature
       if (razorpaySig) {
         provider = 'razorpay';
-        const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
+        const secret = razorpayWebhookSecret.value() || process.env.RAZORPAY_WEBHOOK_SECRET;
         if (secret) {
           const isValid = verifyRazorpaySignature(rawBody, razorpaySig, secret);
           if (!isValid) {
@@ -46,7 +49,7 @@ export const paymentWebhook = onRequest(
         }
       } else if (stripeSig) {
         provider = 'stripe';
-        const secret = process.env.STRIPE_WEBHOOK_SECRET;
+        const secret = stripeWebhookSecret.value() || process.env.STRIPE_WEBHOOK_SECRET;
         if (secret) {
           const isValid = verifyStripeSignature(rawBody, stripeSig, secret);
           if (!isValid) {

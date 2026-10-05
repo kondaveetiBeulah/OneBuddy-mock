@@ -1,4 +1,4 @@
-import { db } from '../core/firebase';
+import { db } from './firebase';
 import { log } from './logging';
 
 export interface IdempotencyResult<T> {

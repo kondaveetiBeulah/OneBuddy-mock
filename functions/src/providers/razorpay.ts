@@ -1,5 +1,11 @@
 import * as crypto from 'crypto';
-import { log, throwError } from '../core/logger';
+import { defineSecret } from 'firebase-functions/params';
+import { log } from '../common/logging';
+import { throwError } from '../common/errors';
+
+export const razorpayKeyId = defineSecret('RAZORPAY_KEY_ID');
+export const razorpayKeySecret = defineSecret('RAZORPAY_KEY_SECRET');
+export const razorpayWebhookSecret = defineSecret('RAZORPAY_WEBHOOK_SECRET');
 
 export interface ProviderResult {
   providerOrderId: string;
@@ -11,8 +17,8 @@ export async function createRazorpayOrder(
   receipt: string,
   notes: Record<string, any>
 ): Promise<ProviderResult> {
-  const keyId = process.env.RAZORPAY_KEY_ID;
-  const keySecret = process.env.RAZORPAY_KEY_SECRET;
+  const keyId = razorpayKeyId.value() || process.env.RAZORPAY_KEY_ID;
+  const keySecret = razorpayKeySecret.value() || process.env.RAZORPAY_KEY_SECRET;
 
   if (!keyId || !keySecret) {
     log.warn(`[payments] Razorpay credentials not configured in environment. Using dev mock order.`);
@@ -72,8 +78,8 @@ export async function executeRazorpayRefund(
   amountMinor: number,
   notes: Record<string, any>
 ): Promise<string> {
-  const keyId = process.env.RAZORPAY_KEY_ID;
-  const keySecret = process.env.RAZORPAY_KEY_SECRET;
+  const keyId = razorpayKeyId.value() || process.env.RAZORPAY_KEY_ID;
+  const keySecret = razorpayKeySecret.value() || process.env.RAZORPAY_KEY_SECRET;
 
   if (!keyId || !keySecret) {
     log.warn(`[payments] Razorpay credentials not configured. Generating dev mock refund ID.`);

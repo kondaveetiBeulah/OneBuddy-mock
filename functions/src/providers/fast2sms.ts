@@ -1,5 +1,5 @@
 import { defineSecret } from 'firebase-functions/params';
-import { log } from '../core/logger';
+import { log } from '../common/logging';
 
 export const fast2smsApiKey = defineSecret('FAST2SMS_API_KEY');
 

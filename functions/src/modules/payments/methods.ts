@@ -1,8 +1,8 @@
 import { z } from 'zod';
 import { FieldValue } from 'firebase-admin/firestore';
-import { db } from '../../core/firebase';
-import { secureCallable } from '../../core/callable';
-import { log } from '../../core/logger';
+import { db } from '../../common/firebase';
+import { secureCallable } from '../../common/auth';
+import { log } from '../../common/logging';
 
 // ----------------------------------------------------------------------------
 // PAYMENT METHODS (Strict PCI-DSS Compliant Schemas — No PAN, CVV, or PIN)

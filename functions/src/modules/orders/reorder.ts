@@ -1,8 +1,10 @@
 import { z } from 'zod';
 import { Timestamp } from 'firebase-admin/firestore';
-import { db } from '../../core/firebase';
-import { secureCallable } from '../../core/callable';
-import { log, throwError } from '../../core/logger';
+import { db } from '../../common/firebase';
+import { secureCallable } from '../../common/auth';
+import { log } from '../../common/logging';
+import { throwError } from '../../common/errors';
+import { OrdersRepository } from '../../repositories';
 import { CANCELLABLE_STATUSES } from './stateMachine';
 
 // ----------------------------------------------------------------------------
@@ -17,7 +19,7 @@ export const reorder = secureCallable(
   reorderSchema,
   async (data, context) => {
     const uid = context.auth.uid;
-    const orderRef = db.collection('orders').doc(data.orderId);
+    const orderRef = OrdersRepository.getOrderRef(data.orderId);
     const orderSnap = await orderRef.get();
 
     if (!orderSnap.exists) {
@@ -28,8 +30,8 @@ export const reorder = secureCallable(
       throwError('permission-denied', 'Permission denied.');
     }
 
-    const itemsSnap = await orderRef.collection('items').get();
-    const items = itemsSnap.docs.map((d) => d.data());
+    const itemDocs = await OrdersRepository.getOrderItems(orderRef);
+    const items = itemDocs.map((d) => d.data());
 
     return {
       success: true,
@@ -51,8 +53,8 @@ export const rescheduleOrder = secureCallable(
   async (data, context) => {
     const uid = context.auth.uid;
     const now = Timestamp.now();
-    const orderRef = db.collection('orders').doc(data.orderId);
-    const userOrderRef = db.collection('users').doc(uid).collection('orders').doc(data.orderId);
+    const orderRef = OrdersRepository.getOrderRef(data.orderId);
+    const userOrderRef = OrdersRepository.getUserOrderProjectionRef(uid, data.orderId);
 
     log.info(`[rescheduleOrder] User ${uid} requesting reschedule for order ${data.orderId} to ${data.scheduledAt}`);
 
@@ -72,26 +74,24 @@ export const rescheduleOrder = secureCallable(
         );
       }
 
-      t.update(orderRef, {
+      OrdersRepository.updateOrder(t, orderRef, {
         scheduledAt: data.scheduledAt,
         rescheduledAt: now,
         updatedAt: now,
       });
 
-      const eventRef = orderRef.collection('events').doc();
-      t.set(eventRef, {
-        eventId: eventRef.id,
+      OrdersRepository.addOrderEvent(t, orderRef, {
         fromStatus: orderData?.status,
         toStatus: orderData?.status,
         actorType: 'user',
         actorId: uid,
         note: `Order delivery rescheduled to ${data.scheduledAt}${data.reason ? ` (${data.reason})` : ''}`,
         createdAt: now,
-      });
+      }, now);
 
       const userOrderSnap = await t.get(userOrderRef);
       if (userOrderSnap.exists) {
-        t.update(userOrderRef, {
+        OrdersRepository.updateUserOrderProjection(t, uid, data.orderId, {
           scheduledAt: data.scheduledAt,
           updatedAt: now,
         });

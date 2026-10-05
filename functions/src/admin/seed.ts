@@ -1,6 +1,6 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import { z } from 'zod';
-import { db } from '../core/firebase';
+import { db } from '../common/firebase';
 import { secureCallable } from '../common/auth';
 import { log } from '../common/logging';
 

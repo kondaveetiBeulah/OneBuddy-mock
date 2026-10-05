@@ -1,13 +1,18 @@
 import * as crypto from 'crypto';
-import { log, throwError } from '../core/logger';
+import { defineSecret } from 'firebase-functions/params';
+import { log } from '../common/logging';
+import { throwError } from '../common/errors';
 import { ProviderResult } from './razorpay';
+
+export const stripeSecretKey = defineSecret('STRIPE_SECRET_KEY');
+export const stripeWebhookSecret = defineSecret('STRIPE_WEBHOOK_SECRET');
 
 export async function createStripePaymentIntent(
   amountMinor: number,
   paymentId: string,
   metadata: Record<string, string>
 ): Promise<ProviderResult> {
-  const secretKey = process.env.STRIPE_SECRET_KEY;
+  const secretKey = stripeSecretKey.value() || process.env.STRIPE_SECRET_KEY;
   if (!secretKey) {
     log.warn(`[payments] Stripe secret key not configured in environment. Using dev mock secret.`);
     return {
@@ -85,7 +90,7 @@ export async function executeStripeRefund(
   amountMinor: number,
   metadata: Record<string, string>
 ): Promise<string> {
-  const secretKey = process.env.STRIPE_SECRET_KEY;
+  const secretKey = stripeSecretKey.value() || process.env.STRIPE_SECRET_KEY;
   if (!secretKey) {
     log.warn(`[payments] Stripe secret key not configured. Generating dev mock refund ID.`);
     return `re_mock_${Date.now()}`;

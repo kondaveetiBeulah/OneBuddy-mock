@@ -1,5 +1,5 @@
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
-import { db } from '../../core/firebase';
+import { db } from '../../common/firebase';
 import { secureCallable, publicCallable } from '../../common/auth';
 import { NotFoundError, PermissionDeniedError, PreconditionFailedError } from '../../common/errors';
 import { log } from '../../common/logging';

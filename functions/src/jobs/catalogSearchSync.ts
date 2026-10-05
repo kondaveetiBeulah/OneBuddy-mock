@@ -1,8 +1,8 @@
 import { onDocumentWritten } from 'firebase-functions/v2/firestore';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { FieldValue } from 'firebase-admin/firestore';
-import { db } from '../core/firebase';
-import { log } from '../core/logger';
+import { db } from '../common/firebase';
+import { log } from '../common/logging';
 
 // ----------------------------------------------------------------------------
 // 1. TRIGGER: RESTAURANT SYNC

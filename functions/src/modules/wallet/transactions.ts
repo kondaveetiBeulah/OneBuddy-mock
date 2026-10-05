@@ -1,9 +1,10 @@
 import { z } from 'zod';
-import { FieldValue } from 'firebase-admin/firestore';
-import { db } from '../../core/firebase';
-import { secureCallable } from '../../core/callable';
-import { log, throwError } from '../../core/logger';
+import { db } from '../../common/firebase';
+import { secureCallable } from '../../common/auth';
+import { log } from '../../common/logging';
+import { throwError } from '../../common/errors';
 import { applyWalletDebit } from './ledger';
+import { WalletsRepository, OrdersRepository, UsersRepository } from '../../repositories';
 
 export const chargeWalletSchema = z
   .object({
@@ -49,10 +50,9 @@ export const chargeWallet = secureCallable(
       data.idempotencyKey ||
       `debit_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
-    // If a non-admin passes an orderId, verify ownership and pending status
+    // If a non-admin passes an orderId, verify ownership and pending status via OrdersRepository
     if (!isAdmin && data.orderId) {
-      const orderRef = db.collection('orders').doc(data.orderId);
-      const orderSnap = await orderRef.get();
+      const orderSnap = await OrdersRepository.getOrder(data.orderId);
       if (!orderSnap.exists) {
         throwError('not-found', 'Order not found.');
       }
@@ -84,8 +84,8 @@ export const chargeWallet = secureCallable(
       });
     });
 
-    // Audit log per Greenfield Sec. 4 Line 292
-    await db.collection('auditEvents').add({
+    // Audit log per Greenfield Sec. 4 Line 292 via UsersRepository
+    await UsersRepository.recordAuditEvent({
       actorType: isAdmin ? 'admin' : 'user',
       actorId: callerUid,
       action: 'wallet.debit',
@@ -94,7 +94,6 @@ export const chargeWallet = secureCallable(
       outcome: 'success',
       requestId:
         (context.rawRequest as any)?.headers?.['x-request-id'] || idempotencyKey,
-      createdAt: FieldValue.serverTimestamp(),
       metadata: {
         amountMinor,
         orderId: data.orderId || null,
@@ -127,30 +126,15 @@ export const listWalletTransactions = secureCallable(
   listWalletTransactionsSchema,
   async (data, context) => {
     const uid = context.auth.uid;
-    const walletRef = db.collection('wallets').doc(uid);
+    const { docs, nextCursor } = await WalletsRepository.listEntries({
+      userId: uid,
+      type: data.type,
+      direction: data.direction,
+      cursor: data.cursor,
+      limit: data.limit,
+    });
 
-    let q: FirebaseFirestore.Query = walletRef
-      .collection('entries')
-      .orderBy('createdAt', 'desc');
-
-    if (data.type) {
-      q = q.where('type', '==', data.type);
-    }
-    if (data.direction) {
-      q = q.where('direction', '==', data.direction);
-    }
-
-    if (data.cursor) {
-      const cursorDoc = await walletRef.collection('entries').doc(data.cursor).get();
-      if (cursorDoc.exists) {
-        q = q.startAfter(cursorDoc);
-      }
-    }
-
-    q = q.limit(data.limit);
-
-    const snap = await q.get();
-    const entries = snap.docs.map((doc) => {
+    const entries = docs.map((doc) => {
       const d = doc.data();
       const amountMinor =
         typeof d.amountMinor === 'number'
@@ -173,9 +157,6 @@ export const listWalletTransactions = secureCallable(
         createdAt: d.createdAt?.toDate ? d.createdAt.toDate().toISOString() : null,
       };
     });
-
-    const nextCursor =
-      snap.docs.length === data.limit ? snap.docs[snap.docs.length - 1].id : null;
 
     return {
       entries,

@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { db } from '../../core/firebase';
-import { secureCallable } from '../../core/callable';
-import { log } from '../../core/logger';
+import { db } from '../../common/firebase';
+import { secureCallable } from '../../common/auth';
+import { log } from '../../common/logging';
 
 // ----------------------------------------------------------------------------
 // SEARCH CATALOG (Greenfield Sec. 1 Line 50 & Sec. 4 Lines 230-232)

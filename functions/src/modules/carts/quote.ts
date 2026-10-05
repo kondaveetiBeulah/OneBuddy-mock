@@ -1,8 +1,9 @@
 import { z } from 'zod';
-import { db } from '../../core/firebase';
-import { secureCallable } from '../../core/callable';
-import { throwError } from '../../core/logger';
+import { db } from '../../common/firebase';
+import { secureCallable } from '../../common/auth';
+import { throwError } from '../../common/errors';
 import { normalizeService, cartItemInputSchema } from './items';
+import { CartsRepository } from '../../repositories';
 
 // ----------------------------------------------------------------------------
 // QUOTE CHECKOUT (Greenfield Sec. 1 Line 90 & Sec. 4 Lines 245-248)
@@ -31,16 +32,12 @@ export const quoteCheckout = secureCallable(
     if (data.items && data.items.length > 0) {
       itemsToVerify = data.items;
     } else {
-      const cartRef = db.collection('carts').doc(cartId);
-      const [cartSnap, itemsSnap] = await Promise.all([
-        cartRef.get(),
-        cartRef.collection('items').get(),
-      ]);
+      const { cartDoc, itemDocs } = await CartsRepository.getCartWithItems(cartId);
 
-      if (cartSnap.exists) {
-        merchantId = merchantId || cartSnap.data()?.merchantId;
+      if (cartDoc.exists) {
+        merchantId = merchantId || cartDoc.data()?.merchantId;
       }
-      itemsToVerify = itemsSnap.docs.map((d) => ({
+      itemsToVerify = itemDocs.map((d) => ({
         productId: d.data().catalogItemId || d.id,
         quantity: d.data().quantity || 1,
         notes: d.data().notes,

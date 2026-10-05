@@ -1,5 +1,5 @@
-﻿import { FieldValue, Timestamp } from 'firebase-admin/firestore';
-import { db } from '../../core/firebase';
+import { FieldValue, Timestamp } from 'firebase-admin/firestore';
+import { db } from '../../common/firebase';
 import { secureCallable, publicCallable } from '../../common/auth';
 import { PreconditionFailedError, NotFoundError } from '../../common/errors';
 import { log } from '../../common/logging';
@@ -312,8 +312,8 @@ export const placeMedicineOrder = secureCallable(placeMedicineOrderSchema, async
     }
 
     // 5. Calculate Delivery Fee, Discounts, and Taxes
-    const deliveryFeeMinor = subtotalMinor > 50000 ? 0 : 3000; // Free delivery above â‚¹500
-    const packagingFeeMinor = 1500; // â‚¹15.00 packaging
+    const deliveryFeeMinor = subtotalMinor > 50000 ? 0 : 3000; // Free delivery above ₹500
+    const packagingFeeMinor = 1500; // ₹15.00 packaging
     const discountMinor = data.promotionCode ? Math.min(Math.round(subtotalMinor * 0.15), 10000) : 0;
     const totalMinor = subtotalMinor + deliveryFeeMinor + packagingFeeMinor + (data.tipMinor || 0) - discountMinor;
 
@@ -326,7 +326,7 @@ export const placeMedicineOrder = secureCallable(placeMedicineOrderSchema, async
       userId: uid,
       category: 'healthcare',
       service: 'pharmacy',
-      merchantId: data.pharmacyId,        // âœ… Canonical Greenfield Merchant Reference
+      merchantId: data.pharmacyId,        // ✅ Canonical Greenfield Merchant Reference
       pharmacyId: data.pharmacyId,        // Backward-compatible alias
       merchantSnapshot: {
         name: pharmacyName,
@@ -406,13 +406,13 @@ export const placeMedicineOrder = secureCallable(placeMedicineOrderSchema, async
       id: orderId,
       category: 'healthcare',
       icon: 'pill',
-      title: `Medicine Order â€¢ ${pharmacyName}`,
+      title: `Medicine Order • ${pharmacyName}`,
       subtitle: itemsSummary.length > 60 ? `${itemsSummary.slice(0, 57)}...` : itemsSummary,
       meta: `Delivery: ${data.deliveryAddress?.line1 || 'Hyderabad'}`,
       status: 'Order Placed',
       statusKind: 'ongoing',
       group: 'Ongoing',
-      price: `â‚¹${(totalMinor / 100).toFixed(0)}`,
+      price: `₹${(totalMinor / 100).toFixed(0)}`,
       actions: ['Track Order', 'Cancel'],
       orderId,
       pharmacyName,

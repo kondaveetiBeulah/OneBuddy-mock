@@ -1,5 +1,5 @@
-﻿import { FieldValue, Timestamp } from 'firebase-admin/firestore';
-import { db } from '../../core/firebase';
+import { FieldValue, Timestamp } from 'firebase-admin/firestore';
+import { db } from '../../common/firebase';
 import { secureCallable, publicCallable } from '../../common/auth';
 import {
   NotFoundError,
@@ -275,12 +275,12 @@ export const createBooking = secureCallable(createBookingSchema, async (data, co
       category: data.service === 'care' ? 'healthcare' : 'homeservices',
       icon: data.service === 'care' ? 'heart' : 'home',
       title: `${data.service === 'care' ? 'Care Visit' : 'Home Service'}: ${data.serviceType}`,
-      subtitle: `${providerName} â€¢ Doorstep Visit`,
+      subtitle: `${providerName} • Doorstep Visit`,
       meta: `Scheduled: ${dateDisplay} at ${resolvedAddress.line1}`,
       status: 'Requested',
       statusKind: 'upcoming',
       group: 'Upcoming',
-      price: `â‚¹${Math.round(quotedPriceMinor / 100)}`,
+      price: `₹${Math.round(quotedPriceMinor / 100)}`,
       actions: ['View Details', 'Cancel'],
       bookingId,
       providerName,
@@ -317,7 +317,7 @@ export const createServiceBooking = createBooking;
 
 /**
  * 4. updateBookingStatus: Advances booking lifecycle state (Provider / Admin).
- * Enforces valid state machine transitions (e.g. requested â†’ confirmed â†’ in_progress â†’ completed)
+ * Enforces valid state machine transitions (e.g. requested → confirmed → in_progress → completed)
  * and records audit events in serviceBookings/{bookingId}/events/{eventId}.
  */
 export const updateBookingStatus = secureCallable(

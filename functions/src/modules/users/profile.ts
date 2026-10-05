@@ -1,9 +1,11 @@
-﻿import { onUserCreated as onUserCreatedV2 } from 'firebase-functions/v2/identity';
+import { onUserCreated as onUserCreatedV2 } from 'firebase-functions/v2/identity';
 import { FieldValue } from 'firebase-admin/firestore';
 import { z } from 'zod';
-import { db, admin } from '../../core/firebase';
-import { secureCallable } from '../../core/callable';
-import { log, throwError } from '../../core/logger';
+import { db, admin } from '../../common/firebase';
+import { secureCallable } from '../../common/auth';
+import { log } from '../../common/logging';
+import { throwError } from '../../common/errors';
+import { UsersRepository, WalletsRepository } from '../../repositories';
 
 /**
  * TRIGGER: Automatically creates a profile document when a user signs up.
@@ -14,8 +16,6 @@ export const onUserCreated = onUserCreatedV2(async (event) => {
   if (!user || !user.uid) return;
   log.info(`Creating profile for new user: ${user.uid}`);
 
-  const profileRef = db.collection('users').doc(user.uid);
-  
   const initialData: Record<string, any> = {
     uid: user.uid,
     displayName: user.displayName || null,
@@ -26,25 +26,20 @@ export const onUserCreated = onUserCreatedV2(async (event) => {
     updatedAt: FieldValue.serverTimestamp(),
   };
 
-  await profileRef.set(initialData, { merge: true });
+  await UsersRepository.saveUserProfile(user.uid, initialData, undefined, true);
 
   // Create default security preferences
-  await profileRef.collection('privacy').doc('security').set({
+  await UsersRepository.saveSecurityPreferences(user.uid, {
     biometric: true,
     verifiedProfile: true,
     familySharing: false,
     familySharingEnabled: false,
     emergencyContact: '',
     updatedAt: FieldValue.serverTimestamp(),
-  }, { merge: true });
+  });
 
   // Create default wallet
-  await db.collection('wallets').doc(user.uid).set({
-    userId: user.uid,
-    balanceMinor: 0,
-    currency: 'INR',
-    updatedAt: FieldValue.serverTimestamp(),
-  }, { merge: true });
+  await WalletsRepository.ensureWallet(user.uid);
 
   log.info(`Successfully created profile and defaults for ${user.uid}`);
 });
@@ -71,9 +66,6 @@ export const ensureProfile = secureCallable(
   ensureProfileSchema,
   async (data, context) => {
     const uid = context.auth.uid;
-    const profileRef = db.collection('users').doc(uid);
-    const walletRef = db.collection('wallets').doc(uid);
-    const securityRef = profileRef.collection('privacy').doc('security');
 
     log.info(`[ensureProfile] Ensuring profile for UID: ${uid}`);
 
@@ -95,7 +87,7 @@ export const ensureProfile = secureCallable(
     const resolvedPhotoURL = data.photoURL || token.picture || null;
     const now = FieldValue.serverTimestamp();
 
-    const profileSnap = await profileRef.get();
+    const profileSnap = await UsersRepository.getUserProfile(uid);
 
     if (!profileSnap.exists) {
       // 1. Initial Creation (Standard 7-field structure + dateOfBirth)
@@ -113,10 +105,10 @@ export const ensureProfile = secureCallable(
       };
 
       const batch = db.batch();
-      batch.set(profileRef, newProfile, { merge: true });
+      UsersRepository.saveUserProfile(uid, newProfile, batch, true);
 
       // Initialize default wallet with balanceMinor: 0
-      batch.set(walletRef, {
+      batch.set(WalletsRepository.getWalletRef(uid), {
         userId: uid,
         balanceMinor: 0,
         currency: 'INR',
@@ -124,14 +116,14 @@ export const ensureProfile = secureCallable(
       }, { merge: true });
 
       // Initialize default security preferences
-      batch.set(securityRef, {
+      UsersRepository.saveSecurityPreferences(uid, {
         biometric: true,
         verifiedProfile: true,
         familySharing: false,
         familySharingEnabled: false,
         emergencyContact: '',
         updatedAt: now,
-      }, { merge: true });
+      }, batch);
 
       await batch.commit();
 
@@ -156,20 +148,12 @@ export const ensureProfile = secureCallable(
     if (!existing.dateOfBirth && rawDob) updates.dateOfBirth = rawDob;
     if (!existing.accountStatus) updates.accountStatus = 'active';
 
-    // Check if wallet exists, create if missing
-    const walletSnap = await walletRef.get();
-    if (!walletSnap.exists) {
-      await walletRef.set({
-        userId: uid,
-        balanceMinor: 0,
-        currency: 'INR',
-        updatedAt: now,
-      }, { merge: true });
-    }
+    // Ensure wallet exists
+    await WalletsRepository.ensureWallet(uid);
 
     if (Object.keys(updates).length > 0) {
       updates.updatedAt = now;
-      await profileRef.set(updates, { merge: true });
+      await UsersRepository.saveUserProfile(uid, updates, undefined, true);
     }
 
     return {
@@ -208,7 +192,6 @@ export const updateProfile = secureCallable(
   updateProfileSchema,
   async (data, context) => {
     const uid = context.auth.uid;
-    const profileRef = db.collection('users').doc(uid);
 
     log.info(`User ${uid} is updating their profile`, data);
 
@@ -229,7 +212,7 @@ export const updateProfile = secureCallable(
     if (data.photoURL !== undefined) updates.photoURL = data.photoURL;
     if (dob !== undefined) updates.dateOfBirth = dob;
 
-    await profileRef.set(updates, { merge: true });
+    await UsersRepository.saveUserProfile(uid, updates, undefined, true);
 
     return { success: true, message: 'Profile updated successfully' };
   }
@@ -247,14 +230,16 @@ export const requestAccountDeletion = secureCallable(
     const uid = context.auth.uid;
     log.info(`User ${uid} requested account deletion: ${data.reason || 'No reason provided'}`);
 
-    await db.collection('users').doc(uid).set(
+    await UsersRepository.saveUserProfile(
+      uid,
       {
         accountStatus: 'deletion_requested',
         deletionRequestedAt: FieldValue.serverTimestamp(),
         deletionReason: data.reason || null,
         updatedAt: FieldValue.serverTimestamp(),
       },
-      { merge: true }
+      undefined,
+      true
     );
 
     return {
@@ -274,29 +259,19 @@ export const getMe = secureCallable(
   z.object({}).strict().optional(),
   async (_data, context) => {
     const uid = context.auth.uid;
-    const userRef = db.collection('users').doc(uid);
-    const walletRef = db.collection('wallets').doc(uid);
 
     log.info(`[getMe] Fetching consolidated account state for UID: ${uid}`);
 
-    // Fetch profile, preferences, security, wallet, and address count in parallel
-    const [
+    // Fetch profile, preferences, security, wallet, and address count in parallel via UsersRepository
+    const {
       profileSnap,
       settingsSnap,
       serviceSnap,
       notificationsSnap,
       securitySnap,
       walletSnap,
-      addressCountSnap,
-    ] = await Promise.all([
-      userRef.get(),
-      userRef.collection('preferences').doc('settings').get(),
-      userRef.collection('preferences').doc('service').get(),
-      userRef.collection('preferences').doc('notifications').get(),
-      userRef.collection('privacy').doc('security').get(),
-      walletRef.get(),
-      userRef.collection('addresses').count().get(),
-    ]);
+      addressCount,
+    } = await UsersRepository.getConsolidatedAccount(uid);
 
     if (!profileSnap.exists) {
       throwError('not-found', 'User profile not found. Please initialize your account first.');
@@ -368,9 +343,6 @@ export const getMe = secureCallable(
       currency: walletData.currency || 'INR',
     };
 
-    // 6. Address Aggregation Count
-    const addressCount = addressCountSnap.data().count;
-
     return {
       profile: {
         uid,
@@ -415,12 +387,11 @@ export const requestDataExport = secureCallable(
     const uid = context.auth.uid;
     const now = FieldValue.serverTimestamp();
     const nowMs = Date.now();
-    const userRef = db.collection('users').doc(uid);
 
     log.info(`[requestDataExport] User ${uid} requested full data export`);
 
     // 1. Fetch user profile and check 24-hour cooldown
-    const profileSnap = await userRef.get();
+    const profileSnap = await UsersRepository.getUserProfile(uid);
     if (!profileSnap.exists) {
       throwError('not-found', 'User profile not found.');
     }
@@ -439,8 +410,8 @@ export const requestDataExport = secureCallable(
       );
     }
 
-    // 2. Aggregate all user-owned data in parallel
-    const [
+    // 2. Aggregate all user-owned data in parallel via UsersRepository
+    const {
       settingsSnap,
       serviceSnap,
       notificationsSnap,
@@ -450,17 +421,7 @@ export const requestDataExport = secureCallable(
       ordersSnap,
       walletSnap,
       entriesSnap,
-    ] = await Promise.all([
-      userRef.collection('preferences').doc('settings').get(),
-      userRef.collection('preferences').doc('service').get(),
-      userRef.collection('preferences').doc('notifications').get(),
-      userRef.collection('privacy').doc('security').get(),
-      userRef.collection('addresses').get(),
-      userRef.collection('savedPlaces').get(),
-      userRef.collection('orders').get(),
-      db.collection('wallets').doc(uid).get(),
-      db.collection('wallets').doc(uid).collection('entries').get(),
-    ]);
+    } = await UsersRepository.getFullUserDataForExport(uid);
 
     // 3. Assemble sanitized export dossier
     const exportDossier = {
@@ -528,45 +489,47 @@ export const requestDataExport = secureCallable(
 
     const batch = db.batch();
 
-    // 5. Update user profile with cooldown timestamp
-    batch.update(userRef, {
+    // 5. Update user profile with cooldown timestamp via UsersRepository
+    batch.update(UsersRepository.getUserRef(uid), {
       lastDataExportRequestedAt: now,
       lastDataExportId: exportId,
       updatedAt: now,
     });
 
-    // 6. Deliver in-app notification per Section 4
-    const notifRef = db.collection('notifications').doc();
-    batch.set(notifRef, {
-      id: notifRef.id,
-      userId: uid,
-      category: 'health', // Account & Security alert
-      title: 'Your Account Data Export Is Ready',
-      body: 'Your personal data archive has been generated and is ready for download.',
-      payload: {
-        exportId,
-        downloadUrl,
+    // 6. Deliver in-app notification per Section 4 via UsersRepository
+    UsersRepository.sendNotification(
+      {
+        userId: uid,
+        category: 'health', // Account & Security alert
+        title: 'Your Account Data Export Is Ready',
+        body: 'Your personal data archive has been generated and is ready for download.',
+        payload: {
+          exportId,
+          downloadUrl,
+        },
+        createdAt: now,
       },
-      createdAt: now,
-    });
+      batch
+    );
 
-    // 7. Write durable audit trail per Section 4
-    const auditRef = db.collection('auditEvents').doc();
-    batch.set(auditRef, {
-      eventId: auditRef.id,
-      actorType: 'user',
-      actorId: uid,
-      action: 'user.data_export_requested',
-      entityType: 'user',
-      entityId: uid,
-      outcome: 'success',
-      metadata: {
-        exportId,
-        storagePath,
-        reason: data.reason || 'User self-service request',
+    // 7. Write durable audit trail per Section 4 via UsersRepository
+    UsersRepository.recordAuditEvent(
+      {
+        actorType: 'user',
+        actorId: uid,
+        action: 'user.data_export_requested',
+        entityType: 'user',
+        entityId: uid,
+        outcome: 'success',
+        metadata: {
+          exportId,
+          storagePath,
+          reason: data.reason || 'User self-service request',
+        },
+        createdAt: now,
       },
-      createdAt: now,
-    });
+      batch
+    );
 
     await batch.commit();
 
@@ -581,5 +544,3 @@ export const requestDataExport = secureCallable(
     };
   }
 );
-
-

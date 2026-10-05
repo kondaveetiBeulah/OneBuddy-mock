@@ -1,8 +1,9 @@
 import { z } from 'zod';
-import { FieldValue } from 'firebase-admin/firestore';
-import { db } from '../../core/firebase';
-import { secureCallable } from '../../core/callable';
-import { log, throwError } from '../../core/logger';
+import { db } from '../../common/firebase';
+import { secureCallable } from '../../common/auth';
+import { log } from '../../common/logging';
+import { throwError } from '../../common/errors';
+import { WalletsRepository } from '../../repositories';
 
 // ----------------------------------------------------------------------------
 // WALLET TRANSACTIONS & LEDGER (Greenfield Sec. 4 Lines 283-285)
@@ -19,24 +20,16 @@ export async function applyWalletCredit(
     description?: string;
   }
 ): Promise<{ balanceMinor: number; balance: number; replayed: boolean }> {
-  const walletRef = db.collection('wallets').doc(uid);
   const entryId = `entry_${source.paymentId}`;
-  const entryRef = walletRef.collection('entries').doc(entryId);
 
   return await db.runTransaction(async (t) => {
-    const existingEntry = await t.get(entryRef);
-    const walletDoc = await t.get(walletRef);
+    const existingEntry = await WalletsRepository.getEntry(uid, entryId, t);
+    const walletDoc = await WalletsRepository.getWallet(uid, t);
 
     let currentBalMinor = 0;
     if (!walletDoc.exists) {
       currentBalMinor = 0;
-      t.set(walletRef, {
-        userId: uid,
-        balanceMinor: 0,
-        currency: 'INR',
-        createdAt: FieldValue.serverTimestamp(),
-        updatedAt: FieldValue.serverTimestamp(),
-      });
+      await WalletsRepository.ensureWallet(uid, t);
     } else {
       const wData = walletDoc.data() || {};
       currentBalMinor =
@@ -58,23 +51,23 @@ export async function applyWalletCredit(
 
     const updatedBalMinor = currentBalMinor + amountMinor;
 
-    t.update(walletRef, {
-      balanceMinor: updatedBalMinor,
-      updatedAt: FieldValue.serverTimestamp(),
-    });
+    WalletsRepository.updateBalance(uid, updatedBalMinor, t);
 
-    t.set(entryRef, {
-      id: entryId,
-      direction: 'credit',
-      type: source.type || 'topup',
-      amountMinor,
-      amount: amountMinor / 100,
-      currency: 'INR',
-      paymentId: source.paymentId,
-      idempotencyKey: source.idempotencyKey,
-      description: source.description || `Wallet Top-up via ${source.provider}`,
-      createdAt: FieldValue.serverTimestamp(),
-    });
+    WalletsRepository.saveEntry(
+      uid,
+      {
+        id: entryId,
+        direction: 'credit',
+        type: source.type || 'topup',
+        amountMinor,
+        amount: amountMinor / 100,
+        currency: 'INR',
+        paymentId: source.paymentId,
+        idempotencyKey: source.idempotencyKey,
+        description: source.description || `Wallet Top-up via ${source.provider}`,
+      },
+      t
+    );
 
     return {
       balanceMinor: updatedBalMinor,
@@ -96,12 +89,10 @@ export async function applyWalletDebit(
     type?: 'order_payment' | 'adjustment';
   }
 ): Promise<{ newBalMinor: number; newBalance: number }> {
-  const walletRef = db.collection('wallets').doc(uid);
   const entryId = `entry_${details.idempotencyKey}`;
-  const entryRef = walletRef.collection('entries').doc(entryId);
 
-  const existingEntry = await t.get(entryRef);
-  const walletDoc = await t.get(walletRef);
+  const existingEntry = await WalletsRepository.getEntry(uid, entryId, t);
+  const walletDoc = await WalletsRepository.getWallet(uid, t);
 
   if (!walletDoc.exists) {
     throwError('not-found', 'Wallet record not found.');
@@ -129,23 +120,23 @@ export async function applyWalletDebit(
 
   const newBalMinor = currentBalMinor - amountMinor;
 
-  t.update(walletRef, {
-    balanceMinor: newBalMinor,
-    updatedAt: FieldValue.serverTimestamp(),
-  });
+  WalletsRepository.updateBalance(uid, newBalMinor, t);
 
-  t.set(entryRef, {
-    id: entryId,
-    direction: 'debit',
-    type: details.type || 'order_payment',
-    amountMinor,
-    amount: amountMinor / 100,
-    currency: 'INR',
-    orderId: details.orderId || null,
-    idempotencyKey: details.idempotencyKey,
-    description: details.description || details.title || 'Wallet payment',
-    createdAt: FieldValue.serverTimestamp(),
-  });
+  WalletsRepository.saveEntry(
+    uid,
+    {
+      id: entryId,
+      direction: 'debit',
+      type: details.type || 'order_payment',
+      amountMinor,
+      amount: amountMinor / 100,
+      currency: 'INR',
+      orderId: details.orderId || null,
+      idempotencyKey: details.idempotencyKey,
+      description: details.description || details.title || 'Wallet payment',
+    },
+    t
+  );
 
   return { newBalMinor, newBalance: newBalMinor / 100 };
 }
@@ -154,36 +145,13 @@ export const getWallet = secureCallable(
   z.object({}).strict(),
   async (_data, context) => {
     const uid = context.auth.uid;
-    const walletRef = db.collection('wallets').doc(uid);
-    const walletSnap = await walletRef.get();
-
-    if (!walletSnap.exists) {
-      // Auto-initialize balance projection per Greenfield specification
-      const initialWallet = {
-        userId: uid,
-        balanceMinor: 0,
-        currency: 'INR',
-        updatedAt: FieldValue.serverTimestamp(),
-      };
-      await walletRef.set(initialWallet);
-      return {
-        userId: uid,
-        balanceMinor: 0,
-        balance: 0,
-        currency: 'INR',
-      };
-    }
-
-    const data = walletSnap.data() || {};
-    const balanceMinor = typeof data.balanceMinor === 'number'
-      ? data.balanceMinor
-      : Math.round((data.balance || 0) * 100);
+    const { balanceMinor, currency } = await WalletsRepository.ensureWallet(uid);
 
     return {
       userId: uid,
       balanceMinor,
       balance: balanceMinor / 100,
-      currency: data.currency || 'INR',
+      currency,
     };
   }
 );

@@ -1,8 +1,8 @@
-﻿import { onTaskDispatched } from 'firebase-functions/v2/tasks';
+import { onTaskDispatched } from 'firebase-functions/v2/tasks';
 import { onRequest } from 'firebase-functions/v2/https';
 import { FieldValue } from 'firebase-admin/firestore';
 import { getFunctions } from 'firebase-admin/functions';
-import { db } from '../../core/firebase';
+import { db } from '../../common/firebase';
 import { secureCallable, assertAdmin } from '../../common/auth';
 import { log } from '../../common/logging';
 import {

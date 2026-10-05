@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { db } from '../../core/firebase';
-import { secureCallable } from '../../core/callable';
-import { throwError } from '../../core/logger';
+import { secureCallable } from '../../common/auth';
+import { throwError } from '../../common/errors';
+import { OrdersRepository } from '../../repositories';
 
 // ----------------------------------------------------------------------------
 // ORDER QUERIES (Greenfield Sec. 1 Line 91 & Sec. 4 Lines 241-253)
@@ -18,36 +18,18 @@ export const listMyOrders = secureCallable(
   listMyOrdersSchema,
   async (data, context) => {
     const uid = context.auth.uid;
-    let query: FirebaseFirestore.Query = db
-      .collection('orders')
-      .where('userId', '==', uid)
-      .orderBy('createdAt', 'desc');
+    const { docs, nextCursor } = await OrdersRepository.listUserOrders({
+      userId: uid,
+      category: data.category,
+      status: data.status,
+      cursor: data.cursor,
+      limit: data.limit,
+    });
 
-    if (data.category) {
-      const normCat = data.category === 'groceries' ? 'groceries' : data.category;
-      query = query.where('category', '==', normCat);
-    }
-
-    if (data.status) {
-      query = query.where('status', '==', data.status);
-    }
-
-    if (data.cursor) {
-      const cursorDoc = await db.collection('orders').doc(data.cursor).get();
-      if (cursorDoc.exists) {
-        query = query.startAfter(cursorDoc);
-      }
-    }
-
-    query = query.limit(data.limit);
-
-    const snap = await query.get();
-    const orders = snap.docs.map((d) => ({
+    const orders = docs.map((d) => ({
       id: d.id,
       ...d.data(),
     }));
-
-    const nextCursor = snap.docs.length === data.limit ? snap.docs[snap.docs.length - 1].id : null;
 
     return {
       orders,
@@ -64,8 +46,7 @@ export const getMyOrder = secureCallable(
   getMyOrderSchema,
   async (data, context) => {
     const uid = context.auth.uid;
-    const orderRef = db.collection('orders').doc(data.orderId);
-    const orderSnap = await orderRef.get();
+    const { orderSnap, items, events, fulfillments } = await OrdersRepository.getOrderWithSubcollections(data.orderId);
 
     if (!orderSnap.exists) {
       throwError('not-found', 'Order not found.');
@@ -75,16 +56,6 @@ export const getMyOrder = secureCallable(
     if (orderData.userId !== uid) {
       throwError('permission-denied', 'You do not have access to this order.');
     }
-
-    const [itemsSnap, eventsSnap, fulfillmentsSnap] = await Promise.all([
-      orderRef.collection('items').orderBy('createdAt', 'asc').get(),
-      orderRef.collection('events').orderBy('createdAt', 'asc').get(),
-      orderRef.collection('fulfillments').get(),
-    ]);
-
-    const items = itemsSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
-    const events = eventsSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
-    const fulfillments = fulfillmentsSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
 
     return {
       order: {

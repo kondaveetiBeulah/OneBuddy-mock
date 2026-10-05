@@ -1,13 +1,15 @@
 import { z } from 'zod';
 import { FieldValue } from 'firebase-admin/firestore';
-import { db } from '../../core/firebase';
-import { secureCallable } from '../../core/callable';
-import { log, throwError } from '../../core/logger';
+import { db } from '../../common/firebase';
+import { secureCallable } from '../../common/auth';
+import { log } from '../../common/logging';
+import { throwError } from '../../common/errors';
 import {
   createRazorpayOrder,
   verifyRazorpaySignature,
   createStripePaymentIntent,
   ProviderResult,
+  razorpayKeySecret,
 } from '../../providers';
 import { applyWalletCredit } from './ledger';
 
@@ -255,7 +257,7 @@ export const confirmTopUp = secureCallable(
 
     // Verify signature if Razorpay
     if (pData.provider === 'razorpay') {
-      const secret = process.env.RAZORPAY_KEY_SECRET;
+      const secret = razorpayKeySecret.value() || process.env.RAZORPAY_KEY_SECRET;
       if (secret && data.providerSignature && data.providerPaymentId) {
         const orderId = data.razorpayOrderId || pData.providerPaymentId;
         const payload = `${orderId}|${data.providerPaymentId}`;

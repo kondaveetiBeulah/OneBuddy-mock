@@ -1,8 +1,10 @@
 import { z } from 'zod';
 import { Timestamp } from 'firebase-admin/firestore';
-import { db } from '../../core/firebase';
-import { secureCallable } from '../../core/callable';
-import { log, throwError } from '../../core/logger';
+import { db } from '../../common/firebase';
+import { secureCallable } from '../../common/auth';
+import { log } from '../../common/logging';
+import { throwError } from '../../common/errors';
+import { OrdersRepository, WalletsRepository } from '../../repositories';
 
 // ----------------------------------------------------------------------------
 // ORDER LIFECYCLE STATE MACHINE (Greenfield Sec. 4 Lines 244-253)
@@ -92,7 +94,7 @@ export async function performOrderCancellation(
   }
 
   // 1. Update Canonical Order Status
-  t.update(orderRef, {
+  OrdersRepository.updateOrder(t, orderRef, {
     status: 'cancelled',
     cancelledAt: now,
     cancellationReason: reason || 'Cancelled by customer',
@@ -100,22 +102,24 @@ export async function performOrderCancellation(
   });
 
   // 2. Append Order Lifecycle Event
-  const eventRef = orderRef.collection('events').doc();
-  t.set(eventRef, {
-    eventId: eventRef.id,
-    fromStatus: currentStatus,
-    toStatus: 'cancelled',
-    actorType: 'user',
-    actorId: uid,
-    note: reason || 'Cancelled by customer',
-    createdAt: now,
-  });
+  OrdersRepository.addOrderEvent(
+    t,
+    orderRef,
+    {
+      fromStatus: currentStatus,
+      toStatus: 'cancelled',
+      actorType: 'user',
+      actorId: uid,
+      note: reason || 'Cancelled by customer',
+      createdAt: now,
+    },
+    now
+  );
 
   // 3. Refund to Wallet if paid via wallet
   if (orderData?.paymentMethod === 'wallet' && orderData?.paymentStatus === 'paid') {
     const refundAmountMinor = orderData.totalMinor || Math.round((orderData.total || 0) * 100);
-    const walletRef = db.collection('wallets').doc(uid);
-    const walletSnap = await t.get(walletRef);
+    const walletSnap = await WalletsRepository.getWallet(uid, t);
 
     if (walletSnap.exists) {
       const walletData = walletSnap.data();
@@ -124,30 +128,32 @@ export async function performOrderCancellation(
         : Math.round((walletData?.balance || 0) * 100);
 
       const newBalMinor = currentBalMinor + refundAmountMinor;
-      t.update(walletRef, {
-        balanceMinor: newBalMinor,
-        updatedAt: now,
-      });
+      WalletsRepository.updateBalance(uid, newBalMinor, t);
 
-      const refundEntryRef = walletRef.collection('entries').doc();
-      t.set(refundEntryRef, {
-        id: refundEntryRef.id,
-        amount: refundAmountMinor / 100,
-        amountMinor: refundAmountMinor,
-        direction: 'credit',
-        type: 'refund',
-        orderId,
-        title: `Refund for Order #${orderId.slice(-6)}`,
-        description: 'Order cancelled. Refunded to wallet.',
-        createdAt: now,
-      });
+      const refundEntryRef = WalletsRepository.getEntryRef(uid);
+      WalletsRepository.saveEntry(
+        uid,
+        {
+          id: refundEntryRef.id,
+          amount: refundAmountMinor / 100,
+          amountMinor: refundAmountMinor,
+          direction: 'credit',
+          type: 'refund',
+          orderId,
+          currency: 'INR',
+          title: `Refund for Order #${orderId.slice(-6)}`,
+          description: 'Order cancelled. Refunded to wallet.',
+          createdAt: now,
+        },
+        t
+      );
     }
   }
 
   // 4. Update User Screen Projection
   const userOrderSnap = await t.get(userOrderRef);
   if (userOrderSnap.exists) {
-    t.update(userOrderRef, {
+    OrdersRepository.updateUserOrderProjection(t, uid, orderId, {
       status: 'Cancelled',
       statusKind: 'done',
       group: 'Completed',
@@ -160,22 +166,24 @@ export async function performOrderCancellation(
   const wasRefunded = orderData?.paymentMethod === 'wallet' && orderData?.paymentStatus === 'paid';
   const refundAmountMinor = wasRefunded ? (orderData.totalMinor || Math.round((orderData.total || 0) * 100)) : null;
 
-  const outboxRef = db.collection('outbox').doc();
-  t.set(outboxRef, {
-    eventId: outboxRef.id,
-    eventType: 'order.cancelled',
-    aggregateType: 'order',
-    aggregateId: orderId,
-    payload: {
-      userId: uid,
-      reason: reason || 'Cancelled by customer',
-      refunded: wasRefunded,
-      refundAmountMinor: refundAmountMinor,
+  OrdersRepository.createOutboxEvent(
+    t,
+    {
+      eventType: 'order.cancelled',
+      aggregateType: 'order',
+      aggregateId: orderId,
+      payload: {
+        userId: uid,
+        reason: reason || 'Cancelled by customer',
+        refunded: wasRefunded,
+        refundAmountMinor: refundAmountMinor,
+      },
+      createdAt: now,
+      availableAt: now,
+      attempts: 0,
     },
-    createdAt: now,
-    availableAt: now,
-    attempts: 0,
-  });
+    now
+  );
 }
 
 export const cancelOrder = secureCallable(
@@ -183,8 +191,8 @@ export const cancelOrder = secureCallable(
   async (data, context) => {
     const uid = context.auth.uid;
     const now = Timestamp.now();
-    const orderRef = db.collection('orders').doc(data.orderId);
-    const userOrderRef = db.collection('users').doc(uid).collection('orders').doc(data.orderId);
+    const orderRef = OrdersRepository.getOrderRef(data.orderId);
+    const userOrderRef = OrdersRepository.getUserOrderProjectionRef(uid, data.orderId);
 
     log.info(`[cancelOrder] User ${uid} requesting cancellation for order ${data.orderId}`);
 
@@ -220,7 +228,7 @@ export const updateOrderStatus = secureCallable(
     const uid = context.auth.uid;
     const isAdmin = context.auth.token?.admin === true;
     const now = Timestamp.now();
-    const orderRef = db.collection('orders').doc(data.orderId);
+    const orderRef = OrdersRepository.getOrderRef(data.orderId);
 
     return await db.runTransaction(async (t) => {
       const snap = await t.get(orderRef);
@@ -242,32 +250,34 @@ export const updateOrderStatus = secureCallable(
       }
 
       // Update Canonical Order
-      t.update(orderRef, {
+      OrdersRepository.updateOrder(t, orderRef, {
         status: targetStatus,
         updatedAt: now,
         ...(targetStatus === 'completed' || targetStatus === 'delivered' ? { completedAt: now } : {}),
       });
 
       // Append Order Event
-      const eventRef = orderRef.collection('events').doc();
-      t.set(eventRef, {
-        eventId: eventRef.id,
-        fromStatus: currentStatus,
-        toStatus: targetStatus,
-        actorType: isAdmin ? 'admin' : 'system',
-        actorId: uid,
-        note: data.note || `Order status updated to ${targetStatus}`,
-        createdAt: now,
-      });
+      OrdersRepository.addOrderEvent(
+        t,
+        orderRef,
+        {
+          fromStatus: currentStatus,
+          toStatus: targetStatus,
+          actorType: isAdmin ? 'admin' : 'system',
+          actorId: uid,
+          note: data.note || `Order status updated to ${targetStatus}`,
+          createdAt: now,
+        },
+        now
+      );
 
       // Update User Projection
       const customerUid = orderData.userId;
       if (customerUid) {
-        const userOrderRef = db.collection('users').doc(customerUid).collection('orders').doc(data.orderId);
-        const userSnap = await t.get(userOrderRef);
+        const userSnap = await OrdersRepository.getUserOrderProjection(customerUid, data.orderId, t);
         if (userSnap.exists) {
           const isDone = ['delivered', 'completed', 'cancelled', 'failed'].includes(targetStatus);
-          t.update(userOrderRef, {
+          OrdersRepository.updateUserOrderProjection(t, customerUid, data.orderId, {
             status: targetStatus.replace('_', ' ').toUpperCase(),
             statusKind: isDone ? 'done' : 'ongoing',
             group: isDone ? 'Completed' : 'Ongoing',
@@ -277,22 +287,24 @@ export const updateOrderStatus = secureCallable(
       }
 
       // Enqueue Outbox Event
-      const outboxRef = db.collection('outbox').doc();
-      t.set(outboxRef, {
-        eventId: outboxRef.id,
-        eventType: 'order.status_updated',
-        aggregateType: 'order',
-        aggregateId: data.orderId,
-        payload: {
-          orderId: data.orderId,
-          userId: customerUid,
-          fromStatus: currentStatus,
-          toStatus: targetStatus,
+      OrdersRepository.createOutboxEvent(
+        t,
+        {
+          eventType: 'order.status_updated',
+          aggregateType: 'order',
+          aggregateId: data.orderId,
+          payload: {
+            orderId: data.orderId,
+            userId: customerUid,
+            fromStatus: currentStatus,
+            toStatus: targetStatus,
+          },
+          createdAt: now,
+          availableAt: now,
+          attempts: 0,
         },
-        createdAt: now,
-        availableAt: now,
-        attempts: 0,
-      });
+        now
+      );
 
       return {
         success: true,
@@ -324,8 +336,7 @@ export const runOrderAction = secureCallable(
       );
     }
 
-    const userOrderRef = db.collection('users').doc(uid).collection('orders').doc(data.orderId);
-    const userOrderSnap = await userOrderRef.get();
+    const userOrderSnap = await OrdersRepository.getUserOrderProjection(uid, data.orderId);
 
     if (!userOrderSnap.exists) {
       throwError('not-found', 'Order not found in user profile.');

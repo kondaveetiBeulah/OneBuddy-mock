@@ -1,6 +1,6 @@
 import { FieldValue } from 'firebase-admin/firestore';
-import { db, admin } from '../core/firebase';
-import { log } from '../core/logger';
+import { db, admin } from '../common/firebase';
+import { log } from '../common/logging';
 
 export interface PushNotificationPayload {
   title: string;

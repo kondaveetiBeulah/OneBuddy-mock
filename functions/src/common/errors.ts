@@ -29,8 +29,8 @@ export class AppError extends Error {
     public readonly details?: unknown
   ) {
     super(message);
-    this.name = 'AppError';
-    Object.setPrototypeOf(this, AppError.prototype);
+    this.name = new.target.name;
+    Object.setPrototypeOf(this, new.target.prototype);
   }
 
   toHttpsError(): HttpsError {

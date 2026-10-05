@@ -1,5 +1,5 @@
-﻿import { FieldValue, GeoPoint } from 'firebase-admin/firestore';
-import { db, getRtdb } from '../../core/firebase';
+import { FieldValue, GeoPoint } from 'firebase-admin/firestore';
+import { db, getRtdb } from '../../common/firebase';
 
 
 import { secureCallable, publicCallable } from '../../common/auth';
@@ -137,7 +137,7 @@ export const requestRide = secureCallable(requestRideSchema, async (data, contex
           platformFeePaise: fareEstimate.platformFeePaise,
           totalFarePaise,
           currency: 'INR',
-          formattedTotal: `â‚¹${Math.round(totalFarePaise / 100)}`,
+          formattedTotal: `₹${Math.round(totalFarePaise / 100)}`,
         },
       };
 
@@ -202,11 +202,11 @@ export const requestRide = secureCallable(requestRideSchema, async (data, contex
         id: orderId,
         rideId: docId,
         category: 'rides',
-        icon: 'ðŸš—',
+        icon: '🚗',
         title: `${data.vehicleType.toUpperCase()} Ride`,
         status: 'Searching Driver',
         statusKind: 'ongoing',
-        subtitle: `${data.pickup.label} â†’ ${data.destination.label}`,
+        subtitle: `${data.pickup.label} → ${data.destination.label}`,
         actions: ['Track', 'Cancel'],
         group: 'Ongoing',
         totalMinor: totalFarePaise,

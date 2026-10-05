@@ -4,10 +4,19 @@
     "lint": "eslint --ext .js,.ts .",
     "build": "tsc",
     "build:watch": "tsc --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "serve": "npm run build && firebase emulators:start --only functions",
     "shell": "npm run build && firebase functions:shell",
     "start": "npm run shell",
     "deploy": "firebase deploy --only functions",
+    "deploy:auth": "npm run build && firebase deploy --only functions:sendMobileOtp,functions:verifyMobileOtp,functions:deleteUserAccount",
+    "deploy:users": "npm run build && firebase deploy --only functions:ensureProfile,functions:getMe,functions:updateProfile,functions:requestAccountDeletion,functions:requestDataExport,functions:getPreferences,functions:updateSettings,functions:updateServicePreferences,functions:updateNotificationPreferences,functions:createAddress,functions:updateAddress,functions:replaceAddresses,functions:deleteAddress,functions:setDefaultAddress",
+    "deploy:payments": "npm run build && firebase deploy --only functions:createPaymentIntent,functions:paymentWebhook,functions:savePaymentMethod,functions:addPaymentMethod,functions:removePaymentMethod,functions:listPaymentMethods,functions:refundPayment,functions:listPaymentRefunds,functions:addMoney,functions:createTopUp,functions:confirmTopUp,functions:chargeWallet,functions:getWallet,functions:listWalletTransactions",
+    "deploy:commerce": "npm run build && firebase deploy --only functions:placeOrder,functions:cancelOrder,functions:updateOrderStatus,functions:listMyOrders,functions:getMyOrder,functions:reorder,functions:rescheduleOrder,functions:runOrderAction,functions:getCart,functions:setCartItem,functions:removeCartItem,functions:clearCart,functions:quoteCheckout,functions:listFoodBanners,functions:listFoodCategories,functions:listRestaurants,functions:getRestaurantDetails,functions:getRestaurantMenu,functions:listGroceryCategories,functions:listGroceryOffers,functions:listGroceryProducts,functions:getGroceryProduct,functions:listServices,functions:getServiceDetails,functions:globalSearch",
+    "deploy:services": "npm run build && firebase deploy --only functions:listHospitals,functions:getHospitalDetails,functions:bookAppointment,functions:listMyAppointments,functions:cancelAppointment,functions:uploadMedicalDocument,functions:listMyMedicalDocuments,functions:deleteMedicalDocument,functions:uploadPrescription,functions:listMyPrescriptions,functions:placePharmacyOrder,functions:listMyPharmacyOrders,functions:getPharmacyOrderDetails,functions:requestRide,functions:cancelRide,functions:getRideStatus,functions:getRideTracking,functions:estimateRidePrice,functions:bookService,functions:cancelBooking,functions:listMyBookings,functions:getBookingDetails,functions:submitSupportTicket,functions:listMySupportTickets,functions:submitOrderFeedback",
+    "deploy:jobs": "npm run build && firebase deploy --only functions:outboxWorker,functions:emailDispatcher,functions:catalogSearchSync",
+    "deploy:firestore": "firebase deploy --only firestore:rules,firestore:indexes",
     "logs": "firebase functions:log"
   },
   "engines": {
@@ -26,7 +35,8 @@
     "eslint-config-google": "^0.14.0",
     "eslint-plugin-import": "^2.25.4",
     "firebase-functions-test": "^3.4.1",
-    "typescript": "^6.0.0"
+    "typescript": "^6.0.0",
+    "vitest": "^5.0.3"
   },
   "private": true
 }

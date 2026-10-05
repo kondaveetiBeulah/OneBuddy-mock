@@ -1,7 +1,7 @@
-﻿import { onDocumentWritten } from 'firebase-functions/v2/firestore';
+import { onDocumentWritten } from 'firebase-functions/v2/firestore';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { z } from 'zod';
-import { db, getRtdb } from '../../core/firebase';
+import { db, getRtdb } from '../../common/firebase';
 import { secureCallable } from '../../common/auth';
 import { NotFoundError, PermissionDeniedError, PreconditionFailedError } from '../../common/errors';
 import { log } from '../../common/logging';

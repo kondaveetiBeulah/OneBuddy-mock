@@ -1,8 +1,10 @@
 import { z } from 'zod';
 import { Timestamp } from 'firebase-admin/firestore';
-import { db } from '../../core/firebase';
-import { secureCallable } from '../../core/callable';
-import { log, throwError } from '../../core/logger';
+import { db } from '../../common/firebase';
+import { secureCallable } from '../../common/auth';
+import { log } from '../../common/logging';
+import { throwError } from '../../common/errors';
+import { OrdersRepository, WalletsRepository, CartsRepository } from '../../repositories';
 
 // ----------------------------------------------------------------------------
 // REQUEST SCHEMAS (Greenfield Sec. 4 Lines 242-248)
@@ -59,8 +61,8 @@ export const placeOrder = secureCallable(
   async (data, context) => {
     const uid = context.auth.uid;
     const now = Timestamp.now();
-    const orderId = data.id || db.collection('orders').doc().id;
-    const orderRef = db.collection('orders').doc(orderId);
+    const orderRef = OrdersRepository.getOrderRef(data.id);
+    const orderId = orderRef.id;
 
     // Normalize category
     const rawCategory = data.category || data.type || 'groceries';
@@ -187,8 +189,7 @@ export const placeOrder = secureCallable(
       let paymentStatus = (data.paymentMethod === 'cash_on_delivery') ? 'pending' : 'paid';
 
       if (data.paymentMethod === 'wallet') {
-        const walletRef = db.collection('wallets').doc(uid);
-        const walletSnap = await t.get(walletRef);
+        const walletSnap = await WalletsRepository.getWallet(uid, t);
         const wData = walletSnap.exists ? walletSnap.data() || {} : {};
 
         const currentBalMinor = typeof wData.balanceMinor === 'number'
@@ -204,33 +205,33 @@ export const placeOrder = secureCallable(
 
         const newBalMinor = currentBalMinor - totalMinor;
 
-        // Update Wallet Balance
-        t.update(walletRef, {
-          balanceMinor: newBalMinor,
-          updatedAt: now,
-        });
+        // Update Wallet Balance via Repository
+        WalletsRepository.updateBalance(uid, newBalMinor, t);
 
-        // Write Immutable Ledger Entry per Greenfield Sec. 4 Line 284
-        const entryRef = walletRef.collection('entries').doc(`entry_order_${orderId}`);
-        t.set(entryRef, {
-          id: entryRef.id,
-          direction: 'debit',
-          type: 'order_payment',
-          amount: totalMinor / 100,
-          amountMinor: totalMinor,
-          currency: 'INR',
-          orderId: orderId,
-          title: `${category === 'food' ? 'Food' : 'Grocery'} Order #${orderId.slice(-6)}`,
-          description: `Payment for order at ${merchantName}`,
-          idempotencyKey: `order_${orderId}`,
-          createdAt: now,
-        });
+        // Write Immutable Ledger Entry via Repository per Greenfield Sec. 4 Line 284
+        WalletsRepository.saveEntry(
+          uid,
+          {
+            id: `entry_order_${orderId}`,
+            direction: 'debit',
+            type: 'order_payment',
+            amount: totalMinor / 100,
+            amountMinor: totalMinor,
+            currency: 'INR',
+            orderId: orderId,
+            title: `${category === 'food' ? 'Food' : 'Grocery'} Order #${orderId.slice(-6)}`,
+            description: `Payment for order at ${merchantName}`,
+            idempotencyKey: `order_${orderId}`,
+            createdAt: now,
+          },
+          t
+        );
 
         paymentStatus = 'paid';
       }
 
-      // 6. Write Canonical Order Document (orders/{orderId})
-      t.set(orderRef, {
+      // 6. Write Canonical Order Document (orders/{orderId}) via Repository
+      OrdersRepository.createOrder(t, orderRef, {
         id: orderId,
         userId: uid,
         category,
@@ -256,46 +257,45 @@ export const placeOrder = secureCallable(
         updatedAt: now,
       });
 
-      // 7. Write Subcollection: orders/{orderId}/items/{itemId} (Immutable Snapshots)
-      for (let i = 0; i < verifiedItems.length; i++) {
-        const item = verifiedItems[i];
-        const itemDocRef = orderRef.collection('items').doc(`item_${i + 1}`);
-        t.set(itemDocRef, {
-          ...item,
+      // 7. Write Subcollection: orders/{orderId}/items/{itemId} (Immutable Snapshots) via Repository
+      OrdersRepository.addOrderItems(t, orderRef, verifiedItems, now);
+
+      // 8. Write Subcollection: orders/{orderId}/events/{eventId} (Lifecycle Trail) via Repository
+      OrdersRepository.addOrderEvent(
+        t,
+        orderRef,
+        {
+          fromStatus: null,
+          toStatus: 'placed',
+          actorType: 'user',
+          actorId: uid,
+          note: 'Order successfully placed by customer',
           createdAt: now,
-        });
-      }
+        },
+        now
+      );
 
-      // 8. Write Subcollection: orders/{orderId}/events/{eventId} (Lifecycle Trail)
-      const initialEventRef = orderRef.collection('events').doc();
-      t.set(initialEventRef, {
-        eventId: initialEventRef.id,
-        fromStatus: null,
-        toStatus: 'placed',
-        actorType: 'user',
-        actorId: uid,
-        note: 'Order successfully placed by customer',
-        createdAt: now,
-      });
+      // 8b. Write Subcollection: orders/{orderId}/fulfillments/{fulfillmentId} (Greenfield Sec. 4 Line 251) via Repository
+      OrdersRepository.addOrderFulfillment(
+        t,
+        orderRef,
+        {
+          fulfillmentId: 'fulfillment_1',
+          merchantId: data.merchantId || null,
+          status: 'accepted',
+          deliveryAddressSnapshot: data.deliveryAddress,
+          createdAt: now,
+          updatedAt: now,
+        },
+        now
+      );
 
-      // 8b. Write Subcollection: orders/{orderId}/fulfillments/{fulfillmentId} (Greenfield Sec. 4 Line 251)
-      const fulfillmentRef = orderRef.collection('fulfillments').doc('fulfillment_1');
-      t.set(fulfillmentRef, {
-        fulfillmentId: 'fulfillment_1',
-        merchantId: data.merchantId || null,
-        status: 'accepted',
-        deliveryAddressSnapshot: data.deliveryAddress,
-        createdAt: now,
-        updatedAt: now,
-      });
-
-      // 9. Write User Screen Projection: users/{uid}/orders/{orderId}
+      // 9. Write User Screen Projection: users/{uid}/orders/{orderId} via Repository
       // Matches the exact OrderCard interface expected by OrdersAndBookings screen!
-      const userOrderProjectionRef = db.collection('users').doc(uid).collection('orders').doc(orderId);
       const totalDisplay = (totalMinor / 100).toFixed(2);
       const itemsCount = verifiedItems.reduce((acc, it) => acc + it.quantity, 0);
 
-      t.set(userOrderProjectionRef, {
+      OrdersRepository.setUserOrderProjection(t, uid, orderId, {
         id: orderId,
         category: (category === 'groceries') ? 'groceries' : 'food',
         icon: (category === 'groceries') ? '🛒' : '🍔',
@@ -309,24 +309,26 @@ export const placeOrder = secureCallable(
         updatedAt: now,
       });
 
-      // 10. Write Transactional Outbox Job: outbox/{eventId}
-      const outboxRef = db.collection('outbox').doc();
-      t.set(outboxRef, {
-        eventId: outboxRef.id,
-        eventType: 'order.placed',
-        aggregateType: 'order',
-        aggregateId: orderId,
-        payload: {
-          userId: uid,
-          category,
-          merchantId: data.merchantId || null,
-          totalMinor,
-          itemCount: verifiedItems.length,
+      // 10. Write Transactional Outbox Job: outbox/{eventId} via Repository
+      OrdersRepository.createOutboxEvent(
+        t,
+        {
+          eventType: 'order.placed',
+          aggregateType: 'order',
+          aggregateId: orderId,
+          payload: {
+            userId: uid,
+            category,
+            merchantId: data.merchantId || null,
+            totalMinor,
+            itemCount: verifiedItems.length,
+          },
+          createdAt: now,
+          availableAt: now,
+          attempts: 0,
         },
-        createdAt: now,
-        availableAt: now,
-        attempts: 0,
-      });
+        now
+      );
 
       return {
         success: true,
@@ -340,24 +342,10 @@ export const placeOrder = secureCallable(
 
     log.info(`[placeOrder] Successfully placed order ${orderId} for user ${uid}`);
 
-    // Clean up server cart for this category after successful order placement
+    // Clean up server cart for this category after successful order placement via Repository
     try {
       const cartId = `${uid}_${category === 'food' ? 'food' : 'grocery'}`;
-      const cartRef = db.collection('carts').doc(cartId);
-      const itemsSnap = await cartRef.collection('items').get();
-      if (!itemsSnap.empty) {
-        const cleanupBatch = db.batch();
-        itemsSnap.docs.forEach((d) => cleanupBatch.delete(d.ref));
-        cleanupBatch.set(cartRef, {
-          userId: uid,
-          service: category === 'food' ? 'food' : 'grocery',
-          merchantId: null,
-          merchantSnapshot: null,
-          itemCount: 0,
-          updatedAt: now,
-        }, { merge: true });
-        await cleanupBatch.commit();
-      }
+      await CartsRepository.clearCart(cartId, uid, category === 'food' ? 'food' : 'grocery');
     } catch (cleanupErr) {
       log.warn(`[placeOrder] Post-order cart cleanup note:`, cleanupErr);
     }
