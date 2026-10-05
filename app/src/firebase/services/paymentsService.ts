@@ -82,16 +82,260 @@ export async function addMoney(amount: number): Promise<{ balance: number }> {
   return res.data;
 }
 
-/** Same reasoning as addMoney: a card/UPI "charge" is simulated server-side
- *  so the balance and the transaction log can never drift apart. */
+/**
+ * Greenfield Architecture Note: Customer wallet debits are executed atomically
+ * inside the server-authoritative `placeOrder` command transaction.
+ * Standalone `chargeWallet` calls are restricted to administrative adjustments
+ * or verified order checkout execution.
+ */
+export interface ChargeWalletParams {
+  amount?: number;
+  amountMinor?: number;
+  title?: string;
+  description?: string;
+  orderId?: string;
+  userId?: string;
+  idempotencyKey?: string;
+}
+
 export async function chargeWallet(
-  amount: number,
-  title: string
-): Promise<{ balance: number }> {
-  const call = httpsCallable<{ amount: number; title: string }, { balance: number }>(
+  amountOrParams: number | ChargeWalletParams,
+  title?: string
+): Promise<{ balance: number; balanceMinor?: number }> {
+  const payload: ChargeWalletParams =
+    typeof amountOrParams === 'number'
+      ? { amount: amountOrParams, title: title || 'Wallet Debit' }
+      : amountOrParams;
+
+  const call = httpsCallable<ChargeWalletParams, { balance: number; balanceMinor?: number }>(
     functions,
     'chargeWallet'
   );
-  const res = await call({ amount, title });
+  const res = await call(payload);
   return res.data;
 }
+
+export interface CreatePaymentIntentParams {
+  amountMinor?: number;
+  amount?: number;
+  currency?: 'INR';
+  provider?: 'razorpay' | 'stripe';
+  orderId?: string;
+  idempotencyKey: string;
+  description?: string;
+  metadata?: Record<string, string | number | boolean>;
+}
+
+export interface PaymentIntentResult {
+  paymentId: string;
+  provider: 'razorpay' | 'stripe';
+  providerOrderId: string | null;
+  clientSecret: string | null;
+  amountMinor: number;
+  amount: number;
+  currency: string;
+  status: 'pending' | 'authorized' | 'captured' | 'failed' | 'refunded' | 'partially_refunded' | 'voided';
+  replayed: boolean;
+}
+
+/**
+ * Creates a server-authoritative payment intent with Razorpay or Stripe
+ * per Greenfield Specification. Captured status is never set from the client.
+ */
+export async function createPaymentIntent(
+  params: CreatePaymentIntentParams
+): Promise<PaymentIntentResult> {
+  const call = httpsCallable<CreatePaymentIntentParams, PaymentIntentResult>(
+    functions,
+    'createPaymentIntent'
+  );
+  const res = await call(params);
+  return res.data;
+}
+
+export interface ListPaymentMethodsOptions {
+  type?: 'card' | 'upi';
+  limit?: number;
+  cursor?: string;
+  includeDeleted?: boolean;
+}
+
+export interface ListPaymentMethodsResult {
+  paymentMethods: Array<SavedCard | UpiHandle>;
+  nextCursor: string | null;
+}
+
+export async function listUserPaymentMethods(
+  options?: ListPaymentMethodsOptions
+): Promise<ListPaymentMethodsResult> {
+  const call = httpsCallable<ListPaymentMethodsOptions, ListPaymentMethodsResult>(
+    functions,
+    'listPaymentMethods'
+  );
+  const res = await call(options || {});
+  return res.data;
+}
+
+export interface WalletData {
+  userId: string;
+  balanceMinor: number;
+  balance: number;
+  currency: string;
+}
+
+export async function fetchWallet(): Promise<WalletData> {
+  const call = httpsCallable<Record<string, never>, WalletData>(functions, 'getWallet');
+  const res = await call({});
+  return res.data;
+}
+
+export interface CreateTopUpParams {
+  amountMinor?: number;
+  amount?: number;
+  currency?: 'INR';
+  provider?: 'razorpay' | 'stripe';
+  idempotencyKey?: string;
+  autoConfirmInDev?: boolean;
+}
+
+export interface CreateTopUpResult {
+  paymentId: string;
+  provider: 'razorpay' | 'stripe';
+  providerOrderId: string | null;
+  clientSecret: string | null;
+  amountMinor: number;
+  amount: number;
+  currency: string;
+  status: string;
+  replayed: boolean;
+  balanceMinor?: number;
+  balance?: number;
+}
+
+export interface ConfirmTopUpParams {
+  paymentId: string;
+  providerPaymentId?: string;
+  providerSignature?: string;
+  razorpayOrderId?: string;
+}
+
+export interface ConfirmTopUpResult {
+  success: boolean;
+  paymentId: string;
+  status: string;
+  balanceMinor: number;
+  balance: number;
+  replayed: boolean;
+}
+
+export async function createTopUp(
+  paramsOrAmount: number | CreateTopUpParams,
+  idempotencyKey?: string
+): Promise<CreateTopUpResult> {
+  const payload: CreateTopUpParams =
+    typeof paramsOrAmount === 'number'
+      ? { amount: paramsOrAmount, idempotencyKey, autoConfirmInDev: true }
+      : paramsOrAmount;
+
+  const call = httpsCallable<CreateTopUpParams, CreateTopUpResult>(
+    functions,
+    'createTopUp'
+  );
+  const res = await call(payload);
+  return res.data;
+}
+
+export async function confirmTopUp(
+  params: ConfirmTopUpParams
+): Promise<ConfirmTopUpResult> {
+  const call = httpsCallable<ConfirmTopUpParams, ConfirmTopUpResult>(
+    functions,
+    'confirmTopUp'
+  );
+  const res = await call(params);
+  return res.data;
+}
+
+export interface WalletTransactionEntry {
+  id: string;
+  amountMinor: number;
+  amount: number;
+  currency: string;
+  direction: 'credit' | 'debit';
+  type: 'topup' | 'order_payment' | 'refund' | 'adjustment';
+  orderId?: string | null;
+  paymentId?: string | null;
+  idempotencyKey?: string | null;
+  description: string;
+  createdAt: string | null;
+}
+
+export interface FetchWalletTransactionsOptions {
+  limit?: number;
+  cursor?: string;
+  type?: 'topup' | 'order_payment' | 'refund' | 'adjustment';
+  direction?: 'credit' | 'debit';
+}
+
+export async function fetchWalletTransactions(
+  options?: FetchWalletTransactionsOptions
+): Promise<{ entries: WalletTransactionEntry[]; nextCursor: string | null }> {
+  const call = httpsCallable<
+    FetchWalletTransactionsOptions,
+    { entries: WalletTransactionEntry[]; nextCursor: string | null }
+  >(functions, 'listWalletTransactions');
+  const res = await call(options || {});
+  return res.data;
+}
+
+export interface RefundPaymentParams {
+  paymentId: string;
+  amountMinor?: number;
+  amount?: number;
+  reasonCode:
+    | 'customer_cancellation'
+    | 'item_unavailable'
+    | 'merchant_rejected'
+    | 'duplicate'
+    | 'fraud'
+    | 'other';
+  note?: string;
+  idempotencyKey: string;
+}
+
+export interface RefundPaymentResult {
+  success: boolean;
+  refundId: string;
+  providerRefundId: string;
+  status: 'refunded' | 'partially_refunded';
+  amountMinor: number;
+  amount: number;
+  currency: string;
+  replayed: boolean;
+}
+
+export async function refundPayment(
+  params: RefundPaymentParams
+): Promise<RefundPaymentResult> {
+  const call = httpsCallable<RefundPaymentParams, RefundPaymentResult>(
+    functions,
+    'refundPayment'
+  );
+  const res = await call(params);
+  return res.data;
+}
+
+export async function fetchPaymentRefunds(
+  paymentId: string,
+  options?: { limit?: number; cursor?: string }
+): Promise<{ refunds: any[]; nextCursor: string | null }> {
+  const call = httpsCallable<
+    { paymentId: string; limit?: number; cursor?: string },
+    { refunds: any[]; nextCursor: string | null }
+  >(functions, 'listPaymentRefunds');
+  const res = await call({ paymentId, ...(options || {}) });
+  return res.data;
+}
+
+
+

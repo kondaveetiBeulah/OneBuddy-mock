@@ -65,17 +65,29 @@ export const updateNotificationPreferences = preferences.updateNotificationPrefe
 // ============================================================================
 // ADDRESSES MODULE
 // ============================================================================
+export const createAddress = addresses.createAddress;
+export const updateAddress = addresses.updateAddress;
 export const replaceAddresses = addresses.replaceAddresses;
 export const deleteAddress = addresses.deleteAddress;
 export const setDefaultAddress = addresses.setDefaultAddress;
 
 // ============================================================================
-// PAYMENTS MODULE
+// PAYMENTS & WALLET MODULE
 // ============================================================================
+export const createPaymentIntent = payments.createPaymentIntent;
+export const paymentWebhook = payments.paymentWebhook;
 export const savePaymentMethod = payments.savePaymentMethod;
+export const addPaymentMethod = payments.addPaymentMethod;
 export const removePaymentMethod = payments.removePaymentMethod;
+export const listPaymentMethods = payments.listPaymentMethods;
 export const addMoney = payments.addMoney;
+export const createTopUp = payments.createTopUp;
+export const confirmTopUp = payments.confirmTopUp;
 export const chargeWallet = payments.chargeWallet;
+export const getWallet = payments.getWallet;
+export const listWalletTransactions = payments.listWalletTransactions;
+export const refundPayment = payments.refundPayment;
+export const listPaymentRefunds = payments.listPaymentRefunds;
 
 // ============================================================================
 // COMMERCE & ORDERS MODULE

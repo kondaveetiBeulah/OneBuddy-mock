@@ -210,7 +210,7 @@ export const placeOrder = secureCallable(
           updatedAt: now,
         });
 
-        // Write Immutable Ledger Entry
+        // Write Immutable Ledger Entry per Greenfield Sec. 4 Line 284
         const entryRef = walletRef.collection('entries').doc(`entry_order_${orderId}`);
         t.set(entryRef, {
           id: entryRef.id,
@@ -218,6 +218,8 @@ export const placeOrder = secureCallable(
           type: 'order_payment',
           amount: totalMinor / 100,
           amountMinor: totalMinor,
+          currency: 'INR',
+          orderId: orderId,
           title: `${category === 'food' ? 'Food' : 'Grocery'} Order #${orderId.slice(-6)}`,
           description: `Payment for order at ${merchantName}`,
           idempotencyKey: `order_${orderId}`,

@@ -57,3 +57,30 @@ export async function setDefaultAddress(uid: string, addressId: string): Promise
   const call = httpsCallable<{ addressId: string }, { success: boolean }>(functions, 'setDefaultAddress');
   await call({ addressId });
 }
+
+/** Creates a single address record under users/{uid}/addresses/{addressId} */
+export async function createAddress(
+  uid: string,
+  address: Omit<Address, 'id'> & { id?: string }
+): Promise<string> {
+  const call = httpsCallable<typeof address, { success: boolean; addressId: string }>(
+    functions,
+    'createAddress'
+  );
+  const res = await call(address);
+  return res.data.addressId;
+}
+
+/** Updates a single address record under users/{uid}/addresses/{addressId} */
+export async function updateAddress(
+  uid: string,
+  addressId: string,
+  updates: Partial<Omit<Address, 'id'>>
+): Promise<void> {
+  const call = httpsCallable<
+    { addressId: string; updates: Partial<Omit<Address, 'id'>> },
+    { success: boolean }
+  >(functions, 'updateAddress');
+  await call({ addressId, updates });
+}
+

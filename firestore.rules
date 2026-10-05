@@ -220,7 +220,14 @@ service cloud.firestore {
     match /payments/{paymentId} {
       allow read: if signedIn() && resource.data.userId == request.auth.uid;
       allow write: if false;
+
+      match /refunds/{refundId} {
+        allow read: if signedIn() && get(/databases/$(database)/documents/payments/$(paymentId)).data.userId == request.auth.uid;
+        allow write: if false;
+      }
     }
+    match /paymentProviderEvents/{eventId} { allow read, write: if false; }
+    match /auditEvents/{eventId} { allow read, write: if false; }
     match /wallets/{uid} {
       allow read: if owns(uid);
       allow write: if false;
