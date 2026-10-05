@@ -12,7 +12,8 @@ import * as authFunctions from './modules/auth';
 import * as profile from './modules/users';
 import * as preferences from './modules/preferences';
 import * as addresses from './modules/addresses';
-import * as payments from './payments';
+import * as payments from './modules/payments';
+import * as wallet from './modules/wallet';
 import * as commerceOrders from './modules/orders';
 import * as hospitalFunctions from './modules/hospitals';
 import * as pharmacyOrders from './modules/pharmacy';
@@ -72,7 +73,7 @@ export const deleteAddress = addresses.deleteAddress;
 export const setDefaultAddress = addresses.setDefaultAddress;
 
 // ============================================================================
-// PAYMENTS & WALLET MODULE
+// PAYMENTS MODULE
 // ============================================================================
 export const createPaymentIntent = payments.createPaymentIntent;
 export const paymentWebhook = payments.paymentWebhook;
@@ -80,14 +81,18 @@ export const savePaymentMethod = payments.savePaymentMethod;
 export const addPaymentMethod = payments.addPaymentMethod;
 export const removePaymentMethod = payments.removePaymentMethod;
 export const listPaymentMethods = payments.listPaymentMethods;
-export const addMoney = payments.addMoney;
-export const createTopUp = payments.createTopUp;
-export const confirmTopUp = payments.confirmTopUp;
-export const chargeWallet = payments.chargeWallet;
-export const getWallet = payments.getWallet;
-export const listWalletTransactions = payments.listWalletTransactions;
 export const refundPayment = payments.refundPayment;
 export const listPaymentRefunds = payments.listPaymentRefunds;
+
+// ============================================================================
+// WALLET MODULE
+// ============================================================================
+export const addMoney = wallet.addMoney;
+export const createTopUp = wallet.createTopUp;
+export const confirmTopUp = wallet.confirmTopUp;
+export const chargeWallet = wallet.chargeWallet;
+export const getWallet = wallet.getWallet;
+export const listWalletTransactions = wallet.listWalletTransactions;
 
 // ============================================================================
 // COMMERCE & ORDERS MODULE

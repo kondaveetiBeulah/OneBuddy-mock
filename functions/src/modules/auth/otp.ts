@@ -1,10 +1,9 @@
-﻿import { z } from 'zod';
-import { defineSecret } from 'firebase-functions/params';
+import { z } from 'zod';
 import { db, auth, admin } from '../../core/firebase';
 import { publicCallable, secureCallable } from '../../core/callable';
 import { log, throwError } from '../../core/logger';
 
-const fast2smsApiKey = defineSecret('FAST2SMS_API_KEY');
+import { fast2smsApiKey, sendSmsViaFast2Sms } from '../../providers/fast2sms';
 
 /**
  * In-memory fallback OTP storage to guarantee SMS verification resilience
@@ -17,44 +16,6 @@ interface OtpEntry {
   expiresAt: number;
 }
 const inMemoryOtpStore = new Map<string, OtpEntry>();
-
-/**
- * Dispatch SMS directly from the backend via Fast2SMS gateway.
- * Kept secure on backend/Cloud Functions only.
- */
-async function sendSmsViaFast2Sms(phone: string, message: string): Promise<void> {
-  const apiKey = fast2smsApiKey.value() || process.env.FAST2SMS_API_KEY || '';
-  if (!apiKey) {
-    log.warn('[Fast2SMS] Missing FAST2SMS_API_KEY secret.');
-  }
-
-  const url = `https://www.fast2sms.com/dev/bulkV2?authorization=${encodeURIComponent(
-    apiKey
-  )}&route=q&message=${encodeURIComponent(message)}&language=english&flash=0&numbers=${encodeURIComponent(
-    phone
-  )}&_t=${Date.now()}`;
-
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: {
-      'cache-control': 'no-cache',
-    },
-  });
-
-  const data = (await response.json().catch(() => ({}))) as {
-    return?: boolean;
-    message?: string | string[];
-    status_code?: number;
-  };
-
-  log.info(`[Fast2SMS] API response for ${phone}:`, data);
-
-  if (data && data.return === false) {
-    const msg = Array.isArray(data.message) ? data.message.join(', ') : data.message;
-    log.warn(`[Fast2SMS] Error response: ${msg || 'Rejected'}`);
-    throwError('internal', msg || 'SMS gateway could not send the verification code.');
-  }
-}
 
 /**
  * Clean phone number to 10 digits
