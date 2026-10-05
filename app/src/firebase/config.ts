@@ -33,12 +33,12 @@ function readExtra(key: string): string | undefined {
 }
 
 const firebaseConfig: FirebaseOptions = {
-  apiKey: readExtra('EXPO_PUBLIC_FIREBASE_API_KEY') || 'AIzaSyA7ZZ57wnJQKMURr1fRuM9AKRRpIGUn_gs',
-  authDomain: readExtra('EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN') || 'one-buddy-4e0d7.firebaseapp.com',
-  projectId: readExtra('EXPO_PUBLIC_FIREBASE_PROJECT_ID') || 'one-buddy-4e0d7',
-  storageBucket: readExtra('EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET') || 'one-buddy-4e0d7.firebasestorage.app',
-  messagingSenderId: readExtra('EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID') || '919781335156',
-  appId: readExtra('EXPO_PUBLIC_FIREBASE_APP_ID') || '1:919781335156:android:b834e9a7bd433f60b83121',
+  apiKey: readExtra('EXPO_PUBLIC_FIREBASE_API_KEY') || '',
+  authDomain: readExtra('EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN') || '',
+  projectId: readExtra('EXPO_PUBLIC_FIREBASE_PROJECT_ID') || '',
+  storageBucket: readExtra('EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET') || '',
+  messagingSenderId: readExtra('EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID') || '',
+  appId: readExtra('EXPO_PUBLIC_FIREBASE_APP_ID') || '',
 };
 
 export const FIRESTORE_DATABASE_ID =
@@ -52,7 +52,7 @@ if (!firebaseConfigured && __DEV__) {
   // eslint-disable-next-line no-console
   console.warn(
     '[firebase] Missing EXPO_PUBLIC_FIREBASE_* config — see .env.example. ' +
-      'Cloud sync is disabled until this is set.'
+    'Cloud sync is disabled until this is set.'
   );
 }
 
