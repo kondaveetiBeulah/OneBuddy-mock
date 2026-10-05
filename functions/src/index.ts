@@ -99,6 +99,9 @@ export const listWalletTransactions = wallet.listWalletTransactions;
 // ============================================================================
 export const placeOrder = commerceOrders.placeOrder;
 export const cancelOrder = commerceOrders.cancelOrder;
+export const updateOrderStatus = commerceOrders.updateOrderStatus;
+export const listMyOrders = commerceOrders.listMyOrders;
+export const getMyOrder = commerceOrders.getMyOrder;
 export const reorder = commerceOrders.reorder;
 export const rescheduleOrder = commerceOrders.rescheduleOrder;
 export const runOrderAction = commerceOrders.runOrderAction;
