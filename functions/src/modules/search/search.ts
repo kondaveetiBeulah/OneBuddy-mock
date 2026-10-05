@@ -4,7 +4,9 @@ import { secureCallable } from '../../core/callable';
 import { log } from '../../core/logger';
 
 // ----------------------------------------------------------------------------
-// SEARCH CATALOG (Unified search driver interface)
+// SEARCH CATALOG (Greenfield Sec. 1 Line 50 & Sec. 4 Lines 230-232)
+// Unified search driver leveraging catalogSearchProjections read model buffer
+// with transparent fallback to canonical collections.
 // ----------------------------------------------------------------------------
 
 export interface CatalogSearchHit {
@@ -18,7 +20,7 @@ export interface CatalogSearchHit {
   merchantId?: string;
 }
 
-const searchCatalogSchema = z.object({
+export const searchCatalogSchema = z.object({
   query: z.string().min(1),
   domain: z.enum(['all', 'restaurants', 'grocery', 'menuItems']).default('all'),
   cityKey: z.string().default('hyderabad'),
@@ -27,10 +29,61 @@ const searchCatalogSchema = z.object({
 });
 
 /**
- * Driver function: Firestore search implementation.
- * Easily replaceable with Algolia / Typesense client driver in future.
+ * Driver 1: Query catalogSearchProjections read model buffer
  */
-async function executeFirestoreCatalogSearch(
+async function searchFromProjections(
+  searchTerm: string,
+  domain: 'all' | 'restaurants' | 'grocery' | 'menuItems',
+  cityKey: string,
+  limitCount: number
+): Promise<CatalogSearchHit[]> {
+  try {
+    let qRef: FirebaseFirestore.Query = db
+      .collection('catalogSearchProjections')
+      .where('isAvailable', '==', true);
+
+    if (domain === 'restaurants') {
+      qRef = qRef.where('entityType', '==', 'restaurant');
+    } else if (domain === 'grocery') {
+      qRef = qRef.where('entityType', '==', 'grocery');
+    } else if (domain === 'menuItems') {
+      qRef = qRef.where('entityType', '==', 'menuItem');
+    }
+
+    const snap = await qRef.limit(100).get();
+    if (snap.empty) return [];
+
+    const hits: CatalogSearchHit[] = [];
+    const lowerQuery = searchTerm.toLowerCase();
+
+    snap.docs.forEach((doc) => {
+      const d = doc.data();
+      const searchable = (d.searchableText || `${d.title} ${d.subtitle}`).toLowerCase();
+      if (searchable.includes(lowerQuery)) {
+        hits.push({
+          id: doc.id,
+          type: d.entityType as 'restaurant' | 'grocery' | 'menuItem',
+          title: d.title || 'Item',
+          subtitle: d.subtitle || undefined,
+          priceMinor: d.priceMinor,
+          imageUrl: d.imageUrl,
+          entityId: d.entityId,
+          merchantId: d.merchantId,
+        });
+      }
+    });
+
+    return hits.slice(0, limitCount);
+  } catch (err) {
+    log.warn('[searchCatalog] Projections buffer query note:', err);
+    return [];
+  }
+}
+
+/**
+ * Driver 2: Canonical Firestore collections fallback
+ */
+async function searchFromCanonicalCollections(
   searchTerm: string,
   domain: 'all' | 'restaurants' | 'grocery' | 'menuItems',
   cityKey: string,
@@ -56,7 +109,7 @@ async function executeFirestoreCatalogSearch(
           type: 'restaurant',
           title: data.name || 'Restaurant',
           subtitle: (data.cuisines || []).join(', '),
-          imageUrl: data.imageUrl,
+          imageUrl: data.imageUrl || data.featuredImage,
           entityId: doc.id,
           merchantId: doc.id,
         });
@@ -82,7 +135,7 @@ async function executeFirestoreCatalogSearch(
           title: data.name || 'Product',
           subtitle: data.unit ? `${data.unit} • ${data.category || ''}` : data.category,
           priceMinor: data.priceMinor || (data.price ? Math.round(data.price * 100) : undefined),
-          imageUrl: data.imageUrl,
+          imageUrl: data.imageUrl || data.image,
           entityId: doc.id,
         });
       }
@@ -109,7 +162,7 @@ async function executeFirestoreCatalogSearch(
             title: data.name || 'Item',
             subtitle: data.category || 'Menu Item',
             priceMinor: data.priceMinor || (data.price ? Math.round(data.price * 100) : undefined),
-            imageUrl: data.imageUrl,
+            imageUrl: data.imageUrl || data.image,
             entityId: doc.id,
             merchantId: parentRestId,
           });
@@ -126,17 +179,28 @@ async function executeFirestoreCatalogSearch(
 export const searchCatalog = secureCallable(
   searchCatalogSchema,
   async (data) => {
-    const hits = await executeFirestoreCatalogSearch(
+    // Attempt fast read from catalogSearchProjections buffer first
+    let hits = await searchFromProjections(
       data.query,
       data.domain,
       data.cityKey,
       data.limit
     );
 
+    // Fall back to canonical collections if projection buffer has not synced yet
+    if (hits.length === 0) {
+      hits = await searchFromCanonicalCollections(
+        data.query,
+        data.domain,
+        data.cityKey,
+        data.limit
+      );
+    }
+
     return {
       hits,
       totalHits: hits.length,
-      nextCursor: null, // Ready for Algolia/Typesense cursor token
+      nextCursor: null, // Ready for external Algolia/Typesense cursor token
     };
   }
 );
