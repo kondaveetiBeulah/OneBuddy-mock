@@ -1,4 +1,4 @@
-﻿import { FieldValue, Timestamp } from 'firebase-admin/firestore';
+import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { db } from '../../core/firebase';
 import { secureCallable, publicCallable } from '../../common/auth';
 import { NotFoundError, PermissionDeniedError, PreconditionFailedError } from '../../common/errors';
@@ -325,6 +325,7 @@ export const createHospitalAppointment = secureCallable(
         addressSnapshot: data.addressSnapshot || null,
         reason: data.reason || 'General Consultation',
         status: 'confirmed' as AppointmentStatus,
+        feeMinor,
         consultationFeeMinor: feeMinor,
         finalPriceMinor: feeMinor,
         currency,
