@@ -65,13 +65,15 @@ function GroceriesLoadingScreen({ isDark }: { isDark: boolean }) {
   );
 }
 
+let hasEverLoadedGroceries = false;
+
 export default function GroceriesHost({
   visible,
   onClose,
 }: GroceriesHostProps): React.JSX.Element | null {
   const { scheme } = useAppTheme();
   const isDark = scheme === 'dark';
-  const [isReady, setIsReady] = useState(false);
+  const [isReady, setIsReady] = useState(() => hasEverLoadedGroceries);
   const navigationRef = useNavigationContainerRef();
 
   useEffect(() => {
@@ -97,27 +99,25 @@ export default function GroceriesHost({
   );
 
   useEffect(() => {
-    if (!visible) {
-      setIsReady(false);
-      return;
-    }
+    if (!visible) return;
 
-    // Pre-warm the grocery cache in background during the splash screen so home data is ready instantly
+    // Pre-warm the grocery cache in background
     productService.getCategories().catch(() => {});
     productService.getOffers().catch(() => {});
     productService.getProducts().catch(() => {});
 
-    const task = InteractionManager.runAfterInteractions(() => {
-      setTimeout(() => {
-        setIsReady(true);
-      }, 100);
-    });
+    if (hasEverLoadedGroceries) {
+      setIsReady(true);
+      return;
+    }
 
-    const fallbackTimer = setTimeout(() => setIsReady(true), 350);
+    const timer = setTimeout(() => {
+      hasEverLoadedGroceries = true;
+      setIsReady(true);
+    }, 80);
 
     return () => {
-      task.cancel();
-      clearTimeout(fallbackTimer);
+      clearTimeout(timer);
     };
   }, [visible]);
 

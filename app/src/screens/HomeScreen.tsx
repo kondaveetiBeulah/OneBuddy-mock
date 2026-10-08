@@ -39,6 +39,7 @@ import { useProfile } from '@/context/ProfileContext';
 import { useToast } from '@/context/ToastContext';
 import { SERVICE_ROUTE, type RootStackParamList } from '@/navigation/types';
 import { useDynamicRefreshRate } from '@/utils/useDynamicRefreshRate';
+import { productService } from '../categories/groceries/services/productService';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -74,6 +75,11 @@ export default function HomeScreen() {
       easing: Easing.bezier(0.22, 1, 0.36, 1),
       useNativeDriver: true,
     }).start();
+
+    // Pre-warm grocery catalog in background for instant opening
+    productService.getCategories().catch(() => {});
+    productService.getOffers().catch(() => {});
+    productService.getProducts().catch(() => {});
   }, [enter]);
 
   // Flip animation cycle starting strictly from Food (index 0)
