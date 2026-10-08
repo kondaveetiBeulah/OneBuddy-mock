@@ -107,17 +107,13 @@ export default function GroceriesHost({
     productService.getOffers().catch(() => {});
     productService.getProducts().catch(() => {});
 
-    const task = InteractionManager.runAfterInteractions(() => {
-      setTimeout(() => {
-        setIsReady(true);
-      }, 100);
-    });
-
-    const fallbackTimer = setTimeout(() => setIsReady(true), 350);
+    // Exactly 1 second transition loading screen
+    const timer = setTimeout(() => {
+      setIsReady(true);
+    }, 1000);
 
     return () => {
-      task.cancel();
-      clearTimeout(fallbackTimer);
+      clearTimeout(timer);
     };
   }, [visible]);
 

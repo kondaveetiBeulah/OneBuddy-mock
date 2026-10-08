@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Star } from "lucide-react-native";
 import { colors } from "../theme/colors";
 import { STAR_LABELS } from "../types";
 
@@ -21,10 +21,11 @@ export default function StarRating({ rating, onChange }: Props) {
             activeOpacity={0.7}
             accessibilityLabel={`${n} star`}
           >
-            <Ionicons
-              name={n <= rating ? "star" : "star-outline"}
-              size={38}
-              color={n <= rating ? "#FFB300" : "#D1D5DB"}
+            <Star
+              size={40}
+              fill={n <= rating ? "#F0B429" : "none"}
+              color={n <= rating ? "#F0B429" : "#E5E7EB"}
+              strokeWidth={1.5}
             />
           </TouchableOpacity>
         ))}
@@ -35,7 +36,7 @@ export default function StarRating({ rating, onChange }: Props) {
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: "row", justifyContent: "center", gap: 10, marginBottom: 4 },
+  row: { flexDirection: "row", justifyContent: "center", gap: 8, marginBottom: 6 },
   btn: { padding: 4 },
-  word: { textAlign: "center", color: colors.orange, fontWeight: "700", fontSize: 15, marginBottom: 20 },
+  word: { textAlign: "center", color: colors.orange, fontWeight: "700", fontSize: 16, marginBottom: 20 },
 });

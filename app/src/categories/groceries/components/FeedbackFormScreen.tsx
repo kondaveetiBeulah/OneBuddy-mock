@@ -111,7 +111,7 @@ export default function FeedbackFormScreen({
           <Hero />
           <OrderCard order={order} />
 
-          <Text style={styles.sectionLabel}>Rate your grocery shopping experience</Text>
+          <Text style={styles.sectionLabel}>Rate your overall experience</Text>
           <StarRating rating={rating} onChange={setRating} />
 
           <CategoryList categories={categories} onChange={setCategoryValue} />
