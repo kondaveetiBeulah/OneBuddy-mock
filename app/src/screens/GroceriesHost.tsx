@@ -54,10 +54,10 @@ function GroceriesLoadingScreen({ isDark }: { isDark: boolean }) {
         <GroceryDeliveryLogo size={72} />
       </View>
       <Text style={[styles.loadingTitle, isDark && { color: '#F1F1EC' }]}>
-        One<Text style={{ color: '#4FA81A' }}>Buddy</Text> Groceries
+        One<Text style={{ color: '#4FA81A' }}>Buddy</Text> Groceries Express
       </Text>
       <Text style={[styles.loadingSub, isDark && { color: '#9BA08F' }]}>
-        Fetching fresh groceries for you...
+        Loading fresh groceries and essentials...
       </Text>
       <ActivityIndicator size="small" color="#4FA81A" style={styles.loadingIndicator} />
     </View>
@@ -104,10 +104,10 @@ export default function GroceriesHost({
     const task = InteractionManager.runAfterInteractions(() => {
       setTimeout(() => {
         setIsReady(true);
-      }, 100);
+      }, 80);
     });
 
-    const fallbackTimer = setTimeout(() => setIsReady(true), 350);
+    const fallbackTimer = setTimeout(() => setIsReady(true), 250);
 
     return () => {
       task.cancel();

@@ -12,10 +12,24 @@ import {
 const hasValidImage = (p: Product) =>
   Boolean(p.image && p.image.trim().length > 0 && p.image !== 'null' && p.image !== 'undefined');
 
+let _categoriesCache: Category[] | null = null;
+let _offersCache: Offer[] | null = null;
+let _productsCache: Product[] | null = null;
+
 export const productService = {
   async getProducts(filter?: ProductFilter, sort?: SortOption): Promise<Product[]> {
+    if (!filter && !sort && _productsCache && _productsCache.length > 0) {
+      fetchProducts().then((res) => {
+        const valid = res.filter(hasValidImage);
+        if (valid.length > 0) _productsCache = valid;
+      }).catch(() => {});
+      return _productsCache;
+    }
     const all = await fetchProducts();
     let result = all.filter(hasValidImage);
+    if (!filter && !sort && result.length > 0) {
+      _productsCache = result;
+    }
 
     if (filter) {
       if (filter.categoryId) {
@@ -181,10 +195,26 @@ export const productService = {
   },
 
   async getCategories(): Promise<Category[]> {
-    return fetchCategories();
+    if (_categoriesCache && _categoriesCache.length > 0) {
+      fetchCategories().then((res) => {
+        if (res.length > 0) _categoriesCache = res;
+      }).catch(() => {});
+      return _categoriesCache;
+    }
+    const res = await fetchCategories();
+    if (res.length > 0) _categoriesCache = res;
+    return res;
   },
 
   async getOffers(): Promise<Offer[]> {
-    return fetchOffers();
+    if (_offersCache && _offersCache.length > 0) {
+      fetchOffers().then((res) => {
+        if (res.length > 0) _offersCache = res;
+      }).catch(() => {});
+      return _offersCache;
+    }
+    const res = await fetchOffers();
+    if (res.length > 0) _offersCache = res;
+    return res;
   },
 };

@@ -1125,17 +1125,15 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation: navProp, onP
       return;
     }
 
-    triggerQuickLoading('Proceeding to payment...', 300, () => {
-      if (onProceed) {
-        onProceed(grandTotal, totalDiscount, selectedTip);
-      } else if (navigation) {
-        navigation.navigate('Payment', {
-          grandTotal,
-          couponDiscount: totalDiscount,
-          tip: selectedTip,
-        } as any);
-      }
-    });
+    if (onProceed) {
+      onProceed(grandTotal, totalDiscount, selectedTip);
+    } else if (navigation) {
+      navigation.navigate('Payment', {
+        grandTotal,
+        couponDiscount: totalDiscount,
+        tip: selectedTip,
+      } as any);
+    }
   };
 
   const handleBack = () => {

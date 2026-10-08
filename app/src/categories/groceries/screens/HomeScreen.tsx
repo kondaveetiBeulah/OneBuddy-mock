@@ -12,6 +12,7 @@ import {
   Alert,
   Modal,
   Dimensions,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -530,10 +531,9 @@ export const HomeScreen: React.FC = () => {
       </View>
 
       {loading && categories.length === 0 && offers.length === 0 && popularProducts.length === 0 ? (
-        <LoadingState
-          message="Loading Fresh Groceries..."
-          subtitle="Fetching daily offers, categories, and fresh products for you"
-        />
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, minHeight: 200 }}>
+          <ActivityIndicator size="small" color={colors.primary as string} />
+        </View>
       ) : networkError && categories.length === 0 ? (
         <NetworkErrorState
           title="Could Not Load Groceries"
