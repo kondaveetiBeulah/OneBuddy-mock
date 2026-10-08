@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Home, Compass, ClipboardList, Heart, ShoppingBag } from 'lucide-react-native';
+import { Home, ClipboardList, Heart } from 'lucide-react-native';
 import { useCart } from '../../context/CartContext';
 import { useFilter } from '../../context/FilterContext';
 
@@ -40,19 +40,6 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
         >
           Home
         </Text>
-      </TouchableOpacity>
-
-      {/* Explore / Search */}
-      <TouchableOpacity
-        onPress={() => {
-          onNavigate('home');
-          triggerSearchFocus();
-          if (onFocusSearch) onFocusSearch();
-        }}
-        style={styles.navItem}
-      >
-        <Compass size={20} color="#6B7280" />
-        <Text style={styles.navText}>Explore</Text>
       </TouchableOpacity>
 
       {/* Orders */}
@@ -149,7 +136,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   favBadgeText: {
-    color: '#111827',
+    color: '#FFFFFF',
     fontSize: 8,
     fontWeight: 'bold',
   },
