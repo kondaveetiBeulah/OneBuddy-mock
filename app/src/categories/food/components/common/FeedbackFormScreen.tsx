@@ -34,7 +34,7 @@ export default function FeedbackFormScreen({ order, onComplete }: FeedbackFormSc
   const insets = useSafeAreaInsets();
   const bottomInset = Math.max(insets.bottom, Platform.OS === 'android' ? 14 : 10);
   const { clearCart } = useCart();
-  const [rating, setRating] = useState(4);
+  const [rating, setRating] = useState(5);
   const [categories, setCategories] = useState<Category[]>(initialCategories);
   const [itemRatings, setItemRatings] = useState<Record<string, SentimentValue>>({});
   const [riderRating, setRiderRating] = useState<SentimentValue | null>(null);

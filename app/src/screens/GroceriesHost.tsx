@@ -25,6 +25,7 @@ import { GroceriesExitContext } from '../categories/groceries/context/GroceriesE
 import { RootNavigator } from '../categories/groceries/navigation/RootNavigator';
 import { colors } from '../categories/groceries/theme';
 import { GroceryDeliveryLogo } from '../categories/groceries/components/GroceryDeliveryLogo';
+import { productService } from '../categories/groceries/services/productService';
 
 interface GroceriesHostProps {
   visible: boolean;
@@ -101,13 +102,18 @@ export default function GroceriesHost({
       return;
     }
 
+    // Pre-warm the grocery cache in background during the splash screen so home data is ready instantly
+    productService.getCategories().catch(() => {});
+    productService.getOffers().catch(() => {});
+    productService.getProducts().catch(() => {});
+
     const task = InteractionManager.runAfterInteractions(() => {
       setTimeout(() => {
         setIsReady(true);
-      }, 80);
+      }, 100);
     });
 
-    const fallbackTimer = setTimeout(() => setIsReady(true), 250);
+    const fallbackTimer = setTimeout(() => setIsReady(true), 350);
 
     return () => {
       task.cancel();

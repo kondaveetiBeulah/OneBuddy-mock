@@ -17,6 +17,18 @@ let _offersCache: Offer[] | null = null;
 let _productsCache: Product[] | null = null;
 
 export const productService = {
+  getCachedCategories(): Category[] {
+    return _categoriesCache || [];
+  },
+
+  getCachedOffers(): Offer[] {
+    return _offersCache || [];
+  },
+
+  getCachedProducts(): Product[] {
+    return _productsCache || [];
+  },
+
   async getProducts(filter?: ProductFilter, sort?: SortOption): Promise<Product[]> {
     if (!filter && !sort && _productsCache && _productsCache.length > 0) {
       fetchProducts().then((res) => {

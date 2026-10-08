@@ -87,14 +87,14 @@ export const HomeScreen: React.FC = () => {
   const { wishlistCount } = useWishlist();
   const cartCount = getCartCount();
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [networkError, setNetworkError] = useState(false);
 
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [offers, setOffers] = useState<Offer[]>([]);
-  const [popularProducts, setPopularProducts] = useState<Product[]>([]);
-  const [freshPicks, setFreshPicks] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>(() => productService.getCachedCategories());
+  const [offers, setOffers] = useState<Offer[]>(() => productService.getCachedOffers());
+  const [popularProducts, setPopularProducts] = useState<Product[]>(() => productService.getCachedProducts().filter((p) => p.isFeatured));
+  const [freshPicks, setFreshPicks] = useState<Product[]>(() => productService.getCachedProducts().filter((p) => !p.isFeatured));
 
   // ── Address Section State (Exact features as CartScreen) ──
   const [isAddressExpanded, setIsAddressExpanded] = useState<boolean>(false);
@@ -530,11 +530,7 @@ export const HomeScreen: React.FC = () => {
         </View>
       </View>
 
-      {loading && categories.length === 0 && offers.length === 0 && popularProducts.length === 0 ? (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, minHeight: 200 }}>
-          <ActivityIndicator size="small" color={colors.primary as string} />
-        </View>
-      ) : networkError && categories.length === 0 ? (
+      {networkError && categories.length === 0 ? (
         <NetworkErrorState
           title="Could Not Load Groceries"
           message="We couldn't connect to OneBuddy Grocery services. Please check your internet connection."
