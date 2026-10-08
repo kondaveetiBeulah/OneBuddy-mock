@@ -13,6 +13,7 @@ interface MenuFilterBarProps {
   priceSort: 'none' | 'lowToHigh' | 'highToLow';
   onTogglePriceSort: () => void;
   categories: string[];
+  onVoicePress?: () => void;
 }
 
 export const MenuFilterBar: React.FC<MenuFilterBarProps> = ({
@@ -25,6 +26,7 @@ export const MenuFilterBar: React.FC<MenuFilterBarProps> = ({
   priceSort,
   onTogglePriceSort,
   categories,
+  onVoicePress,
 }) => {
   return (
     <View style={styles.container}>
@@ -32,6 +34,7 @@ export const MenuFilterBar: React.FC<MenuFilterBarProps> = ({
       <SearchBar
         value={searchQuery}
         onChangeText={onSearchChange}
+        onVoicePress={onVoicePress}
         placeholder="Search dishes, combos, or desserts in menu..."
       />
 

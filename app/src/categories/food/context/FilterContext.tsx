@@ -62,9 +62,10 @@ export const FilterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (filters.searchQuery.trim()) {
         const q = filters.searchQuery.toLowerCase().trim();
         const normalizedQ = q.endsWith('s') ? q.slice(0, -1) : q;
+        const normalizedMehfil = q.replace(/mefil/g, 'mehfil');
         
-        const matchesName = r.name.toLowerCase().includes(q);
-        const matchesTagline = r.tagline.toLowerCase().includes(q);
+        const matchesName = r.name.toLowerCase().includes(q) || r.name.toLowerCase().includes(normalizedMehfil);
+        const matchesTagline = r.tagline.toLowerCase().includes(q) || r.tagline.toLowerCase().includes(normalizedMehfil);
         const matchesCuisine = r.cuisine.some((c) => c.toLowerCase().includes(q) || c.toLowerCase().includes(normalizedQ));
         const matchesMenuItem = r.menu.some(
           (m) => m.name.toLowerCase().includes(q) || 

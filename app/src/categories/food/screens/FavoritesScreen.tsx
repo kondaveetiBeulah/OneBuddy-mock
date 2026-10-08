@@ -43,7 +43,9 @@ export const FavoritesScreen: React.FC<FavoritesScreenProps> = ({
 
       {favoriteRestaurants.length === 0 ? (
         <View style={styles.emptyCard}>
-          <Text style={{ fontSize: 44, marginBottom: 12 }}>❤️</Text>
+          <View style={styles.emptyIconCircle}>
+            <Heart size={40} color="#F43F5E" fill="#F43F5E" />
+          </View>
           <Text style={styles.emptyTitle}>No Favorites Saved</Text>
           <Text style={styles.emptyDesc}>
             Tap the heart icon on any restaurant card to save your favorite spots.
@@ -116,6 +118,15 @@ const styles = StyleSheet.create({
     padding: 32,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  emptyIconCircle: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    backgroundColor: 'rgba(244, 63, 94, 0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
   },
   emptyTitle: {
     fontSize: 16,

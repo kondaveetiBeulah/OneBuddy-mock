@@ -12,6 +12,11 @@ import { MenuItem, OfferBanner, Restaurant } from '../../categories/food/types';
 
 /* ─────────────── Defensive Mappers ─────────────── */
 
+export function correctMehfilSpelling(text?: string | null): string {
+  if (!text) return '';
+  return text.replace(/\bmefil\b/gi, 'Mehfil').replace(/mefil/gi, 'Mehfil');
+}
+
 export function mapMenuItem(item: any, idx: number): MenuItem {
   // Convert minor units (paise) back to rupees if present, else fallback
   const price = typeof item.priceMinor === 'number'
@@ -24,10 +29,10 @@ export function mapMenuItem(item: any, idx: number): MenuItem {
 
   return {
     id: item.id || `item-${idx}`,
-    name: item.name || '',
+    name: correctMehfilSpelling(item.name) || '',
     price,
     originalPrice,
-    description: item.description || '',
+    description: correctMehfilSpelling(item.description) || '',
     image: item.image || '',
     rating: typeof item.rating === 'number' ? item.rating : 4.5,
     ratingCount: typeof item.ratingCount === 'number' ? item.ratingCount : 100,
@@ -44,9 +49,16 @@ export function mapMenuItem(item: any, idx: number): MenuItem {
 }
 
 export function mapRestaurant(docId: string, data: any, menuItems: MenuItem[] = []): Restaurant {
+  const rawName = String(data.name || '');
+  const isMehfil = docId.toLowerCase().includes('mefil') || rawName.toLowerCase().includes('mefil');
+  const name = isMehfil ? correctMehfilSpelling(rawName) || 'Mehfil' : rawName;
+  const tagline = correctMehfilSpelling(data.tagline || '');
+
   const gradientColors: [string, string] =
     Array.isArray(data.gradientColors) && data.gradientColors.length >= 2
       ? [String(data.gradientColors[0]), String(data.gradientColors[1])]
+      : isMehfil
+      ? ['#3e1f18', '#1c0c08']
       : ['#173a2b', '#0a1812'];
 
   const costForTwo = typeof data.costForTwoMinor === 'number'
@@ -68,8 +80,8 @@ export function mapRestaurant(docId: string, data: any, menuItems: MenuItem[] = 
 
   return {
     id: data.id || docId,
-    name: data.name || '',
-    tagline: data.tagline || '',
+    name,
+    tagline,
     cuisine: Array.isArray(data.cuisine) ? data.cuisine : [],
     rating: typeof data.rating === 'number' ? data.rating : 4.5,
     totalRatings,
@@ -87,7 +99,7 @@ export function mapRestaurant(docId: string, data: any, menuItems: MenuItem[] = 
     offerText: data.offerText || '',
     couponCode: data.couponCode || undefined,
     gradientColors,
-    cardBorderColor: data.cardBorderColor || 'rgba(76, 154, 106, 0.4)',
+    cardBorderColor: isMehfil ? 'rgba(232, 115, 74, 0.4)' : (data.cardBorderColor || 'rgba(76, 154, 106, 0.4)'),
     menu,
   };
 }
@@ -100,12 +112,12 @@ export function mapBanner(docId: string, data: any): OfferBanner {
 
   return {
     id: data.id || docId,
-    title: data.title || '',
-    subtitle: data.subtitle || '',
+    title: correctMehfilSpelling(data.title) || '',
+    subtitle: correctMehfilSpelling(data.subtitle) || '',
     discountBadge: data.discountBadge || '',
     code: data.code || '',
     restaurantId: data.restaurantId || '',
-    restaurantName: data.restaurantName || '',
+    restaurantName: correctMehfilSpelling(data.restaurantName) || '',
     gradientColors,
     image: data.image || '',
   };

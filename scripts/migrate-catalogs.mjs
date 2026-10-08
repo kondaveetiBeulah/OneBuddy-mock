@@ -139,9 +139,14 @@ async function migrate() {
 
     // 1. Restaurant document
     const restaurantRef = defaultDb.collection('catalogRestaurants').doc(doc.id);
+    let restaurantName = data.name || '';
+    if (restaurantName.toLowerCase() === 'mefil' || doc.id.includes('mefil')) {
+      restaurantName = restaurantName.replace(/mefil/gi, 'Mehfil');
+      if (!restaurantName || restaurantName.toLowerCase() === 'mehfil') restaurantName = 'Mehfil';
+    }
     restBatch.set(restaurantRef, {
       id: doc.id,
-      name: data.name || '',
+      name: restaurantName,
       tagline: data.tagline || '',
       cuisine: Array.isArray(data.cuisine) ? data.cuisine : [],
       rating: typeof data.rating === 'number' ? data.rating : 4.5,

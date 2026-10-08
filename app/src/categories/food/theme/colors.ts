@@ -81,6 +81,16 @@ export const RESTAURANT_GRADIENTS = {
     border: 'rgba(201, 162, 39, 0.4)',
     accent: '#65A30D',
   },
+  mehfil: {
+    colors: ['#3e1f18', '#1c0c08'] as [string, string],
+    border: 'rgba(232, 115, 74, 0.4)',
+    accent: '#E8734A',
+  },
+  mefil: {
+    colors: ['#3e1f18', '#1c0c08'] as [string, string],
+    border: 'rgba(232, 115, 74, 0.4)',
+    accent: '#E8734A',
+  },
   spiceRoute: {
     colors: ['#44162e', '#190610'] as [string, string],
     border: 'rgba(201, 85, 122, 0.4)',

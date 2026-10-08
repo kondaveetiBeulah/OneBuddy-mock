@@ -78,8 +78,8 @@ export const BottomTabNavigator: React.FC = () => {
                 onBack={onClose}
               />
               <HomeScreen
-                onSelectRestaurant={(restaurantId) => {
-                  rootNavigation.navigate('RestaurantMenu', { restaurantId });
+                onSelectRestaurant={(restaurantId, initialSearchQuery) => {
+                  rootNavigation.navigate('RestaurantMenu', { restaurantId, initialSearchQuery });
                 }}
                 onNavigate={(screen) => {
                   if (screen === 'home') tabNav.navigate('Home');

@@ -965,9 +965,9 @@ const CartScreen: React.FC<CartScreenProps> = ({ onProceed, onBack }) => {
             return;
         }
 
-        triggerQuickLoading('Preparing checkout...', 350, () => {
-            if (onProceed) onProceed(grandTotal, cartItems, currentRestaurant?.name || 'Restaurant', deliveryAddress);
-        });
+        if (onProceed) {
+            onProceed(grandTotal, cartItems, currentRestaurant?.name || 'Restaurant', deliveryAddress);
+        }
     };
 
     const tipOptions: TipAmount[] = [0, 20, 30, 50];

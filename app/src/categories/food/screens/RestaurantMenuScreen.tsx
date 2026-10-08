@@ -7,6 +7,7 @@ import { MenuFilterBar } from '../components/menu/MenuFilterBar';
 import { MenuItemCard } from '../components/menu/MenuItemCard';
 import { ComboHighlight } from '../components/menu/ComboHighlight';
 import { ItemDetailModal } from '../components/menu/ItemDetailModal';
+import { VoiceSearchModal, cleanFoodVoiceQuery } from '../components/VoiceSearchModal';
 import { ArrowLeft, Utensils } from 'lucide-react-native';
 import { MenuItem } from '../types';
 import { useNetwork } from '@/context/NetworkContext';
@@ -15,11 +16,13 @@ import { NetworkErrorState } from '@/components/NetworkErrorState';
 interface RestaurantMenuScreenProps {
   restaurantId: string;
   onBack: () => void;
+  initialSearchQuery?: string;
 }
 
 export const RestaurantMenuScreen: React.FC<RestaurantMenuScreenProps> = ({
   restaurantId,
   onBack,
+  initialSearchQuery,
 }) => {
   const insets = useSafeAreaInsets();
   const { restaurants, isLoading, error, refresh } = useFoodData();
@@ -30,11 +33,18 @@ export const RestaurantMenuScreen: React.FC<RestaurantMenuScreenProps> = ({
 
   const scrollViewRef = useRef<ScrollView>(null);
 
-  const [menuSearchQuery, setMenuSearchQuery] = useState('');
+  const [menuSearchQuery, setMenuSearchQuery] = useState(initialSearchQuery || '');
+  const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedDietary, setSelectedDietary] = useState<'all' | 'veg' | 'non-veg'>('all');
   const [priceSort, setPriceSort] = useState<'none' | 'lowToHigh' | 'highToLow'>('none');
   const [selectedItemForDetail, setSelectedItemForDetail] = useState<MenuItem | null>(null);
+
+  useEffect(() => {
+    if (initialSearchQuery) {
+      setMenuSearchQuery(initialSearchQuery);
+    }
+  }, [initialSearchQuery]);
 
 
 
@@ -162,6 +172,7 @@ export const RestaurantMenuScreen: React.FC<RestaurantMenuScreenProps> = ({
         priceSort={priceSort}
         onTogglePriceSort={handleTogglePriceSort}
         categories={categories}
+        onVoicePress={() => setIsVoiceModalOpen(true)}
       />
 
       {/* 4. Section Title */}
@@ -199,6 +210,16 @@ export const RestaurantMenuScreen: React.FC<RestaurantMenuScreenProps> = ({
         onClose={() => setSelectedItemForDetail(null)}
         item={selectedItemForDetail}
         restaurant={restaurant}
+      />
+
+      <VoiceSearchModal
+        visible={isVoiceModalOpen}
+        onClose={() => setIsVoiceModalOpen(false)}
+        onResult={(spoken) => {
+          setIsVoiceModalOpen(false);
+          setMenuSearchQuery(cleanFoodVoiceQuery(spoken));
+        }}
+        restaurants={restaurants}
       />
     </ScrollView>
   );

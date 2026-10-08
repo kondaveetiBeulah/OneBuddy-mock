@@ -83,6 +83,7 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
           <Heart
             size={20}
             color={activeScreen === 'favorites' ? '#F43F5E' : '#6B7280'}
+            fill={activeScreen === 'favorites' ? '#F43F5E' : 'transparent'}
           />
           {favorites.length > 0 && (
             <View style={styles.favBadge}>

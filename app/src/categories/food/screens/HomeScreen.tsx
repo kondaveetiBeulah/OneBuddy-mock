@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -13,24 +13,45 @@ import { FilterBottomSheet } from '../components/home/FilterBottomSheet';
 import { RestaurantList } from '../components/home/RestaurantList';
 import { SearchBar } from '../components/common/SearchBar';
 import { useFilter } from '../context/FilterContext';
+import { useFoodData } from '../context/FoodDataContext';
+import { VoiceSearchModal, parseFoodVoiceQuery } from '../components/VoiceSearchModal';
 import { Sparkles, Award, ShieldCheck } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { isCategoryDark } from '@/theme/categoryThemeBridge';
 
 interface HomeScreenProps {
-  onSelectRestaurant: (restaurantId: string) => void;
+  onSelectRestaurant: (restaurantId: string, initialSearchQuery?: string) => void;
   onNavigate: (screen: 'home' | 'restaurant-menu' | 'orders' | 'favorites') => void;
 }
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({ onSelectRestaurant }) => {
   const { filters, updateFilter, filteredRestaurants } = useFilter();
+  const { restaurants } = useFoodData();
   const scrollViewRef = useRef<ScrollView>(null);
+  const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
 
   useEffect(() => {
     if (filters.searchQuery.trim() && scrollViewRef.current) {
       scrollViewRef.current.scrollTo({ y: 0, animated: true });
     }
   }, [filters.searchQuery]);
+
+  const handleVoiceResult = (spokenText: string) => {
+    setIsVoiceModalOpen(false);
+    const parsed = parseFoodVoiceQuery(spokenText, restaurants);
+
+    if (parsed.isSpecificItemInRestaurant && parsed.matchedRestaurant) {
+      // 1. Specific item in specific restaurant (e.g. "Biryani from Paradise")
+      onSelectRestaurant(parsed.matchedRestaurant.id, parsed.matchedItemQuery);
+    } else if (parsed.matchedRestaurant && !parsed.matchedItemQuery) {
+      // 2. Restaurant only (e.g. "Paradise", "Bawarchi", "Blue Sea")
+      onSelectRestaurant(parsed.matchedRestaurant.id);
+    } else {
+      // 3. Food item / cuisine (e.g. "Biryani", "Pizza", "Burgers")
+      const query = parsed.matchedItemQuery || parsed.cleanedText;
+      updateFilter('searchQuery', query);
+    }
+  };
 
   const cuisineHighlights = [
     { name: 'All', image: 'https://cdn-icons-png.flaticon.com/512/3565/3565401.png' },
@@ -54,7 +75,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSelectRestaurant }) =>
         <SearchBar
           value={filters.searchQuery}
           onChangeText={(q) => updateFilter('searchQuery', q)}
-          placeholder="Search restaurants, dishes or cuisines..."
+          onVoicePress={() => setIsVoiceModalOpen(true)}
         />
 
         {/* Popular Quick Pills */}
@@ -146,6 +167,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSelectRestaurant }) =>
 
       {/* Bottom Filter Sheet Modal */}
       <FilterBottomSheet />
+
+      {/* Voice Search Modal */}
+      <VoiceSearchModal
+        visible={isVoiceModalOpen}
+        onClose={() => setIsVoiceModalOpen(false)}
+        onResult={handleVoiceResult}
+        restaurants={restaurants}
+      />
     </ScrollView>
   );
 };

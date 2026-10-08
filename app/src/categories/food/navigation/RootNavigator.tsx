@@ -38,6 +38,7 @@ const Stack = createNativeStackNavigator<FoodStackParamList>();
 
 function RestaurantMenuWrapper({ route, navigation }: any) {
   const restaurantId = route.params?.restaurantId || 'paradise-restaurant';
+  const initialSearchQuery = route.params?.initialSearchQuery;
 
   const handleNavigate = (screen: string) => {
     if (screen === 'home') {
@@ -70,6 +71,7 @@ function RestaurantMenuWrapper({ route, navigation }: any) {
       <View style={styles.menuContent}>
         <RestaurantMenuScreen
           restaurantId={restaurantId}
+          initialSearchQuery={initialSearchQuery}
           onBack={() => navigation.goBack()}
         />
       </View>
