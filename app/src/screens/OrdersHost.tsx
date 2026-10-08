@@ -8,6 +8,8 @@ import { useAuth } from '../firebase/context/AuthContext';
 import { useAppTheme } from '../theme/ThemeContext';
 import { listOrders, runOrderAction, subscribeUserOrders } from '../firebase/services/ordersService';
 
+import { ORDERS } from '../native/screens/OrdersAndBookings/data';
+
 interface OrdersHostProps {
   visible?: boolean;
   onClose: () => void;
@@ -40,7 +42,19 @@ export default function OrdersHost({
       return;
     }
     const unsubscribe = subscribeUserOrders(user.uid, (fetched) => {
-      setOrders(fetched);
+      if (!fetched || fetched.length === 0) {
+        setOrders(ORDERS);
+      } else {
+        const activeCategories = new Set(
+          fetched
+            .filter((o) => o.group === 'Ongoing')
+            .map((o) => o.category)
+        );
+        const fallbackActive = ORDERS.filter(
+          (o) => o.group === 'Ongoing' && !activeCategories.has(o.category)
+        );
+        setOrders([...fetched, ...fallbackActive]);
+      }
     });
     return () => {
       unsubscribe();

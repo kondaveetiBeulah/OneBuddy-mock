@@ -29,6 +29,17 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({
   const { addToCart, updateQuantity, getItemQuantity, toggleFavoriteItem, isFavoriteItem } = useCart();
   const quantity = getItemQuantity(item.id);
   const isFav = isFavoriteItem(item.id);
+  const [imageError, setImageError] = React.useState(false);
+
+  if (
+    !item?.image ||
+    !item.image.trim() ||
+    item.image === 'null' ||
+    item.image === 'undefined' ||
+    imageError
+  ) {
+    return null;
+  }
 
   return (
     <TouchableOpacity
@@ -108,7 +119,11 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({
         {/* Right Image + Quantity Stepper */}
         <View style={styles.rightCol}>
           <View style={styles.imageBox}>
-            <Image source={{ uri: item.image }} style={styles.image} />
+            <Image
+              source={{ uri: item.image }}
+              style={styles.image}
+              onError={() => setImageError(true)}
+            />
             <TouchableOpacity
               style={styles.favBtn}
               onPress={() => toggleFavoriteItem(item.id)}

@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { View, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
-import { Search, X, Mic } from 'lucide-react-native';
+import { Search, X } from 'lucide-react-native';
 import { useFilter } from '../../context/FilterContext';
 
 interface SearchBarProps {
@@ -46,16 +46,9 @@ export const SearchBar: React.FC<SearchBarProps> = ({
         style={styles.input}
       />
 
-      {value.length > 0 ? (
+      {value.length > 0 && (
         <TouchableOpacity onPress={handleClear} style={styles.iconBtn}>
           <X size={16} color="#6B7280" />
-        </TouchableOpacity>
-      ) : (
-        <TouchableOpacity
-          onPress={() => onChangeText('Biryani')}
-          style={styles.iconBtn}
-        >
-          <Mic size={16} color="#65A30D" />
         </TouchableOpacity>
       )}
     </View>

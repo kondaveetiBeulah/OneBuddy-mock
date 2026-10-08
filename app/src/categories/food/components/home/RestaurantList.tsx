@@ -5,6 +5,10 @@ import { RestaurantCard } from './RestaurantCard';
 import { UtensilsCrossed, RotateCcw } from 'lucide-react-native';
 import { useFilter } from '../../context/FilterContext';
 
+import { useFoodData } from '../../context/FoodDataContext';
+import { useNetwork } from '@/context/NetworkContext';
+import { NetworkErrorState } from '@/components/NetworkErrorState';
+
 interface RestaurantListProps {
   restaurants: Restaurant[];
   onSelectRestaurant: (restaurantId: string) => void;
@@ -15,8 +19,21 @@ export const RestaurantList: React.FC<RestaurantListProps> = ({
   onSelectRestaurant,
 }) => {
   const { resetFilters } = useFilter();
+  const { error, refresh } = useFoodData();
+  const { isConnected } = useNetwork();
 
   if (restaurants.length === 0) {
+    if (!isConnected || error) {
+      return (
+        <NetworkErrorState
+          fullscreen={false}
+          title="Could Not Load Restaurants"
+          message="We could not connect to OneBuddy Food services. Check your connection and retry."
+          onRetry={refresh}
+        />
+      );
+    }
+
     return (
       <View style={styles.emptyContainer}>
         <View style={styles.emptyIconCircle}>

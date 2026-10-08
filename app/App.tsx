@@ -15,6 +15,9 @@ import RootNavigator from './src/navigation/RootNavigator';
 import { brand, schemes } from './src/design/tokens';
 import { initDynamicRefreshRate } from './src/utils/dynamicRefreshRate';
 
+import { NetworkProvider } from './src/context/NetworkContext';
+import { OfflineBanner } from './src/components/OfflineBanner';
+
 /**
  * React Navigation is the app shell now. The WebView, the generated HTML
  * document and the postMessage bridge are gone; every screen that used to be
@@ -32,6 +35,7 @@ function Shell() {
         barStyle={scheme === 'dark' ? 'light-content' : 'dark-content'}
         backgroundColor={schemes[scheme].bgDeep}
       />
+      <OfflineBanner />
       <RootNavigator />
     </>
   );
@@ -54,21 +58,23 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <AuthProvider>
-        <ToastProvider>
-          <SettingsProvider>
-            <ThemeProvider>
-              <OtpAuthProvider>
-                <ProfileProvider>
-                  <ServicePreferencesProvider>
-                    <Shell />
-                  </ServicePreferencesProvider>
-                </ProfileProvider>
-              </OtpAuthProvider>
-            </ThemeProvider>
-          </SettingsProvider>
-        </ToastProvider>
-      </AuthProvider>
+      <NetworkProvider>
+        <AuthProvider>
+          <ToastProvider>
+            <SettingsProvider>
+              <ThemeProvider>
+                <OtpAuthProvider>
+                  <ProfileProvider>
+                    <ServicePreferencesProvider>
+                      <Shell />
+                    </ServicePreferencesProvider>
+                  </ProfileProvider>
+                </OtpAuthProvider>
+              </ThemeProvider>
+            </SettingsProvider>
+          </ToastProvider>
+        </AuthProvider>
+      </NetworkProvider>
     </SafeAreaProvider>
   );
 }

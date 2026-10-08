@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import {
+  Alert,
+  Platform,
   View,
   Text,
   StyleSheet,
@@ -13,6 +15,7 @@ import { Header } from '../components/Header';
 import { CustomButton } from '../components/CustomButton';
 import { DeliverySlot } from '../types/order.types';
 import { useCart } from '../context/CartContext';
+import { useUser } from '../context/UserContext';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/navigation.types';
 
@@ -40,6 +43,7 @@ const SLOTS_DATA: DeliverySlot[] = [
 
 export const DeliverySlotScreen: React.FC<DeliverySlotScreenProps> = ({ navigation }) => {
   const { getPriceSummary } = useCart();
+  const { selectedAddress, addresses } = useUser();
   const summary = getPriceSummary();
   const [selectedDate, setSelectedDate] = useState('Today');
   const [selectedSlot, setSelectedSlot] = useState<DeliverySlot>(SLOTS_DATA[0]);
@@ -136,7 +140,19 @@ export const DeliverySlotScreen: React.FC<DeliverySlotScreenProps> = ({ navigati
 
         <CustomButton
           title="Proceed to Payment"
-          onPress={() => navigation.navigate('Payment', { grandTotal: summary.total })}
+          onPress={() => {
+            if (!selectedAddress && (!addresses || addresses.length === 0)) {
+              const msg = '⚠️ Please add a delivery address before proceeding to payment.';
+              if (Platform.OS === 'web' && typeof window !== 'undefined') {
+                window.alert(msg);
+              } else {
+                Alert.alert('Delivery Address Required', msg);
+              }
+              navigation.navigate('Address');
+              return;
+            }
+            navigation.navigate('Payment', { grandTotal: summary.total });
+          }}
           size="large"
           style={styles.proceedBtn}
         />

@@ -13,6 +13,7 @@ import {
   Dimensions,
   StatusBar,
   Easing,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -2315,6 +2316,28 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({ navigation, route 
   const couponDiscount = route?.params?.couponDiscount || summary.discount || 0;
   const tip = route?.params?.tip || 0;
 
+  useEffect(() => {
+    const verifyAddress = async () => {
+      if (!selectedAddress) {
+        try {
+          const stored = await storageHelper.getItem<any[]>(STORAGE_KEYS.SAVED_ADDRESSES);
+          if (!stored || stored.length === 0) {
+            const msg = '⚠️ Please add a delivery address to proceed to payment.';
+            if (Platform.OS === 'web' && typeof window !== 'undefined') {
+              window.alert(msg);
+            } else {
+              Alert.alert('Delivery Address Required', msg);
+            }
+            navigation.navigate('Address');
+          }
+        } catch {
+          // ignore
+        }
+      }
+    };
+    verifyAddress();
+  }, [selectedAddress, navigation]);
+
   const handleOrderSuccess = async (orderDetails: any): Promise<string | null> => {
     try {
       let activeAddress = selectedAddress;
@@ -2343,19 +2366,14 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({ navigation, route 
       }
 
       if (!activeAddress) {
-        activeAddress = {
-          id: 'addr_default',
-          name: user?.name || 'Customer',
-          phone: user?.phone || '9876543210',
-          houseNumber: 'Standard Delivery Address',
-          street: 'Main Road',
-          area: 'Suryaraopeta',
-          city: 'Kurnool',
-          state: 'Andhra Pradesh',
-          pincode: '518001',
-          type: 'home',
-          isDefault: true,
-        };
+        const msg = '⚠️ Delivery Address Required: Please add your delivery address to proceed to payment.';
+        if (Platform.OS === 'web' && typeof window !== 'undefined') {
+          window.alert(msg);
+        } else {
+          Alert.alert('Delivery Address Required', msg);
+        }
+        navigation.navigate('Address');
+        return null;
       }
 
       const order = await orderService.createOrder({

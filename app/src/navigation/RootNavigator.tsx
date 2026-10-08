@@ -3,6 +3,7 @@ import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Ionicons } from '@expo/vector-icons';
 
 import { brand, schemes } from '@/design/tokens';
 import { useAppTheme } from '@/theme/ThemeContext';
@@ -61,17 +62,44 @@ function Tabs() {
       <Tab.Screen
         name="HomeTab"
         component={HomeScreen}
-        options={{ title: 'Home', tabBarIcon: () => <Text>🏠</Text> }}
+        options={{
+          title: 'Home',
+          tabBarIcon: ({ color, focused, size }) => (
+            <Ionicons
+              name={focused ? 'home' : 'home-outline'}
+              size={size ?? 22}
+              color={color}
+            />
+          ),
+        }}
       />
       <Tab.Screen
         name="OrdersTab"
         component={OrdersRoute}
-        options={{ title: 'Orders', tabBarIcon: () => <Text>📋</Text> }}
+        options={{
+          title: 'Orders',
+          tabBarIcon: ({ color, focused, size }) => (
+            <Ionicons
+              name={focused ? 'receipt' : 'receipt-outline'}
+              size={size ?? 22}
+              color={color}
+            />
+          ),
+        }}
       />
       <Tab.Screen
         name="AccountTab"
         component={AppSettingsRoute}
-        options={{ title: 'Account', tabBarIcon: () => <Text>👤</Text> }}
+        options={{
+          title: 'Account',
+          tabBarIcon: ({ color, focused, size }) => (
+            <Ionicons
+              name={focused ? 'person' : 'person-outline'}
+              size={size ?? 22}
+              color={color}
+            />
+          ),
+        }}
       />
     </Tab.Navigator>
   );
