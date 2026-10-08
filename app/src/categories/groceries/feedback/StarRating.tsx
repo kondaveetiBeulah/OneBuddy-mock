@@ -38,5 +38,5 @@ export default function StarRating({ rating, onChange }: Props) {
 const styles = StyleSheet.create({
   row: { flexDirection: "row", justifyContent: "center", gap: 8, marginBottom: 6 },
   btn: { padding: 4 },
-  word: { textAlign: "center", color: colors.orange, fontWeight: "700", fontSize: 16, marginBottom: 20 },
+  word: { textAlign: "center", color: '#4FA81A', fontWeight: "700", fontSize: 16, marginBottom: 20 },
 });
