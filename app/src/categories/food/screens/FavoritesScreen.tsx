@@ -72,7 +72,7 @@ const FavoriteRestaurantCard: React.FC<FavoriteRestaurantCardProps> = ({
           style={styles.favIconBtn}
           accessibilityLabel="Remove from favorites"
         >
-          <Heart size={18} color="#F43F5E" fill="#F43F5E" />
+          <Heart size={18} color="#65A30D" />
         </TouchableOpacity>
       </View>
 
@@ -140,7 +140,7 @@ export const FavoritesScreen: React.FC<FavoritesScreenProps> = ({
       <View style={styles.header}>
         <View style={styles.headLeft}>
           <View style={styles.iconCircle}>
-            <Heart size={18} color="#F43F5E" fill="#F43F5E" />
+            <Heart size={18} color="#65A30D" />
           </View>
           <View>
             <Text style={styles.title}>Favorite Spots</Text>
@@ -154,7 +154,7 @@ export const FavoritesScreen: React.FC<FavoritesScreenProps> = ({
       {favoriteRestaurants.length === 0 ? (
         <View style={styles.emptyCard}>
           <View style={styles.emptyIconCircle}>
-            <Heart size={36} color="#F43F5E" fill="#F43F5E" />
+            <Heart size={36} color="#65A30D" />
           </View>
           <Text style={styles.emptyTitle}>No Favorites Saved</Text>
           <Text style={styles.emptyDesc}>
@@ -202,7 +202,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 14,
-    backgroundColor: 'rgba(244, 63, 94, 0.15)',
+    backgroundColor: 'rgba(101, 163, 13, 0.12)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -274,7 +274,7 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: 'rgba(244, 63, 94, 0.08)',
+    backgroundColor: 'rgba(101, 163, 13, 0.08)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -378,7 +378,7 @@ const styles = StyleSheet.create({
     width: 76,
     height: 76,
     borderRadius: 38,
-    backgroundColor: 'rgba(244, 63, 94, 0.12)',
+    backgroundColor: 'rgba(101, 163, 13, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,

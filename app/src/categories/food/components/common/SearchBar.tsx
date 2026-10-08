@@ -10,7 +10,7 @@ import {
   ViewStyle,
   StyleProp,
 } from 'react-native';
-import { Search, X, Mic } from 'lucide-react-native';
+import { Search, X } from 'lucide-react-native';
 import { useFilter } from '../../context/FilterContext';
 import { isCategoryDark } from '@/theme/categoryThemeBridge';
 
@@ -127,13 +127,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     if (onClear) onClear();
   };
 
-  const handleVoiceOrPick = () => {
-    if (onVoicePress) {
-      onVoicePress();
-    } else if (onChangeText) {
-      onChangeText(itemsList[categoryIndex]);
-    }
-  };
 
   const content = (
     <View
@@ -207,27 +200,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
         </TouchableOpacity>
       )}
 
-      {/* Voice Assistant Mic Icon */}
-      {(!value || value.length === 0) && (
-        <TouchableOpacity
-          onPress={(e) => {
-            e?.stopPropagation?.();
-            handleVoiceOrPick();
-          }}
-          style={[
-            styles.micBtn,
-            {
-              backgroundColor: isDark
-                ? 'rgba(101, 163, 13, 0.2)'
-                : 'rgba(101, 163, 13, 0.1)',
-            },
-          ]}
-          activeOpacity={0.7}
-          accessibilityLabel="Voice Search"
-        >
-          <Mic size={16} color="#65A30D" />
-        </TouchableOpacity>
-      )}
+
     </View>
   );
 
@@ -294,14 +267,6 @@ const styles = StyleSheet.create({
   },
   iconBtn: {
     padding: 6,
-    marginLeft: 4,
-  },
-  micBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
     marginLeft: 4,
   },
 });

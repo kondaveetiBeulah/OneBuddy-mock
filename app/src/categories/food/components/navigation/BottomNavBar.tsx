@@ -66,22 +66,14 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
         onPress={() => onNavigate('favorites')}
         style={styles.navItem}
       >
-        <View style={styles.iconWrapper}>
-          <Heart
-            size={20}
-            color={activeScreen === 'favorites' ? '#F43F5E' : '#6B7280'}
-            fill={activeScreen === 'favorites' ? '#F43F5E' : 'transparent'}
-          />
-          {favorites.length > 0 && (
-            <View style={styles.favBadge}>
-              <Text style={styles.favBadgeText}>{favorites.length}</Text>
-            </View>
-          )}
-        </View>
+        <Heart
+          size={20}
+          color={activeScreen === 'favorites' ? '#65A30D' : '#6B7280'}
+        />
         <Text
           style={[
             styles.navText,
-            activeScreen === 'favorites' && { color: '#F43F5E', fontWeight: 'bold' },
+            activeScreen === 'favorites' && styles.navTextActive,
           ]}
         >
           Favorites
