@@ -16,6 +16,7 @@ import { Header } from '../components/Header';
 import { RatingStars } from '../components/RatingStars';
 import { QuantitySelector } from '../components/QuantitySelector';
 import { LoadingState } from '../components/LoadingState';
+import { NetworkErrorState } from '@/components/NetworkErrorState';
 import { productService } from '../services/productService';
 import { Product } from '../types/product.types';
 import { formatCurrency } from '../utils/helpers';
@@ -72,9 +73,12 @@ export const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({
     fetchProductDetails();
   }, [productId]);
 
+  const [networkError, setNetworkError] = useState(false);
+
   const fetchProductDetails = async () => {
     try {
       setLoading(true);
+      setNetworkError(false);
       const data = await productService.getProductById(productId);
       if (data) {
         setProduct(data);
@@ -83,12 +87,25 @@ export const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({
       }
     } catch (e) {
       console.error(e);
+      setNetworkError(true);
     } finally {
       setLoading(false);
     }
   };
 
   if (!product) {
+    if (networkError) {
+      return (
+        <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+          <Header title="Product Details" showBack onBack={() => navigation.goBack()} />
+          <NetworkErrorState
+            title="Product Unavailable"
+            message="Could not load product details due to a connection error."
+            onRetry={fetchProductDetails}
+          />
+        </SafeAreaView>
+      );
+    }
     return <LoadingState message={loading ? "Loading product..." : "Product not found"} />;
   }
 

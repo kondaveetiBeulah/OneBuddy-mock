@@ -21,6 +21,18 @@ export default function ProductCard({ id, accent = COLORS.green }: ProductCardPr
   const mrp = p.mrp ?? p.price;
   const pct = mrp > p.price ? Math.round((1 - p.price / mrp) * 100) : 0;
   const localImage = MEDICINE_IMAGES[id];
+  const hasRemoteImage = Boolean(
+    p.image &&
+    typeof p.image === 'string' &&
+    p.image.trim().length > 0 &&
+    p.image !== 'null' &&
+    p.image !== 'undefined' &&
+    !imgError
+  );
+
+  if (!localImage && !hasRemoteImage) {
+    return null;
+  }
 
   return (
     <View style={[styles.pcard, { backgroundColor: medColors.card, borderColor: medColors.line }]}>

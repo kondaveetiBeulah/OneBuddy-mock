@@ -38,9 +38,6 @@ export default function CategoryTabs({ filter, onChange }: CategoryTabsProps) {
             accessibilityRole="button"
             accessibilityState={{ selected: active }}
           >
-            {tab.emoji ? (
-              <Text style={styles.tabEmoji}>{tab.emoji} </Text>
-            ) : null}
             <Text
               style={[styles.tabLabel, active && { color: activeColors.fg }]}
             >

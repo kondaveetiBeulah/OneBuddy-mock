@@ -39,7 +39,6 @@ interface SearchBarProps {
   onSubmitEditing?: () => void;
   onClear?: () => void;
   onPress?: () => void;
-  onVoicePress?: () => void;
   editable?: boolean;
   autoFocus?: boolean;
   style?: ViewStyle;
@@ -53,7 +52,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   onSubmitEditing,
   onClear,
   onPress,
-  onVoicePress,
   editable = true,
   autoFocus = false,
   style,
@@ -150,20 +148,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
         </TouchableOpacity>
       )}
 
-      {/* Voice Assistant Mic Icon */}
-      {onVoicePress && (
-        <TouchableOpacity
-          onPress={(e) => {
-            e.stopPropagation?.();
-            onVoicePress();
-          }}
-          style={[styles.micBtn, { backgroundColor: colors.primaryLight }]}
-          activeOpacity={0.7}
-          accessibilityLabel="Voice Search"
-        >
-          <Ionicons name="mic" size={18} color={colors.primary as string} />
-        </TouchableOpacity>
-      )}
+
     </View>
   );
 

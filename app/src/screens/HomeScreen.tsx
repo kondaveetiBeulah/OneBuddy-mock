@@ -6,7 +6,6 @@ import {
   Pressable,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,7 +18,6 @@ import {
   ChevronDown,
   MapPin,
   Moon,
-  Search,
   Settings as SettingsIcon,
   Sun,
 } from 'lucide-react-native';
@@ -64,7 +62,6 @@ export default function HomeScreen() {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [alerts, setAlerts] = useState<AlertNotification[]>(INITIAL_ALERTS);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [query, setQuery] = useState('');
   const [copiedCode, setCopiedCode] = useState(false);
   const [flippedCards, setFlippedCards] = useState<Record<string, boolean>>({});
 
@@ -291,27 +288,6 @@ export default function HomeScreen() {
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 40 }]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Search Bar */}
-        <View
-          style={[
-            styles.searchBar,
-            {
-              backgroundColor: isDark ? tokens.surface1 : '#EFF3EA',
-              borderColor: isDark ? tokens.ink(0.1) : '#E4EADF',
-            },
-          ]}
-        >
-          <Search size={19} color={tokens.textDim} style={styles.searchIcon} />
-          <TextInput
-            value={query}
-            onChangeText={setQuery}
-            placeholder="Search food, grocery, rides, doctors..."
-            placeholderTextColor={tokens.textDim}
-            style={[styles.searchInput, { color: tokens.text }]}
-            returnKeyType="search"
-          />
-        </View>
-
         {/* Location Selector Chip */}
         <Pressable
           accessibilityRole="button"
@@ -570,23 +546,6 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: 20,
     paddingTop: 18,
-  },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 26,
-    paddingHorizontal: 16,
-    paddingVertical: 3,
-    borderWidth: 1,
-    marginBottom: 14,
-  },
-  searchIcon: {
-    marginRight: 10,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 14.5,
-    paddingVertical: 9,
   },
   location: {
     alignSelf: 'flex-start',

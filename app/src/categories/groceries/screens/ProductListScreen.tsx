@@ -16,6 +16,7 @@ import { SearchBar } from '../components/SearchBar';
 import { ProductCard } from '../components/ProductCard';
 import { EmptyState } from '../components/EmptyState';
 import { LoadingState } from '../components/LoadingState';
+import { NetworkErrorState } from '@/components/NetworkErrorState';
 import { productService } from '../services/productService';
 import { Product, SortOption, ProductFilter } from '../types/product.types';
 import { useCart } from '../context/CartContext';
@@ -47,6 +48,7 @@ export const ProductListScreen: React.FC<ProductListScreenProps> = ({
   // Filter state
   const [filterInStockOnly, setFilterInStockOnly] = useState(false);
   const [minRating, setMinRating] = useState<number | undefined>(undefined);
+  const [networkError, setNetworkError] = useState(false);
 
   useEffect(() => {
     fetchProducts();
@@ -55,6 +57,7 @@ export const ProductListScreen: React.FC<ProductListScreenProps> = ({
   const fetchProducts = async () => {
     try {
       setLoading(true);
+      setNetworkError(false);
       const filter: ProductFilter = {
         categoryId,
         inStockOnly: filterInStockOnly,
@@ -64,6 +67,7 @@ export const ProductListScreen: React.FC<ProductListScreenProps> = ({
       setProductsList(data);
     } catch (e) {
       console.error(e);
+      setNetworkError(true);
     } finally {
       setLoading(false);
     }
@@ -139,6 +143,12 @@ export const ProductListScreen: React.FC<ProductListScreenProps> = ({
 
       {loading ? (
         <LoadingState message={`Fetching ${categoryName}...`} />
+      ) : networkError && productsList.length === 0 ? (
+        <NetworkErrorState
+          title="Could Not Load Products"
+          message={`Unable to load products in ${categoryName}. Please check your connection.`}
+          onRetry={fetchProducts}
+        />
       ) : filteredProducts.length === 0 ? (
         <EmptyState
           iconName="search-outline"

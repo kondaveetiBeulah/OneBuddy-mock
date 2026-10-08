@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Image,
   Pressable,
@@ -11,7 +11,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { BookingStepper, colors, useColors, PrimaryButton } from '../components/UI';
 import { useBooking } from '../context/BookingContext';
-import { doctors, getDateKey } from '../mockData';
+import { doctors, getDateKey, getDefaultSlotsForDate } from '../mockData';
+import type { TimeSlot } from '../types';
 
 interface Props {
   navigation: {
@@ -27,10 +28,10 @@ interface Props {
 
 export function AvailabilityScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
-  const { selectedDoctor, chooseSlot, doctorsList } = useBooking();
+  const { selectedDoctor, chooseDoctor, chooseSlot, doctorsList } = useBooking();
   const tc = useColors();
   const currentDoctors = doctorsList && doctorsList.length > 0 ? doctorsList : doctors;
-  const doctor = selectedDoctor ?? currentDoctors.find((item) => item.id === route?.params?.doctorId) ?? currentDoctors[0];
+  const doctor = selectedDoctor ?? currentDoctors.find((item) => item.id === route?.params?.doctorId) ?? currentDoctors[0] ?? doctors[0];
   const [date, setDate] = useState(getDateKey(0));
   const [slotId, setSlotId] = useState<string>();
 
@@ -44,7 +45,30 @@ export function AvailabilityScreen({ navigation, route }: Props) {
     };
   });
 
-  const selected = doctor?.slots?.[date]?.find((slot) => slot.id === slotId);
+  const availableSlots: TimeSlot[] = useMemo(() => {
+    let slotsList: TimeSlot[] = [];
+    if (doctor?.slots?.[date] && Array.isArray(doctor.slots[date]) && doctor.slots[date].length > 0) {
+      slotsList = doctor.slots[date].map((s: any, idx: number) => ({
+        id: s.id || `slot-${date}-${idx}`,
+        label: s.label || s.time || (s.startAt && s.endAt ? `${s.startAt} - ${s.endAt}` : `Slot ${idx + 1}`),
+        available: s.available !== undefined ? Boolean(s.available) : true,
+      }));
+    }
+    if (!slotsList || slotsList.length === 0) {
+      slotsList = getDefaultSlotsForDate(date);
+    }
+    return slotsList;
+  }, [doctor, date]);
+
+  useEffect(() => {
+    if (availableSlots && availableSlots.length > 0) {
+      if (!slotId || !availableSlots.some((s) => s.id === slotId)) {
+        setSlotId(availableSlots[0].id);
+      }
+    }
+  }, [date, availableSlots, slotId]);
+
+  const selected = availableSlots.find((slot) => slot.id === slotId) || availableSlots[0];
 
   return (
     <View style={styles.layerContainer}>
@@ -127,7 +151,6 @@ export function AvailabilityScreen({ navigation, route }: Props) {
                   key={item.key}
                   onPress={() => {
                     setDate(item.key);
-                    setSlotId(undefined);
                   }}
                   style={[styles.dayCard, { backgroundColor: tc.white, borderColor: tc.border }, isActive && styles.dayCardActive]}
                 >
@@ -145,7 +168,7 @@ export function AvailabilityScreen({ navigation, route }: Props) {
           {/* Available Slots */}
           <Text style={[styles.sectionLabel, { color: tc.ink }]}>Available Slots</Text>
           <View style={styles.slotsGrid}>
-            {doctor.slots[date]?.map((slot) => {
+            {availableSlots.map((slot) => {
               const isActive = slotId === slot.id;
               return (
                 <Pressable
@@ -168,6 +191,9 @@ export function AvailabilityScreen({ navigation, route }: Props) {
               disabled={!selected}
               onPress={() => {
                 if (selected) {
+                  if (!selectedDoctor && doctor) {
+                    chooseDoctor(doctor);
+                  }
                   chooseSlot(date, selected);
                   navigation.navigate('PatientDetails');
                 }

@@ -15,13 +15,13 @@ import { SearchBar } from '../components/SearchBar';
 import { ProductCard } from '../components/ProductCard';
 import { EmptyState } from '../components/EmptyState';
 import { LoadingState } from '../components/LoadingState';
+import { NetworkErrorState } from '@/components/NetworkErrorState';
 import { productService } from '../services/productService';
 import { Product } from '../types/product.types';
 import { useCart } from '../context/CartContext';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../types/navigation.types';
-import { VoiceSearchModal } from '../components/VoiceSearchModal';
 
 type SearchScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Search'>;
@@ -48,15 +48,9 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({ navigation, route })
     'Fortune Oil',
   ]);
   const [searching, setSearching] = useState(false);
-  const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
+  const [searchError, setSearchError] = useState(false);
   const { addToCart, getCartCount } = useCart();
   const cartCount = getCartCount();
-
-  useEffect(() => {
-    if (route?.params?.initialVoiceSearch) {
-      setIsVoiceModalOpen(true);
-    }
-  }, [route?.params?.initialVoiceSearch]);
 
   useEffect(() => {
     if (query.trim().length > 0) {
@@ -67,25 +61,23 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({ navigation, route })
   }, [query]);
 
   const performSearch = async (searchQuery: string) => {
-    setSearching(true);
-    const data = await productService.searchProducts(searchQuery);
-    setResults(data);
-    setSearching(false);
+    try {
+      setSearching(true);
+      setSearchError(false);
+      const data = await productService.searchProducts(searchQuery);
+      setResults(data);
+    } catch (e) {
+      console.error(e);
+      setSearchError(true);
+    } finally {
+      setSearching(false);
+    }
   };
 
   const handleSelectSearchTerm = (term: string) => {
     setQuery(term);
     if (!recentSearches.includes(term)) {
       setRecentSearches([term, ...recentSearches.slice(0, 4)]);
-    }
-  };
-
-  const handleVoiceResult = (spokenText: string) => {
-    setIsVoiceModalOpen(false);
-    setQuery(spokenText);
-    performSearch(spokenText);
-    if (!recentSearches.includes(spokenText)) {
-      setRecentSearches([spokenText, ...recentSearches.slice(0, 4)]);
     }
   };
 
@@ -122,16 +114,9 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({ navigation, route })
           value={query}
           onChangeText={setQuery}
           onClear={() => setQuery('')}
-          onVoicePress={() => setIsVoiceModalOpen(true)}
-          autoFocus={!route?.params?.initialVoiceSearch}
+          autoFocus={true}
         />
       </View>
-
-      <VoiceSearchModal
-        visible={isVoiceModalOpen}
-        onClose={() => setIsVoiceModalOpen(false)}
-        onResult={handleVoiceResult}
-      />
 
       {query.trim().length === 0 ? (
         <ScrollView contentContainerStyle={styles.suggestionsContainer}>
@@ -181,6 +166,12 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({ navigation, route })
           message={`Searching for "${query}"...`}
           subtitle="Looking up fresh grocery items"
           showLogo={false}
+        />
+      ) : searchError && results.length === 0 ? (
+        <NetworkErrorState
+          title="Search Failed"
+          message="Could not search products due to a connection issue. Please try again."
+          onRetry={() => performSearch(query)}
         />
       ) : results.length === 0 ? (
         <EmptyState

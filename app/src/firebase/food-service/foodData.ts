@@ -58,9 +58,13 @@ export function mapRestaurant(docId: string, data: any, menuItems: MenuItem[] = 
     : (data.totalRatings || '100+ ratings');
 
   // Use subcollection menu items if provided; else fall back to legacy embedded menu array
-  const menu = menuItems.length > 0
+  const rawMenu = menuItems.length > 0
     ? menuItems
-    : (Array.isArray(data.menu) ? data.menu.map(mapMenuItem) : []);
+    : (Array.isArray(data.menu) ? data.menu.map((item: any, idx: number) => mapMenuItem(item, idx)) : []);
+
+  const menu = rawMenu.filter((m: MenuItem) =>
+    Boolean(m.image && m.image.trim().length > 0 && m.image !== 'null' && m.image !== 'undefined')
+  );
 
   return {
     id: data.id || docId,
@@ -132,7 +136,9 @@ export async function fetchMenuItems(restaurantId: string): Promise<MenuItem[]> 
       where('available', '==', true)
     );
     const snap = await getDocs(q);
-    return snap.docs.map((d, idx) => mapMenuItem({ id: d.id, ...d.data() }, idx));
+    return snap.docs
+      .map((d: any, idx: number) => mapMenuItem({ id: d.id, ...d.data() }, idx))
+      .filter((m: MenuItem) => Boolean(m.image && m.image.trim().length > 0 && m.image !== 'null' && m.image !== 'undefined'));
   } catch (err) {
     console.error(`[FoodBackend] Error fetching menu items for ${restaurantId}:`, err);
     return [];
