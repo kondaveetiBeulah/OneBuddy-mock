@@ -61,6 +61,16 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
     toggleWishlist(product);
   };
 
+  if (
+    !product?.image ||
+    !product.image.trim() ||
+    product.image === 'null' ||
+    product.image === 'undefined' ||
+    imageError
+  ) {
+    return null;
+  }
+
   const cardColorStyle = {
     backgroundColor: colors.cardBackground,
     borderColor: colors.borderLight,

@@ -55,18 +55,7 @@ export interface SavedAddressItem {
   receiverPhone: string;
 }
 
-const DEFAULT_SAVED_ADDRESSES: SavedAddressItem[] = [
-  {
-    id: 'addr_default_1',
-    label: 'Home',
-    houseNo: 'Flat 402',
-    building: 'Sunshine Apts',
-    landmark: 'Main Road',
-    formattedAddress: 'Flat 402, Sunshine Apts, Main Road, Kurnool',
-    receiverName: 'Anjali',
-    receiverPhone: '9876543210',
-  },
-];
+const DEFAULT_SAVED_ADDRESSES: SavedAddressItem[] = [];
 
 // ─── Constants ─────────────────────────────────────────────────────────────
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -227,7 +216,18 @@ interface CrossSellCardProps {
 }
 
 const CrossSellCard: React.FC<CrossSellCardProps> = ({ item, isAdded, onAdd, onDismiss }) => {
+  const [imgErr, setImgErr] = useState(false);
   const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  if (
+    !item.imageUrl ||
+    !item.imageUrl.trim() ||
+    item.imageUrl === 'null' ||
+    item.imageUrl === 'undefined' ||
+    imgErr
+  ) {
+    return null;
+  }
 
   const handleAdd = () => {
     Animated.sequence([
@@ -238,7 +238,11 @@ const CrossSellCard: React.FC<CrossSellCardProps> = ({ item, isAdded, onAdd, onD
 
   return (
     <Animated.View style={[styles.crossSellCard, { transform: [{ scale: scaleAnim }] }]}>
-      <Image source={{ uri: item.imageUrl }} style={styles.crossSellImage} />
+      <Image
+        source={{ uri: item.imageUrl }}
+        style={styles.crossSellImage}
+        onError={() => setImgErr(true)}
+      />
       {onDismiss && (
         <TouchableOpacity
           onPress={() => onDismiss(item)}
@@ -359,9 +363,9 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation: navProp, onP
   const [couponApplied, setCouponApplied] = useState(false);
   const [couponDiscount, setCouponDiscount] = useState(0);
 
-  const [savedAddresses, setSavedAddresses] = useState<SavedAddressItem[]>(DEFAULT_SAVED_ADDRESSES);
-  const [selectedAddressId, setSelectedAddressId] = useState<string>('addr_default_1');
-  const [deliveryAddress, setDeliveryAddress] = useState('Flat 402, Sunshine Apts, Main Road, Kurnool');
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddressItem[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string>('');
+  const [deliveryAddress, setDeliveryAddress] = useState('Select or Add Delivery Address');
   const [isAddressExpanded, setIsAddressExpanded] = useState(false);
   const [isAddFormOpen, setIsAddFormOpen] = useState(false);
   const [isAddOptionModalVisible, setIsAddOptionModalVisible] = useState(false);
@@ -481,15 +485,10 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation: navProp, onP
     const loadSavedAddresses = async () => {
       try {
         const stored = await storageHelper.getItem<SavedAddressItem[]>(STORAGE_KEYS.SAVED_ADDRESSES);
-        if (stored !== null && Array.isArray(stored)) {
+        if (stored !== null && Array.isArray(stored) && stored.length > 0) {
           setSavedAddresses(stored);
-          if (stored.length > 0) {
-            setSelectedAddressId(stored[0].id);
-            setDeliveryAddress(stored[0].formattedAddress);
-          } else {
-            setSelectedAddressId('');
-            setDeliveryAddress('Select or Add Delivery Address');
-          }
+          setSelectedAddressId(stored[0].id);
+          setDeliveryAddress(stored[0].formattedAddress);
         } else if (selectedAddress) {
           const formatted = `${selectedAddress.houseNumber || ''}, ${selectedAddress.street || ''}, ${selectedAddress.city || ''}`.replace(/^,\s*|,\s*$/g, '');
           if (formatted) {
@@ -506,7 +505,15 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation: navProp, onP
             setSavedAddresses([initialItem]);
             setSelectedAddressId(initialItem.id);
             setDeliveryAddress(formatted);
+          } else {
+            setSavedAddresses([]);
+            setSelectedAddressId('');
+            setDeliveryAddress('Select or Add Delivery Address');
           }
+        } else {
+          setSavedAddresses([]);
+          setSelectedAddressId('');
+          setDeliveryAddress('Select or Add Delivery Address');
         }
       } catch (e) {
         console.error('Failed to load saved addresses', e);
@@ -515,7 +522,7 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation: navProp, onP
       }
     };
     loadSavedAddresses();
-  }, []);
+  }, [selectedAddress]);
 
   useEffect(() => {
     if (isLoaded) {
@@ -526,16 +533,6 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation: navProp, onP
   }, [savedAddresses, isLoaded]);
 
   // ── Calculations ────────────────────────────────────────────────────────────
-  const subtotal = cartItems.reduce(
-    (sum, item) => sum + (item.product.discountPrice || item.product.price) * item.quantity,
-    0
-  );
-  const FREE_DELIVERY_THRESHOLD = 100;
-  // Free delivery ONLY when the amount is above 100 (> 100)
-  const isFreeDelivery = subtotal > FREE_DELIVERY_THRESHOLD;
-  const deliveryFee = isFreeDelivery ? 0 : (cartItems.length > 0 ? DELIVERY_FEE : 0);
-  const amountToFreeDelivery = Math.max(0, FREE_DELIVERY_THRESHOLD - subtotal);
-
   const itemDiscounts = cartItems.reduce((sum, item) => {
     const orig = item.product.price;
     const disc = item.product.discountPrice || item.product.price;
@@ -544,6 +541,23 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation: navProp, onP
     }
     return sum;
   }, 0);
+
+  const subtotal = cartItems.reduce(
+    (sum, item) =>
+      sum +
+      (item.product.discountPrice && item.product.price > item.product.discountPrice
+        ? item.product.price
+        : item.product.discountPrice || item.product.price) *
+        item.quantity,
+    0
+  );
+  const FREE_DELIVERY_THRESHOLD = 100;
+  // Free delivery ONLY when the amount is above 100 (> 100)
+  const effectiveSubtotal = subtotal - itemDiscounts;
+  const isFreeDelivery = effectiveSubtotal > FREE_DELIVERY_THRESHOLD;
+  const deliveryFee = isFreeDelivery ? 0 : (cartItems.length > 0 ? DELIVERY_FEE : 0);
+  const amountToFreeDelivery = Math.max(0, FREE_DELIVERY_THRESHOLD - effectiveSubtotal);
+
   const totalDiscount = couponDiscount + itemDiscounts;
 
   const grandTotal = Math.max(0, subtotal + deliveryFee + selectedTip - totalDiscount);
@@ -742,15 +756,34 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation: navProp, onP
 
   const handleApplyCoupon = () => {
     triggerQuickLoading('Applying promo...', 320, () => {
-      if (couponCode.toUpperCase() === 'SAVE10') {
+      const code = couponCode.trim().toUpperCase();
+      if (code === 'SAVE10') {
+        const discount = Math.round(subtotal * 0.1);
         setCouponApplied(true);
-        setCouponDiscount(subtotal * 0.1);
-      } else if (couponCode.toUpperCase() === 'FLAT50') {
+        setCouponDiscount(discount);
+        setToastMessage(`🎉 Applied SAVE10! Saved ₹${discount}`);
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3000);
+      } else if (code === 'FLAT50') {
+        const discount = Math.min(50, subtotal);
         setCouponApplied(true);
-        setCouponDiscount(50);
+        setCouponDiscount(discount);
+        setToastMessage(`🎉 Applied FLAT50! Saved ₹${discount}`);
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3000);
+      } else if (code === 'BUDDY50') {
+        const discount = Math.min(Math.round(subtotal * 0.5), 100) || 50;
+        setCouponApplied(true);
+        setCouponDiscount(discount);
+        setToastMessage(`🎉 Applied BUDDY50! Saved ₹${discount}`);
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3000);
       } else {
         setCouponApplied(false);
         setCouponDiscount(0);
+        setToastMessage('❌ Invalid coupon code. Try SAVE10, FLAT50 or BUDDY50');
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3000);
       }
     });
   };
@@ -1074,17 +1107,19 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation: navProp, onP
     if (
       !selectedAddressId ||
       !deliveryAddress ||
+      deliveryAddress.trim() === '' ||
       deliveryAddress === 'Select or Add Delivery Address' ||
       savedAddresses.length === 0
     ) {
-      const msg = '⚠️ Delivery Address Required: Please select or add your delivery address to proceed to checkout.';
+      const msg = '⚠️ Delivery Address Required: Please add your delivery address to proceed to payment.';
       if (Platform.OS === 'web' && typeof window !== 'undefined') {
         window.alert(msg);
       } else {
         Alert.alert('Delivery Address Required', msg);
       }
       setIsAddressExpanded(true);
-      setToastMessage('⚠️ Please select delivery address');
+      setIsAddFormOpen(true);
+      setToastMessage('⚠️ Please add delivery address to proceed');
       setShowToast(true);
       setTimeout(() => setShowToast(false), 3500);
       return;
@@ -1617,7 +1652,7 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation: navProp, onP
               You saved ₹{couponDiscount.toFixed(2)} with code "{couponCode}"
             </Text>
           )}
-          <Text style={styles.couponHint}>Try: SAVE10 or FLAT50</Text>
+          <Text style={styles.couponHint}>Try: SAVE10, FLAT50 or BUDDY50</Text>
         </View>
 
         {/* ── Tip Selection ── */}

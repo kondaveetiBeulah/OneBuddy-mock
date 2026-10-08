@@ -35,6 +35,7 @@ import { storageHelper, STORAGE_KEYS, fetchLiveAddressDetails } from '../utils/h
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/navigation.types';
+import { NetworkErrorState } from '@/components/NetworkErrorState';
 
 
 interface SavedAddressItem {
@@ -87,6 +88,7 @@ export const HomeScreen: React.FC = () => {
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [networkError, setNetworkError] = useState(false);
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [offers, setOffers] = useState<Offer[]>([]);
@@ -136,6 +138,7 @@ export const HomeScreen: React.FC = () => {
   const loadHomeData = async () => {
     try {
       setLoading(true);
+      setNetworkError(false);
       const [cats, offs, prods] = await Promise.all([
         productService.getCategories(),
         productService.getOffers(),
@@ -148,6 +151,7 @@ export const HomeScreen: React.FC = () => {
       setFreshPicks(prods.filter((p) => !p.isFeatured));
     } catch (e) {
       console.error('Failed to load home data', e);
+      setNetworkError(true);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -530,6 +534,12 @@ export const HomeScreen: React.FC = () => {
           message="Loading Fresh Groceries..."
           subtitle="Fetching daily offers, categories, and fresh products for you"
         />
+      ) : networkError && categories.length === 0 ? (
+        <NetworkErrorState
+          title="Could Not Load Groceries"
+          message="We couldn't connect to OneBuddy Grocery services. Please check your internet connection."
+          onRetry={loadHomeData}
+        />
       ) : (
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -538,6 +548,14 @@ export const HomeScreen: React.FC = () => {
         }
         contentContainerStyle={styles.scrollContent}
       >
+        {networkError && (
+          <NetworkErrorState
+            compact
+            title="Connection issue"
+            message="Showing cached data. Tap to reconnect."
+            onRetry={loadHomeData}
+          />
+        )}
         {/* ── 2. Interactive Delivery Address Section (Matching CartScreen) ── */}
         <View style={[styles.addressWrapper, { backgroundColor: colors.background }]}>
           <View style={[styles.addressManagerCard, { backgroundColor: colors.cardBackground, borderColor: colors.borderLight, shadowColor: colors.shadow }]}>
@@ -828,7 +846,6 @@ export const HomeScreen: React.FC = () => {
           <SearchBar
             editable={false}
             onPress={() => navigation.navigate('Search')}
-            onVoicePress={() => navigation.navigate('Search', { initialVoiceSearch: true })}
           />
           <View style={styles.freeDeliveryPill}>
             <Ionicons name="flash" size={13} color={colors.primary} />

@@ -254,7 +254,12 @@ interface CrossSellCardProps {
 
 const CrossSellCard: React.FC<CrossSellCardProps> = ({ item, isAdded, onAdd, onDismiss }) => {
     const { styles } = useCartTheme();
+    const [imgErr, setImgErr] = useState(false);
     const scaleAnim = useRef(new Animated.Value(1)).current;
+
+    if (!item.imageUrl || !item.imageUrl.trim() || item.imageUrl === 'null' || item.imageUrl === 'undefined' || imgErr) {
+        return null;
+    }
 
     const handleAdd = () => {
         Animated.sequence([
@@ -265,7 +270,11 @@ const CrossSellCard: React.FC<CrossSellCardProps> = ({ item, isAdded, onAdd, onD
 
     return (
         <Animated.View style={[styles.crossSellCard, { transform: [{ scale: scaleAnim }] }]}>
-            <Image source={{ uri: item.imageUrl }} style={styles.crossSellImage} />
+            <Image
+                source={{ uri: item.imageUrl }}
+                style={styles.crossSellImage}
+                onError={() => setImgErr(true)}
+            />
             {onDismiss && (
                 <TouchableOpacity
                     onPress={() => onDismiss(item)}
@@ -377,7 +386,17 @@ const CartScreen: React.FC<CartScreenProps> = ({ onProceed, onBack }) => {
         if (!currentRestaurant) return [];
         const cartItemIds = new Set(contextCart.map((ci) => ci.item.id));
         const candidates = currentRestaurant.menu
-            .filter((menuItem) => !cartItemIds.has(menuItem.id))
+            .filter(
+                (menuItem) =>
+                    !cartItemIds.has(menuItem.id) &&
+                    Boolean(
+                        menuItem.image &&
+                        typeof menuItem.image === 'string' &&
+                        menuItem.image.trim().length > 0 &&
+                        menuItem.image !== 'null' &&
+                        menuItem.image !== 'undefined'
+                    )
+            )
             // Prefer bestsellers first, then sort by rating descending
             .sort((a, b) => {
                 if (a.bestseller && !b.bestseller) return -1;
@@ -576,12 +595,6 @@ const CartScreen: React.FC<CartScreenProps> = ({ onProceed, onBack }) => {
     const segmentSlide = useRef(new Animated.Value(0)).current;
 
     // ── Calculations ────────────────────────────────────────────────────────────
-    const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    const FREE_DELIVERY_THRESHOLD = 499;
-    const isFreeDelivery = subtotal >= FREE_DELIVERY_THRESHOLD;
-    const deliveryFee = isFreeDelivery ? 0 : (cartItems.length > 0 ? DELIVERY_FEE : 0);
-    const amountToFreeDelivery = FREE_DELIVERY_THRESHOLD - subtotal;
-
     const itemDiscounts = cartItems.reduce((sum, item) => {
         if (item.originalPrice && item.originalPrice > item.price) {
             return sum + (item.originalPrice - item.price) * item.quantity;
@@ -589,8 +602,18 @@ const CartScreen: React.FC<CartScreenProps> = ({ onProceed, onBack }) => {
         return sum;
     }, 0);
 
+    const subtotal = cartItems.reduce(
+        (sum, item) => sum + (item.originalPrice && item.originalPrice > item.price ? item.originalPrice : item.price) * item.quantity,
+        0
+    );
+    const FREE_DELIVERY_THRESHOLD = 499;
+    const effectiveSubtotal = subtotal - itemDiscounts;
+    const isFreeDelivery = effectiveSubtotal >= FREE_DELIVERY_THRESHOLD;
+    const deliveryFee = isFreeDelivery ? 0 : (cartItems.length > 0 ? DELIVERY_FEE : 0);
+    const amountToFreeDelivery = FREE_DELIVERY_THRESHOLD - effectiveSubtotal;
+
     const tax = 0;
-    const grandTotal = subtotal + deliveryFee + selectedTip - itemDiscounts - couponDiscount;
+    const grandTotal = Math.max(0, subtotal + deliveryFee + selectedTip - itemDiscounts - couponDiscount);
     const totalDiscount = couponDiscount + itemDiscounts;
 
     const handleIncrement = useCallback((id: string) => {
@@ -666,15 +689,34 @@ const CartScreen: React.FC<CartScreenProps> = ({ onProceed, onBack }) => {
 
     const handleApplyCoupon = () => {
         triggerQuickLoading('Applying promo...', 320, () => {
-            if (couponCode.toUpperCase() === 'SAVE10') {
+            const code = couponCode.trim().toUpperCase();
+            if (code === 'SAVE10') {
+                const discount = Math.round(subtotal * 0.1);
                 setCouponApplied(true);
-                setCouponDiscount(subtotal * 0.1);
-            } else if (couponCode.toUpperCase() === 'FLAT50') {
+                setCouponDiscount(discount);
+                setToastMessage(`🎉 Applied SAVE10! Saved ₹${discount}`);
+                setShowToast(true);
+                setTimeout(() => setShowToast(false), 3000);
+            } else if (code === 'FLAT50') {
+                const discount = Math.min(50, subtotal);
                 setCouponApplied(true);
-                setCouponDiscount(50);
+                setCouponDiscount(discount);
+                setToastMessage(`🎉 Applied FLAT50! Saved ₹${discount}`);
+                setShowToast(true);
+                setTimeout(() => setShowToast(false), 3000);
+            } else if (code === 'BUDDY50') {
+                const discount = Math.min(Math.round(subtotal * 0.5), 100) || 50;
+                setCouponApplied(true);
+                setCouponDiscount(discount);
+                setToastMessage(`🎉 Applied BUDDY50! Saved ₹${discount}`);
+                setShowToast(true);
+                setTimeout(() => setShowToast(false), 3000);
             } else {
                 setCouponApplied(false);
                 setCouponDiscount(0);
+                setToastMessage('❌ Invalid coupon code. Try SAVE10, FLAT50 or BUDDY50');
+                setShowToast(true);
+                setTimeout(() => setShowToast(false), 3000);
             }
         });
     };
@@ -914,9 +956,11 @@ const CartScreen: React.FC<CartScreenProps> = ({ onProceed, onBack }) => {
     };
 
     const handleProceed = () => {
-        if (savedAddresses.length === 0 || !selectedAddressId) {
-            setToastMessage('⚠️ Please Add Address');
+        if (!selectedAddressId || savedAddresses.length === 0 || !deliveryAddress || deliveryAddress.trim() === '' || deliveryAddress === 'Select or Add Delivery Address') {
+            setToastMessage('⚠️ Please add delivery address to proceed');
             setShowToast(true);
+            setIsAddressExpanded(true);
+            setIsAddFormOpen(true);
             setTimeout(() => setShowToast(false), 3000);
             return;
         }
@@ -1278,7 +1322,7 @@ const CartScreen: React.FC<CartScreenProps> = ({ onProceed, onBack }) => {
                 {currentRestaurant && restaurantRecommendations.length > 0 && (
                     <View style={styles.section}>
                         <Text style={styles.sectionTitle}>
-                            ✨ More from {currentRestaurant.name}
+                            More from {currentRestaurant.name}
                         </Text>
                         <FlatList
                             data={restaurantRecommendations.filter(item => !dismissedCrossSell.has(item.id))}
@@ -1300,7 +1344,7 @@ const CartScreen: React.FC<CartScreenProps> = ({ onProceed, onBack }) => {
 
                 {/* ── Coupon Code ── */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>🎟 Promo Code</Text>
+                    <Text style={styles.sectionTitle}>Promo Code</Text>
                     <View style={styles.couponRow}>
                         <View style={styles.couponInputWrapper}>
                             <TextInput
@@ -1333,12 +1377,12 @@ const CartScreen: React.FC<CartScreenProps> = ({ onProceed, onBack }) => {
                             🎉 You saved ₹{couponDiscount.toFixed(2)} with code "{couponCode}"
                         </Text>
                     )}
-                    <Text style={styles.couponHint}>Try: SAVE10 or FLAT50</Text>
+                    <Text style={styles.couponHint}>Try: SAVE10, FLAT50 or BUDDY50</Text>
                 </View>
 
                 {/* ── Tip Selection ── */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>💝 Tip Your Rider</Text>
+                    <Text style={styles.sectionTitle}>Tip Your Rider</Text>
                     <Text style={styles.tipSubText}>100% of the tip goes to your delivery partner</Text>
                     <View style={styles.tipRow}>
                         {tipOptions.map(amount => (
@@ -1354,7 +1398,7 @@ const CartScreen: React.FC<CartScreenProps> = ({ onProceed, onBack }) => {
 
                 {/* ── Bill Breakdown ── */}
                 <View style={[styles.section, styles.billCard]}>
-                    <Text style={styles.sectionTitle}>🧾 Bill Breakdown</Text>
+                    <Text style={styles.sectionTitle}>Bill Breakdown</Text>
                     <View style={styles.billRow}>
                         <Text style={styles.billLabel}>Subtotal</Text>
                         <Text style={styles.billValue}>₹{subtotal.toFixed(2)}</Text>

@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFoodData } from '../context/FoodDataContext';
 import { MenuHeader } from '../components/menu/MenuHeader';
@@ -7,8 +7,10 @@ import { MenuFilterBar } from '../components/menu/MenuFilterBar';
 import { MenuItemCard } from '../components/menu/MenuItemCard';
 import { ComboHighlight } from '../components/menu/ComboHighlight';
 import { ItemDetailModal } from '../components/menu/ItemDetailModal';
-import { Utensils } from 'lucide-react-native';
+import { ArrowLeft, Utensils } from 'lucide-react-native';
 import { MenuItem } from '../types';
+import { useNetwork } from '@/context/NetworkContext';
+import { NetworkErrorState } from '@/components/NetworkErrorState';
 
 interface RestaurantMenuScreenProps {
   restaurantId: string;
@@ -20,7 +22,8 @@ export const RestaurantMenuScreen: React.FC<RestaurantMenuScreenProps> = ({
   onBack,
 }) => {
   const insets = useSafeAreaInsets();
-  const { restaurants, isLoading } = useFoodData();
+  const { restaurants, isLoading, error, refresh } = useFoodData();
+  const { isConnected } = useNetwork();
   const restaurant = useMemo(() => {
     return restaurants.find((r) => r.id === restaurantId) || restaurants[0];
   }, [restaurants, restaurantId]);
@@ -102,6 +105,32 @@ export const RestaurantMenuScreen: React.FC<RestaurantMenuScreenProps> = ({
       return (
         <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
           <ActivityIndicator size="large" color="#65A30D" />
+        </View>
+      );
+    }
+    if (!isConnected || error) {
+      return (
+        <View style={[styles.container, { paddingTop: insets.top + 8 }]}>
+          <View style={{ paddingHorizontal: 16, paddingBottom: 12 }}>
+            <TouchableOpacity
+              onPress={onBack}
+              style={{
+                width: 38,
+                height: 38,
+                borderRadius: 19,
+                backgroundColor: 'rgba(0,0,0,0.06)',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <ArrowLeft size={20} color="#1F2937" />
+            </TouchableOpacity>
+          </View>
+          <NetworkErrorState
+            title="Menu Unavailable"
+            message="Could not load the restaurant menu due to a connection issue. Please check your internet."
+            onRetry={refresh}
+          />
         </View>
       );
     }

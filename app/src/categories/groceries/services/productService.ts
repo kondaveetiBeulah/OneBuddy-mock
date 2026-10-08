@@ -9,10 +9,13 @@ import {
   fetchOffers,
 } from '../../../firebase/grocery-service';
 
+const hasValidImage = (p: Product) =>
+  Boolean(p.image && p.image.trim().length > 0 && p.image !== 'null' && p.image !== 'undefined');
+
 export const productService = {
   async getProducts(filter?: ProductFilter, sort?: SortOption): Promise<Product[]> {
     const all = await fetchProducts();
-    let result = [...all];
+    let result = all.filter(hasValidImage);
 
     if (filter) {
       if (filter.categoryId) {
@@ -64,18 +67,20 @@ export const productService = {
   },
 
   async getProductById(id: string): Promise<Product | null> {
-    return fetchProductById(id);
+    const p = await fetchProductById(id);
+    return p && hasValidImage(p) ? p : null;
   },
 
   async getFeaturedProducts(): Promise<Product[]> {
-    return fetchFeaturedProducts();
+    const list = await fetchFeaturedProducts();
+    return list.filter(hasValidImage);
   },
 
   async searchProducts(query: string): Promise<Product[]> {
     const cleanQuery = query.toLowerCase().trim();
     if (!cleanQuery) return [];
 
-    const products = await fetchProducts();
+    const products = (await fetchProducts()).filter(hasValidImage);
 
     // Category synonyms mapping for precise voice and text intent matching
     const CATEGORY_MAP: Record<string, string[]> = {

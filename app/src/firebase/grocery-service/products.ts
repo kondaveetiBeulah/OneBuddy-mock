@@ -64,7 +64,9 @@ export async function fetchProducts(): Promise<Product[]> {
       where('isAvailable', '==', true)
     );
     const snap = await getDocs(q);
-    return snap.docs.map((d) => mapProduct(d.id, d.data()));
+    return snap.docs
+      .map((d) => mapProduct(d.id, d.data()))
+      .filter((p) => Boolean(p.image && p.image.trim().length > 0 && p.image !== 'null' && p.image !== 'undefined'));
   } catch (err) {
     console.error('[GroceryBackend] Error fetching products:', err);
     return [];
@@ -77,7 +79,11 @@ export async function fetchProductById(productId: string): Promise<Product | nul
     const ref = doc(db, 'catalogGroceryProducts', productId);
     const snap = await getDoc(ref);
     if (snap.exists()) {
-      return mapProduct(snap.id, snap.data());
+      const prod = mapProduct(snap.id, snap.data());
+      if (!prod.image || !prod.image.trim() || prod.image === 'null' || prod.image === 'undefined') {
+        return null;
+      }
+      return prod;
     }
   } catch (err) {
     console.error(`[GroceryBackend] Error fetching product ${productId}:`, err);
@@ -94,7 +100,9 @@ export async function fetchFeaturedProducts(): Promise<Product[]> {
       where('isFeatured', '==', true)
     );
     const snap = await getDocs(q);
-    return snap.docs.map((d) => mapProduct(d.id, d.data()));
+    return snap.docs
+      .map((d) => mapProduct(d.id, d.data()))
+      .filter((p) => Boolean(p.image && p.image.trim().length > 0 && p.image !== 'null' && p.image !== 'undefined'));
   } catch (err) {
     console.error('[GroceryBackend] Error fetching featured products:', err);
     return [];
@@ -118,7 +126,9 @@ export function subscribeProducts(
   return onSnapshot(
     q,
     (snap) => {
-      const products = snap.docs.map((d) => mapProduct(d.id, d.data()));
+      const products = snap.docs
+        .map((d) => mapProduct(d.id, d.data()))
+        .filter((p) => Boolean(p.image && p.image.trim().length > 0 && p.image !== 'null' && p.image !== 'undefined'));
       onData(products);
     },
     (err) => {
