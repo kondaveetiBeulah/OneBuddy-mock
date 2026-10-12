@@ -17,7 +17,7 @@ import Svg, {
   Text as SvgText,
 } from 'react-native-svg';
 import { TrackingStage } from '../../types';
-import { COLORS, RADII, SPACING, SHADOWS } from '../../theme';
+import { useHomeTheme, COLORS, RADII, SPACING, SHADOWS } from '../../theme';
 import { Navigation, Compass, Focus, Maximize2 } from 'lucide-react-native';
 
 /**
@@ -306,10 +306,39 @@ export const LiveMap: React.FC<LiveMapProps> = ({
     }
   };
 
+  const { isDark, colors } = useHomeTheme();
+  const mapTheme = isDark
+    ? {
+        bg: '#121417',
+        water: '#162838',
+        park: '#142717',
+        parkStroke: '#1E3823',
+        parcelFill: '#1A1D24',
+        parcelStroke: 'rgba(255, 255, 255, 0.08)',
+        roadBorder: '#232730',
+        roadFill: '#1E2128',
+        roadDashed: 'rgba(255, 255, 255, 0.15)',
+        label: '#8E9AAB',
+        watermark: '#64748B',
+      }
+    : {
+        bg: '#F4FAF2',
+        water: '#B2D7FB',
+        park: '#C5EEC0',
+        parkStroke: '#B0E2A8',
+        parcelFill: '#EBF4E8',
+        parcelStroke: '#D4E3D2',
+        roadBorder: '#D0E0CE',
+        roadFill: '#FFFFFF',
+        roadDashed: '#EAF2E8',
+        label: '#526450',
+        watermark: '#475569',
+      };
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: mapTheme.bg }]}>
       {/* 2D Vector Map Canvas */}
-      <View style={styles.canvasContainer}>
+      <View style={[styles.canvasContainer, { backgroundColor: mapTheme.bg }]}>
         <Animated.View
           style={[
             styles.mapCanvas,
@@ -330,21 +359,21 @@ export const LiveMap: React.FC<LiveMapProps> = ({
             preserveAspectRatio="xMidYMid slice"
           >
             {/* 1. Base Map Background */}
-            <Rect x="0" y="0" width="400" height="480" fill="#F4FAF2" />
+            <Rect x="0" y="0" width="400" height="480" fill={mapTheme.bg} />
 
             {/* 2. Water Bodies (Canal & Lake) */}
-            <Path d="M0 430 L110 480 L0 480 Z" fill="#B2D7FB" />
-            <Path d="M0 202 L110 178 L190 196 L190 206 L108 186 L0 212 Z" fill="#B2D7FB" />
+            <Path d="M0 430 L110 480 L0 480 Z" fill={mapTheme.water} />
+            <Path d="M0 202 L110 178 L190 196 L190 206 L108 186 L0 212 Z" fill={mapTheme.water} />
 
             {/* 3. Green Park Areas */}
-            <Rect x="28" y="42" width="46" height="34" rx="3" fill="#C5EEC0" stroke="#B0E2A8" strokeWidth="1" />
-            <Path d="M28 135 L68 135 L68 185 L28 178 Z" fill="#C5EEC0" stroke="#B0E2A8" strokeWidth="1" />
-            <Path d="M125 155 L175 168 L170 200 L120 188 Z" fill="#C5EEC0" stroke="#B0E2A8" strokeWidth="1" />
-            <Path d="M245 355 L320 405 L320 440 L260 440 L235 405 Z" fill="#C5EEC0" stroke="#B0E2A8" strokeWidth="1" />
-            <Rect x="265" y="375" width="30" height="24" rx="2" fill="#C5EEC0" />
+            <Rect x="28" y="42" width="46" height="34" rx="3" fill={mapTheme.park} stroke={mapTheme.parkStroke} strokeWidth="1" />
+            <Path d="M28 135 L68 135 L68 185 L28 178 Z" fill={mapTheme.park} stroke={mapTheme.parkStroke} strokeWidth="1" />
+            <Path d="M125 155 L175 168 L170 200 L120 188 Z" fill={mapTheme.park} stroke={mapTheme.parkStroke} strokeWidth="1" />
+            <Path d="M245 355 L320 405 L320 440 L260 440 L235 405 Z" fill={mapTheme.park} stroke={mapTheme.parkStroke} strokeWidth="1" />
+            <Rect x="265" y="375" width="30" height="24" rx="2" fill={mapTheme.park} />
 
             {/* 4. Residential Parcels & Building Blocks */}
-            <G stroke="#D4E3D2" strokeWidth="1.2" fill="#EBF4E8">
+            <G stroke={mapTheme.parcelStroke} strokeWidth="1.2" fill={mapTheme.parcelFill}>
               <Rect x="220" y="14" width="36" height="26" rx="2" />
               <Rect x="260" y="14" width="40" height="26" rx="2" />
               <Rect x="304" y="14" width="44" height="26" rx="2" />
@@ -376,14 +405,14 @@ export const LiveMap: React.FC<LiveMapProps> = ({
             {/* Golf Course Rd */}
             <Path
               d="M180 370 L380 470"
-              stroke="#D0E0CE"
+              stroke={mapTheme.roadBorder}
               strokeWidth="30"
               strokeLinecap="round"
               fill="none"
             />
             <Path
               d="M180 370 L380 470"
-              stroke="#FFFFFF"
+              stroke={mapTheme.roadFill}
               strokeWidth="26"
               strokeLinecap="round"
               fill="none"
@@ -392,7 +421,7 @@ export const LiveMap: React.FC<LiveMapProps> = ({
             {/* Sector 16 Main Rd (Curved highway) */}
             <Path
               d="M245 405 L190 310 L130 190 L90 110 L50 10"
-              stroke="#D0E0CE"
+              stroke={mapTheme.roadBorder}
               strokeWidth="32"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -400,7 +429,7 @@ export const LiveMap: React.FC<LiveMapProps> = ({
             />
             <Path
               d="M245 405 L190 310 L130 190 L90 110 L50 10"
-              stroke="#FFFFFF"
+              stroke={mapTheme.roadFill}
               strokeWidth="28"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -408,7 +437,7 @@ export const LiveMap: React.FC<LiveMapProps> = ({
             />
             <Path
               d="M245 405 L190 310 L130 190 L90 110 L50 10"
-              stroke="#EAF2E8"
+              stroke={mapTheme.roadDashed}
               strokeWidth="1.5"
               strokeDasharray="8 6"
               fill="none"
@@ -417,14 +446,14 @@ export const LiveMap: React.FC<LiveMapProps> = ({
             {/* Sector 18B Rd */}
             <Path
               d="M190 310 L380 405"
-              stroke="#D0E0CE"
+              stroke={mapTheme.roadBorder}
               strokeWidth="18"
               strokeLinecap="round"
               fill="none"
             />
             <Path
               d="M190 310 L380 405"
-              stroke="#FFFFFF"
+              stroke={mapTheme.roadFill}
               strokeWidth="15"
               strokeLinecap="round"
               fill="none"
@@ -433,27 +462,27 @@ export const LiveMap: React.FC<LiveMapProps> = ({
             {/* Sector 18A Rd */}
             <Path
               d="M200 240 L380 330"
-              stroke="#D0E0CE"
+              stroke={mapTheme.roadBorder}
               strokeWidth="16"
               strokeLinecap="round"
               fill="none"
             />
             <Path
               d="M200 240 L380 330"
-              stroke="#FFFFFF"
+              stroke={mapTheme.roadFill}
               strokeWidth="13"
               strokeLinecap="round"
               fill="none"
             />
 
             {/* Cross Street connecting to Sector 18A */}
-            <Path d="M275 14 L275 320" stroke="#D0E0CE" strokeWidth="15" fill="none" />
-            <Path d="M275 14 L275 320" stroke="#FFFFFF" strokeWidth="12" fill="none" />
+            <Path d="M275 14 L275 320" stroke={mapTheme.roadBorder} strokeWidth="15" fill="none" />
+            <Path d="M275 14 L275 320" stroke={mapTheme.roadFill} strokeWidth="12" fill="none" />
 
             {/* Interior connecting road to Destination crescent */}
             <Path
               d="M110 140 L256 215 L256 160 L154 90"
-              stroke="#D0E0CE"
+              stroke={mapTheme.roadBorder}
               strokeWidth="16"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -461,7 +490,7 @@ export const LiveMap: React.FC<LiveMapProps> = ({
             />
             <Path
               d="M110 140 L256 215 L256 160 L154 90"
-              stroke="#FFFFFF"
+              stroke={mapTheme.roadFill}
               strokeWidth="13"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -471,14 +500,14 @@ export const LiveMap: React.FC<LiveMapProps> = ({
             {/* Crescent Cul-de-Sac Loop */}
             <Path
               d="M148 40 L160 90 L136 120"
-              stroke="#D0E0CE"
+              stroke={mapTheme.roadBorder}
               strokeWidth="12"
               strokeLinecap="round"
               fill="none"
             />
             <Path
               d="M148 40 L160 90 L136 120"
-              stroke="#FFFFFF"
+              stroke={mapTheme.roadFill}
               strokeWidth="9"
               strokeLinecap="round"
               fill="none"
@@ -490,7 +519,7 @@ export const LiveMap: React.FC<LiveMapProps> = ({
               y="320"
               fontSize="10"
               fontWeight="600"
-              fill="#526450"
+              fill={mapTheme.label}
               transform="rotate(-55, 172, 320)"
             >
               Sector 16 Main Rd
@@ -501,7 +530,7 @@ export const LiveMap: React.FC<LiveMapProps> = ({
               y="410"
               fontSize="10"
               fontWeight="600"
-              fill="#526450"
+              fill={mapTheme.label}
               transform="rotate(26, 245, 410)"
             >
               Golf Course Rd
@@ -512,7 +541,7 @@ export const LiveMap: React.FC<LiveMapProps> = ({
               y="360"
               fontSize="9.5"
               fontWeight="600"
-              fill="#526450"
+              fill={mapTheme.label}
               transform="rotate(27, 290, 360)"
             >
               Sector 18B Rd
@@ -625,14 +654,22 @@ export const LiveMap: React.FC<LiveMapProps> = ({
         {/* Floating Map Controls [Re-Center] [Fit Route] */}
         <View style={styles.floatingControls}>
           <TouchableOpacity
-            style={[styles.mapBtn, isAutoCenter && styles.mapBtnActive]}
+            style={[
+              styles.mapBtn,
+              {
+                backgroundColor: isDark ? '#1D1E22' : 'rgba(255, 255, 255, 0.95)',
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : COLORS.border,
+              },
+              isAutoCenter && styles.mapBtnActive,
+            ]}
             onPress={handleRecenter}
             activeOpacity={0.8}
           >
-            <Focus size={14} color={isAutoCenter ? '#FFFFFF' : COLORS.textPrimary} />
+            <Focus size={14} color={isAutoCenter ? '#FFFFFF' : (isDark ? '#F1F1EC' : COLORS.textPrimary)} />
             <Text
               style={[
                 styles.mapBtnText,
+                { color: isAutoCenter ? '#FFFFFF' : (isDark ? '#F1F1EC' : COLORS.textPrimary) },
                 isAutoCenter && styles.mapBtnTextActive,
               ]}
             >
@@ -641,12 +678,19 @@ export const LiveMap: React.FC<LiveMapProps> = ({
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.mapBtn, { marginTop: 6 }]}
+            style={[
+              styles.mapBtn,
+              {
+                backgroundColor: isDark ? '#1D1E22' : 'rgba(255, 255, 255, 0.95)',
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : COLORS.border,
+                marginTop: 6,
+              },
+            ]}
             onPress={handleFitRoute}
             activeOpacity={0.8}
           >
-            <Maximize2 size={14} color={COLORS.textPrimary} />
-            <Text style={styles.mapBtnText}>Fit</Text>
+            <Maximize2 size={14} color={isDark ? '#F1F1EC' : COLORS.textPrimary} />
+            <Text style={[styles.mapBtnText, { color: isDark ? '#F1F1EC' : COLORS.textPrimary }]}>Fit</Text>
           </TouchableOpacity>
         </View>
       </View>

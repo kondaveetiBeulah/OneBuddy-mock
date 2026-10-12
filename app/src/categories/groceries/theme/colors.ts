@@ -69,21 +69,21 @@ export const darkColors = {
   accent: '#5FA300',
 
   // ── Backgrounds ──
-  background: '#121214',
-  cardBackground: '#1D1E22',
+  background: '#000000',
+  cardBackground: '#000000',
   white: '#FFFFFF',
   black: '#FFFFFF',
 
   // ── Text ──
-  textPrimary: '#F1F1EC',
-  textSecondary: '#9BA08F',
-  textMuted: '#6B7266',
-  text: '#F1F1EC',
-  subtext: '#9BA08F',
+  textPrimary: '#FFFFFF',
+  textSecondary: '#E5E7EB',
+  textMuted: '#9CA3AF',
+  text: '#FFFFFF',
+  subtext: '#E5E7EB',
 
   // ── Borders ──
-  border: 'rgba(255, 255, 255, 0.08)',
-  borderLight: 'rgba(255, 255, 255, 0.06)',
+  border: 'rgba(255, 255, 255, 0.15)',
+  borderLight: 'rgba(255, 255, 255, 0.12)',
 
   // ── Status ──
   danger: '#EF4444',
@@ -96,16 +96,16 @@ export const darkColors = {
 
   // ── Utility ──
   shadow: 'rgba(0, 0, 0, 0.2)',
-  overlay: 'rgba(0, 0, 0, 0.6)',
-  bg: '#121214',
-  cardBg: '#1D1E22',
-  divider: 'rgba(255, 255, 255, 0.08)',
+  overlay: 'rgba(0, 0, 0, 0.7)',
+  bg: '#000000',
+  cardBg: '#000000',
+  divider: 'rgba(255, 255, 255, 0.15)',
   orange: '#F97316',
   green: '#5FA300',
-  inputBg: '#24262B',
-  photoIcon: '#9BA08F',
-  photoBoxBorder: 'rgba(255, 255, 255, 0.12)',
-  orderThumbBg: '#24262B',
+  inputBg: '#000000',
+  photoIcon: '#E5E7EB',
+  photoBoxBorder: 'rgba(255, 255, 255, 0.15)',
+  orderThumbBg: '#000000',
 };
 
 export const colors = { ...lightColors };

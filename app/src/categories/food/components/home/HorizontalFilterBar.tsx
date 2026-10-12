@@ -2,14 +2,19 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Modal, TouchableWithoutFeedback } from 'react-native';
 import { SlidersHorizontal, Star, Zap, IndianRupee, Sparkles, RotateCcw, Utensils, X } from 'lucide-react-native';
 import { useFilter } from '../../context/FilterContext';
+import { isCategoryDark } from '@/theme/categoryThemeBridge';
 
 const CUISINES = ['Biryani', 'Pizzas', 'Chinese', 'North Indian', 'South Indian', 'Italian', 'Seafood', 'Thai', 'Kebabs', 'Pan-Asian'];
 
 export const HorizontalFilterBar: React.FC = () => {
+  const isDark = isCategoryDark();
   const { filters, updateFilter, resetFilters, setIsFilterSheetOpen, activeFilterCount } = useFilter();
   const [showCuisineModal, setShowCuisineModal] = useState(false);
 
   const isCuisineActive = CUISINES.some(c => c.toLowerCase() === filters.searchQuery.toLowerCase());
+
+  const darkChipStyle = isDark ? { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.15)' } : null;
+  const darkChipTextStyle = isDark ? { color: '#FFFFFF' } : null;
 
   return (
     <View style={styles.container}>
@@ -21,15 +26,20 @@ export const HorizontalFilterBar: React.FC = () => {
         {/* Main Filter Button */}
         <TouchableOpacity
           onPress={() => setIsFilterSheetOpen(true)}
-          style={[styles.chip, styles.mainFilterChip, activeFilterCount > 0 && styles.activeChip]}
+          style={[
+            styles.chip,
+            styles.mainFilterChip,
+            isDark && { backgroundColor: '#000000', borderColor: '#65A30D' },
+            activeFilterCount > 0 && (isDark ? { backgroundColor: '#FFFFFF', borderColor: '#FFFFFF' } : styles.activeChip),
+          ]}
         >
-          <SlidersHorizontal size={13} color="#65A30D" />
-          <Text style={[styles.chipText, { color: '#4D7C0F', fontWeight: 'bold' }]}>
+          <SlidersHorizontal size={13} color={activeFilterCount > 0 && isDark ? '#000000' : '#65A30D'} />
+          <Text style={[styles.chipText, { color: activeFilterCount > 0 && isDark ? '#000000' : '#4D7C0F', fontWeight: 'bold' }]}>
             Filters
           </Text>
           {activeFilterCount > 0 && (
-            <View style={styles.countBadge}>
-              <Text style={styles.countBadgeText}>{activeFilterCount}</Text>
+            <View style={[styles.countBadge, isDark && { backgroundColor: '#000000' }]}>
+              <Text style={[styles.countBadgeText, isDark && { color: '#FFFFFF' }]}>{activeFilterCount}</Text>
             </View>
           )}
         </TouchableOpacity>
@@ -37,10 +47,10 @@ export const HorizontalFilterBar: React.FC = () => {
         {/* Cuisine Button */}
         <TouchableOpacity
           onPress={() => setShowCuisineModal(true)}
-          style={[styles.chip, isCuisineActive && styles.cuisineActive]}
+          style={[styles.chip, darkChipStyle, isCuisineActive && styles.cuisineActive]}
         >
-          <Utensils size={13} color={isCuisineActive ? '#C084FC' : '#6B7280'} />
-          <Text style={[styles.chipText, isCuisineActive && { color: '#6B21A8' }]}>
+          <Utensils size={13} color={isCuisineActive ? '#C084FC' : (isDark ? '#E5E7EB' : '#6B7280')} />
+          <Text style={[styles.chipText, darkChipTextStyle, isCuisineActive && { color: '#6B21A8' }]}>
             Cuisines
           </Text>
         </TouchableOpacity>
@@ -48,12 +58,12 @@ export const HorizontalFilterBar: React.FC = () => {
         {/* Pure Veg */}
         <TouchableOpacity
           onPress={() => updateFilter('dietary', filters.dietary === 'pure-veg' ? 'all' : 'pure-veg')}
-          style={[styles.chip, filters.dietary === 'pure-veg' && styles.vegActive]}
+          style={[styles.chip, darkChipStyle, filters.dietary === 'pure-veg' && styles.vegActive]}
         >
           <View style={styles.vegDotBox}>
             <View style={styles.vegDot} />
           </View>
-          <Text style={[styles.chipText, filters.dietary === 'pure-veg' && { color: '#6EE7B7' }]}>
+          <Text style={[styles.chipText, darkChipTextStyle, filters.dietary === 'pure-veg' && { color: '#6EE7B7' }]}>
             Pure Veg
           </Text>
         </TouchableOpacity>
@@ -61,12 +71,12 @@ export const HorizontalFilterBar: React.FC = () => {
         {/* Non-Veg */}
         <TouchableOpacity
           onPress={() => updateFilter('dietary', filters.dietary === 'non-veg' ? 'all' : 'non-veg')}
-          style={[styles.chip, filters.dietary === 'non-veg' && styles.nonVegActive]}
+          style={[styles.chip, darkChipStyle, filters.dietary === 'non-veg' && styles.nonVegActive]}
         >
           <View style={styles.nonVegDotBox}>
             <View style={styles.nonVegDot} />
           </View>
-          <Text style={[styles.chipText, filters.dietary === 'non-veg' && { color: '#FCA5A5' }]}>
+          <Text style={[styles.chipText, darkChipTextStyle, filters.dietary === 'non-veg' && { color: '#FCA5A5' }]}>
             Non-Veg
           </Text>
         </TouchableOpacity>
@@ -74,10 +84,10 @@ export const HorizontalFilterBar: React.FC = () => {
         {/* Rating 4.5+ */}
         <TouchableOpacity
           onPress={() => updateFilter('rating4Plus', !filters.rating4Plus)}
-          style={[styles.chip, filters.rating4Plus && styles.ratingActive]}
+          style={[styles.chip, darkChipStyle, filters.rating4Plus && styles.ratingActive]}
         >
           <Star size={13} color="#65A30D" fill={filters.rating4Plus ? '#65A30D' : 'transparent'} />
-          <Text style={[styles.chipText, filters.rating4Plus && { color: '#4D7C0F' }]}>
+          <Text style={[styles.chipText, darkChipTextStyle, filters.rating4Plus && { color: '#4D7C0F' }]}>
             Ratings 4.5+
           </Text>
         </TouchableOpacity>
@@ -85,10 +95,10 @@ export const HorizontalFilterBar: React.FC = () => {
         {/* Fast Delivery (<25 min) */}
         <TouchableOpacity
           onPress={() => updateFilter('maxDeliveryTime', filters.maxDeliveryTime === 25 ? 60 : 25)}
-          style={[styles.chip, filters.maxDeliveryTime <= 25 && styles.fastActive]}
+          style={[styles.chip, darkChipStyle, filters.maxDeliveryTime <= 25 && styles.fastActive]}
         >
           <Zap size={13} color="#38BDF8" />
-          <Text style={[styles.chipText, filters.maxDeliveryTime <= 25 && { color: '#7DD3FC' }]}>
+          <Text style={[styles.chipText, darkChipTextStyle, filters.maxDeliveryTime <= 25 && { color: '#7DD3FC' }]}>
             Fast (&lt;25 min)
           </Text>
         </TouchableOpacity>
@@ -96,10 +106,10 @@ export const HorizontalFilterBar: React.FC = () => {
         {/* Combos Only */}
         <TouchableOpacity
           onPress={() => updateFilter('onlyCombos', !filters.onlyCombos)}
-          style={[styles.chip, filters.onlyCombos && styles.comboActive]}
+          style={[styles.chip, darkChipStyle, filters.onlyCombos && styles.comboActive]}
         >
           <Sparkles size={13} color="#C084FC" />
-          <Text style={[styles.chipText, filters.onlyCombos && { color: '#6B21A8' }]}>
+          <Text style={[styles.chipText, darkChipTextStyle, filters.onlyCombos && { color: '#6B21A8' }]}>
             Combos & Feasts
           </Text>
         </TouchableOpacity>
@@ -107,10 +117,10 @@ export const HorizontalFilterBar: React.FC = () => {
         {/* Under ₹300 */}
         <TouchableOpacity
           onPress={() => updateFilter('costForTwo', filters.costForTwo === 'under300' ? 'all' : 'under300')}
-          style={[styles.chip, filters.costForTwo === 'under300' && styles.costActive]}
+          style={[styles.chip, darkChipStyle, filters.costForTwo === 'under300' && styles.costActive]}
         >
           <IndianRupee size={12} color="#34D399" />
-          <Text style={[styles.chipText, filters.costForTwo === 'under300' && { color: '#6EE7B7' }]}>
+          <Text style={[styles.chipText, darkChipTextStyle, filters.costForTwo === 'under300' && { color: '#6EE7B7' }]}>
             Under ₹300
           </Text>
         </TouchableOpacity>
@@ -129,11 +139,11 @@ export const HorizontalFilterBar: React.FC = () => {
         <TouchableWithoutFeedback onPress={() => setShowCuisineModal(false)}>
           <View style={styles.modalOverlay}>
             <TouchableWithoutFeedback>
-              <View style={styles.modalContent}>
-                <View style={styles.modalHeader}>
-                  <Text style={styles.modalTitle}>Select Cuisine</Text>
+              <View style={[styles.modalContent, isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.15)' }]}>
+                <View style={[styles.modalHeader, isDark && { borderBottomColor: 'rgba(255, 255, 255, 0.15)' }]}>
+                  <Text style={[styles.modalTitle, isDark && { color: '#FFFFFF' }]}>Select Cuisine</Text>
                   <TouchableOpacity onPress={() => setShowCuisineModal(false)}>
-                    <X size={18} color="#6B7280" />
+                    <X size={18} color={isDark ? '#FFFFFF' : '#6B7280'} />
                   </TouchableOpacity>
                 </View>
                 <ScrollView contentContainerStyle={styles.cuisineList}>
@@ -142,13 +152,21 @@ export const HorizontalFilterBar: React.FC = () => {
                     return (
                       <TouchableOpacity
                         key={cuisine}
-                        style={[styles.cuisineItem, isActive && styles.cuisineItemActive]}
+                        style={[
+                          styles.cuisineItem,
+                          isDark && { backgroundColor: 'rgba(255, 255, 255, 0.08)' },
+                          isActive && (isDark ? { backgroundColor: '#FFFFFF', borderColor: '#FFFFFF', borderWidth: 1 } : styles.cuisineItemActive),
+                        ]}
                         onPress={() => {
                           updateFilter('searchQuery', isActive ? '' : cuisine);
                           setShowCuisineModal(false);
                         }}
                       >
-                        <Text style={[styles.cuisineItemText, isActive && styles.cuisineItemTextActive]}>
+                        <Text style={[
+                          styles.cuisineItemText,
+                          isDark && { color: '#FFFFFF' },
+                          isActive && (isDark ? { color: '#000000', fontWeight: 'bold' } : styles.cuisineItemTextActive),
+                        ]}>
                           {cuisine}
                         </Text>
                       </TouchableOpacity>

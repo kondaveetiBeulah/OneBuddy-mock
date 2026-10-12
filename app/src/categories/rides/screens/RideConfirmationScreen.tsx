@@ -135,14 +135,22 @@ export const RideConfirmationScreen = ({ route, navigation, onCancelRide, onConf
       <View style={styles.mapContainer}>
         <MapView
           style={styles.map}
-          showRoute={false}
-          pickupCoord={pickup}
+          showRoute={true}
+          pickupCoord={{ latitude: pickup?.latitude || 17.355, longitude: pickup?.longitude || 78.405 }}
+          destCoord={{ latitude: 17.425, longitude: 78.475 }}
           showOneBuddyOverlay={false}
         >
           <Marker
-            coordinate={{ latitude: pickup.latitude || 17.385044, longitude: pickup.longitude || 78.486671 }}
-            pinColor={COLORS.success}
-            title="Pickup"
+            coordinate={{ latitude: pickup?.latitude || 17.355, longitude: pickup?.longitude || 78.405 }}
+            pinColor={COLORS.danger}
+            title={pickup?.title || 'Pickup'}
+            type="pickup"
+          />
+          <Marker
+            coordinate={{ latitude: 17.425, longitude: 78.475 }}
+            title={destination || 'Destination'}
+            isDestination={true}
+            type="drop"
           />
         </MapView>
       </View>
@@ -229,7 +237,7 @@ export const RideConfirmationScreen = ({ route, navigation, onCancelRide, onConf
 
             <View style={styles.locationContainer}>
               <View style={styles.locationRow}>
-                <View style={[styles.dot, { backgroundColor: COLORS.success }]} />
+                <View style={[styles.dot, { borderRadius: 2, backgroundColor: COLORS.danger }]} />
                 <View style={styles.locationTextContainer}>
                   <Text style={styles.locationLabel}>Pickup</Text>
                   <Text style={styles.locationValue}>{pickup.title}</Text>
@@ -237,7 +245,7 @@ export const RideConfirmationScreen = ({ route, navigation, onCancelRide, onConf
               </View>
               <View style={styles.locationLine} />
               <View style={styles.locationRow}>
-                <View style={[styles.dot, { backgroundColor: COLORS.danger }]} />
+                <View style={[styles.dot, { borderRadius: 6, backgroundColor: COLORS.success }]} />
                 <View style={styles.locationTextContainer}>
                   <Text style={styles.locationLabel}>Destination</Text>
                   <Text style={styles.locationValue}>{destination}</Text>

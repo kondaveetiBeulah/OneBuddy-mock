@@ -12,6 +12,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing } from '../theme';
+import { useGroceryColors } from '../theme/colors';
+import { isCategoryDark } from '@/theme/categoryThemeBridge';
 import { Header } from '../components/Header';
 import { AddressCard } from '../components/AddressCard';
 import { CustomInput } from '../components/CustomInput';
@@ -31,6 +33,9 @@ export const AddressScreen: React.FC<AddressScreenProps> = ({ navigation }) => {
   const [showChoiceModal, setShowChoiceModal] = useState(false);
   const [showPermissionModal, setShowPermissionModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const groceryColors = useGroceryColors();
+  const isDark = isCategoryDark() || groceryColors.cardBackground === '#000000';
+  const dynStyles = getStyles(isDark);
 
   // New Address Form State
   const [name, setName] = useState('');
@@ -176,24 +181,24 @@ export const AddressScreen: React.FC<AddressScreenProps> = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={dynStyles.container}>
       <Header title="Select Delivery Address" showBack onBack={() => navigation.goBack()} />
 
-      <ScrollView contentContainerStyle={styles.scrollPadding}>
+      <ScrollView contentContainerStyle={dynStyles.scrollPadding}>
         <TouchableOpacity
-          style={styles.addNewButton}
+          style={dynStyles.addNewButton}
           onPress={handleAddNewClick}
         >
-          <Ionicons name="add-circle" size={22} color={colors.primary} />
-          <Text style={styles.addNewText}>+ Add New Address</Text>
+          <Ionicons name="add-circle" size={22} color={isDark ? '#FFFFFF' : colors.primary} />
+          <Text style={dynStyles.addNewText}>+ Add New Address</Text>
         </TouchableOpacity>
 
-        <Text style={styles.sectionTitle}>Saved Addresses</Text>
+        <Text style={dynStyles.sectionTitle}>Saved Addresses</Text>
 
         {addresses.length === 0 ? (
-          <View style={styles.emptyCard}>
-            <Ionicons name="location-outline" size={32} color={colors.textMuted} />
-            <Text style={styles.emptyText}>No saved addresses found. Tap '+ Add New Address' above to set your location.</Text>
+          <View style={dynStyles.emptyCard}>
+            <Ionicons name="location-outline" size={32} color={isDark ? '#E5E7EB' : colors.textMuted} />
+            <Text style={dynStyles.emptyText}>No saved addresses found. Tap '+ Add New Address' above to set your location.</Text>
           </View>
         ) : (
           addresses.map((addr) => (
@@ -208,13 +213,13 @@ export const AddressScreen: React.FC<AddressScreenProps> = ({ navigation }) => {
       </ScrollView>
 
       {/* Deliver Here CTA */}
-      <View style={styles.footer}>
+      <View style={dynStyles.footer}>
         <CustomButton
           title="Deliver to this Address"
           onPress={() => navigation.navigate('DeliverySlot')}
           disabled={!selectedAddress}
           size="large"
-          style={styles.deliverBtn}
+          style={dynStyles.deliverBtn}
         />
       </View>
 
@@ -225,49 +230,49 @@ export const AddressScreen: React.FC<AddressScreenProps> = ({ navigation }) => {
         animationType="fade"
         onRequestClose={() => setShowChoiceModal(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.choiceCard}>
-            <View style={styles.choiceHeader}>
-              <Text style={styles.choiceTitle}>Add Delivery Address</Text>
+        <View style={dynStyles.modalOverlay}>
+          <View style={dynStyles.choiceCard}>
+            <View style={dynStyles.choiceHeader}>
+              <Text style={dynStyles.choiceTitle}>Add Delivery Address</Text>
               <TouchableOpacity onPress={() => setShowChoiceModal(false)}>
-                <Ionicons name="close" size={20} color={colors.textMuted} />
+                <Ionicons name="close" size={20} color={isDark ? '#FFFFFF' : colors.textMuted} />
               </TouchableOpacity>
             </View>
-            <Text style={styles.choiceSubtitle}>Choose how you want to add your address:</Text>
+            <Text style={dynStyles.choiceSubtitle}>Choose how you want to add your address:</Text>
 
             <TouchableOpacity
               onPress={handleRequestLiveLocation}
-              style={styles.choiceOptionLive}
+              style={dynStyles.choiceOptionLive}
               activeOpacity={0.85}
             >
-              <View style={styles.choiceIconCircleLive}>
-                <Ionicons name="navigate" size={22} color={colors.primary} />
+              <View style={dynStyles.choiceIconCircleLive}>
+                <Ionicons name="navigate" size={22} color={isDark ? '#FFFFFF' : colors.primary} />
               </View>
               <View style={{ flex: 1 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <Text style={styles.choiceOptionTitleLive}>Add Live Location</Text>
-                  <View style={styles.pillBadge}>
-                    <Text style={styles.pillText}>AUTO GPS</Text>
+                  <Text style={dynStyles.choiceOptionTitleLive}>Add Live Location</Text>
+                  <View style={dynStyles.pillBadge}>
+                    <Text style={dynStyles.pillText}>AUTO GPS</Text>
                   </View>
                 </View>
-                <Text style={styles.choiceOptionSub}>Auto-detect and fill current address via GPS</Text>
+                <Text style={dynStyles.choiceOptionSub}>Auto-detect and fill current address via GPS</Text>
               </View>
-              <Ionicons name="arrow-forward" size={18} color={colors.primary} />
+              <Ionicons name="arrow-forward" size={18} color={isDark ? '#FFFFFF' : colors.primary} />
             </TouchableOpacity>
 
             <TouchableOpacity
               onPress={handleManualEntry}
-              style={styles.choiceOptionManual}
+              style={dynStyles.choiceOptionManual}
               activeOpacity={0.85}
             >
-              <View style={styles.choiceIconCircleManual}>
-                <Ionicons name="create-outline" size={22} color={colors.textPrimary} />
+              <View style={dynStyles.choiceIconCircleManual}>
+                <Ionicons name="create-outline" size={22} color={isDark ? '#FFFFFF' : colors.textPrimary} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.choiceOptionTitleManual}>Enter New Address</Text>
-                <Text style={styles.choiceOptionSub}>Type house no., street, area, and details manually</Text>
+                <Text style={dynStyles.choiceOptionTitleManual}>Enter New Address</Text>
+                <Text style={dynStyles.choiceOptionSub}>Type house no., street, area, and details manually</Text>
               </View>
-              <Ionicons name="arrow-forward" size={18} color={colors.primary} />
+              <Ionicons name="arrow-forward" size={18} color={isDark ? '#FFFFFF' : colors.primary} />
             </TouchableOpacity>
           </View>
         </View>
@@ -280,29 +285,29 @@ export const AddressScreen: React.FC<AddressScreenProps> = ({ navigation }) => {
         animationType="fade"
         onRequestClose={() => setShowPermissionModal(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.choiceCard}>
-            <View style={styles.permissionIconCircle}>
-              <Ionicons name="location" size={28} color={colors.primary} />
+        <View style={dynStyles.modalOverlay}>
+          <View style={dynStyles.choiceCard}>
+            <View style={dynStyles.permissionIconCircle}>
+              <Ionicons name="location" size={28} color={isDark ? '#FFFFFF' : colors.primary} />
             </View>
-            <Text style={styles.permissionTitle}>Allow Location Access?</Text>
-            <Text style={styles.permissionMessage}>
+            <Text style={dynStyles.permissionTitle}>Allow Location Access?</Text>
+            <Text style={dynStyles.permissionMessage}>
               OneBuddy needs your permission to access device GPS to automatically detect and fill your delivery address.
             </Text>
 
-            <View style={styles.permissionBtnRow}>
+            <View style={dynStyles.permissionBtnRow}>
               <TouchableOpacity
                 onPress={() => setShowPermissionModal(false)}
-                style={styles.permissionCancelBtn}
+                style={dynStyles.permissionCancelBtn}
               >
-                <Text style={styles.permissionCancelText}>Don't Allow</Text>
+                <Text style={dynStyles.permissionCancelText}>Don't Allow</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 onPress={handleConfirmLocationAccess}
-                style={styles.permissionAllowBtn}
+                style={dynStyles.permissionAllowBtn}
               >
-                <Text style={styles.permissionAllowText}>Allow & Auto-Fill</Text>
+                <Text style={dynStyles.permissionAllowText}>Allow & Auto-Fill</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -311,7 +316,7 @@ export const AddressScreen: React.FC<AddressScreenProps> = ({ navigation }) => {
 
       {/* Add Address Form Modal */}
       <Modal visible={showAddModal} animationType="slide">
-        <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? '#000000' : colors.background }}>
           <Header
             title="Add New Address"
             showBack
@@ -319,21 +324,21 @@ export const AddressScreen: React.FC<AddressScreenProps> = ({ navigation }) => {
           />
 
           <ScrollView contentContainerStyle={{ padding: spacing.md }}>
-            <Text style={styles.modalSub}>Address Type</Text>
-            <View style={styles.typeSelectorRow}>
+            <Text style={dynStyles.modalSub}>Address Type</Text>
+            <View style={dynStyles.typeSelectorRow}>
               {(['home', 'work', 'other'] as const).map((t) => (
                 <TouchableOpacity
                   key={t}
                   style={[
-                    styles.typeChip,
-                    type === t && styles.activeTypeChip,
+                    dynStyles.typeChip,
+                    type === t && dynStyles.activeTypeChip,
                   ]}
                   onPress={() => setType(t)}
                 >
                   <Text
                     style={[
-                      styles.typeChipText,
-                      type === t && styles.activeTypeChipText,
+                      dynStyles.typeChipText,
+                      type === t && dynStyles.activeTypeChipText,
                     ]}
                   >
                     {t.toUpperCase()}
@@ -386,10 +391,10 @@ export const AddressScreen: React.FC<AddressScreenProps> = ({ navigation }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: isDark ? '#000000' : colors.background,
   },
   scrollPadding: {
     padding: spacing.md,
@@ -398,11 +403,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.cardBackground,
+    backgroundColor: isDark ? '#000000' : colors.cardBackground,
     padding: spacing.md,
     borderRadius: spacing.borderRadius.md,
     borderWidth: 1.5,
-    borderColor: colors.primary,
+    borderColor: isDark ? '#FFFFFF' : colors.primary,
     borderStyle: 'dashed',
     marginBottom: spacing.lg,
     gap: spacing.xs,
@@ -410,19 +415,19 @@ const styles = StyleSheet.create({
   addNewText: {
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.bold,
-    color: colors.primary,
+    color: isDark ? '#FFFFFF' : colors.primary,
   },
   sectionTitle: {
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.bold,
-    color: colors.textPrimary,
+    color: isDark ? '#FFFFFF' : colors.textPrimary,
     marginBottom: spacing.sm,
   },
   footer: {
-    backgroundColor: colors.cardBackground,
+    backgroundColor: isDark ? '#000000' : colors.cardBackground,
     padding: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: colors.borderLight,
+    borderTopColor: isDark ? 'rgba(255,255,255,0.15)' : colors.borderLight,
   },
   deliverBtn: {
     width: '100%',
@@ -430,7 +435,7 @@ const styles = StyleSheet.create({
   modalSub: {
     fontSize: typography.sizes.sm,
     fontWeight: typography.weights.bold,
-    color: colors.textPrimary,
+    color: isDark ? '#FFFFFF' : colors.textPrimary,
     marginBottom: spacing.xs,
   },
   typeSelectorRow: {
@@ -442,42 +447,42 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs + 2,
     paddingHorizontal: spacing.md,
     borderRadius: spacing.borderRadius.round,
-    backgroundColor: colors.background,
+    backgroundColor: isDark ? '#000000' : colors.background,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: isDark ? 'rgba(255,255,255,0.2)' : colors.border,
   },
   activeTypeChip: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+    backgroundColor: isDark ? '#FFFFFF' : colors.primary,
+    borderColor: isDark ? '#FFFFFF' : colors.primary,
   },
   typeChipText: {
     fontSize: typography.sizes.xs,
     fontWeight: typography.weights.bold,
-    color: colors.textSecondary,
+    color: isDark ? '#FFFFFF' : colors.textSecondary,
   },
   activeTypeChipText: {
-    color: colors.white,
+    color: isDark ? '#000000' : colors.white,
   },
   emptyCard: {
     padding: spacing.xl,
-    backgroundColor: colors.cardBackground,
+    backgroundColor: isDark ? '#000000' : colors.cardBackground,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
     borderWidth: 1,
-    borderColor: colors.borderLight,
+    borderColor: isDark ? 'rgba(255,255,255,0.15)' : colors.borderLight,
     marginTop: spacing.md,
   },
   emptyText: {
     fontSize: 13,
-    color: colors.textMuted,
+    color: isDark ? '#E5E7EB' : colors.textMuted,
     textAlign: 'center',
     lineHeight: 18,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: isDark ? 'rgba(0,0,0,0.7)' : 'rgba(0,0,0,0.5)',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,
@@ -486,11 +491,11 @@ const styles = StyleSheet.create({
   choiceCard: {
     width: '100%',
     maxWidth: 440,
-    backgroundColor: colors.cardBackground,
+    backgroundColor: isDark ? '#000000' : colors.cardBackground,
     borderRadius: 20,
     padding: 22,
     borderWidth: 1,
-    borderColor: colors.borderLight,
+    borderColor: isDark ? 'rgba(255,255,255,0.15)' : colors.borderLight,
   },
   choiceHeader: {
     flexDirection: 'row',
@@ -501,41 +506,41 @@ const styles = StyleSheet.create({
   choiceTitle: {
     fontSize: 17,
     fontWeight: '800',
-    color: colors.textPrimary,
+    color: isDark ? '#FFFFFF' : colors.textPrimary,
   },
   choiceSubtitle: {
     fontSize: 12,
-    color: colors.textMuted,
+    color: isDark ? '#E5E7EB' : colors.textMuted,
     marginBottom: 16,
   },
   choiceOptionLive: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.primaryLight,
+    backgroundColor: isDark ? 'rgba(95,163,0,0.2)' : colors.primaryLight,
     borderRadius: 12,
     padding: 14,
     borderWidth: 1.5,
-    borderColor: colors.primaryMedium,
+    borderColor: isDark ? '#5FA300' : colors.primaryMedium,
     marginBottom: 12,
   },
   choiceIconCircleLive: {
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: colors.cardBackground,
+    backgroundColor: isDark ? '#000000' : colors.cardBackground,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
     borderWidth: 1,
-    borderColor: colors.primaryMedium,
+    borderColor: isDark ? '#5FA300' : colors.primaryMedium,
   },
   choiceOptionTitleLive: {
     fontSize: 14,
     fontWeight: '800',
-    color: colors.primaryDark,
+    color: isDark ? '#FFFFFF' : colors.primaryDark,
   },
   pillBadge: {
-    backgroundColor: colors.primary,
+    backgroundColor: isDark ? '#5FA300' : colors.primary,
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
@@ -548,42 +553,42 @@ const styles = StyleSheet.create({
   },
   choiceOptionSub: {
     fontSize: 11,
-    color: colors.textMuted,
+    color: isDark ? '#E5E7EB' : colors.textMuted,
     marginTop: 2,
     lineHeight: 15,
   },
   choiceOptionManual: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.cardBackground,
+    backgroundColor: isDark ? '#000000' : colors.cardBackground,
     borderRadius: 12,
     padding: 14,
     borderWidth: 1,
-    borderColor: colors.borderLight,
+    borderColor: isDark ? 'rgba(255,255,255,0.15)' : colors.borderLight,
   },
   choiceIconCircleManual: {
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: colors.background,
+    backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : colors.background,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
     borderWidth: 1,
-    borderColor: colors.borderLight,
+    borderColor: isDark ? 'rgba(255,255,255,0.15)' : colors.borderLight,
   },
   choiceOptionTitleManual: {
     fontSize: 14,
     fontWeight: '700',
-    color: colors.textPrimary,
+    color: isDark ? '#FFFFFF' : colors.textPrimary,
   },
   permissionIconCircle: {
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: colors.primaryLight,
+    backgroundColor: isDark ? 'rgba(95,163,0,0.2)' : colors.primaryLight,
     borderWidth: 1.5,
-    borderColor: colors.primary,
+    borderColor: isDark ? '#5FA300' : colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
@@ -592,13 +597,13 @@ const styles = StyleSheet.create({
   permissionTitle: {
     fontSize: 17,
     fontWeight: '800',
-    color: colors.textPrimary,
+    color: isDark ? '#FFFFFF' : colors.textPrimary,
     textAlign: 'center',
     marginBottom: 6,
   },
   permissionMessage: {
     fontSize: 13,
-    color: colors.textMuted,
+    color: isDark ? '#E5E7EB' : colors.textMuted,
     textAlign: 'center',
     lineHeight: 18,
     marginBottom: 18,
@@ -611,28 +616,28 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 11,
     borderRadius: 10,
-    backgroundColor: colors.background,
+    backgroundColor: isDark ? '#000000' : colors.background,
     borderWidth: 1,
-    borderColor: colors.borderLight,
+    borderColor: isDark ? 'rgba(255,255,255,0.2)' : colors.borderLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
   permissionCancelText: {
     fontSize: 13,
     fontWeight: '700',
-    color: colors.textPrimary,
+    color: isDark ? '#FFFFFF' : colors.textPrimary,
   },
   permissionAllowBtn: {
     flex: 1.2,
     paddingVertical: 11,
     borderRadius: 10,
-    backgroundColor: colors.primary,
+    backgroundColor: isDark ? '#FFFFFF' : colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   permissionAllowText: {
     fontSize: 13,
     fontWeight: '700',
-    color: colors.white,
+    color: isDark ? '#000000' : colors.white,
   },
 });

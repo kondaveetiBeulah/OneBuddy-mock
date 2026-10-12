@@ -17,6 +17,7 @@ import { BottomNavBar } from '../components/navigation/BottomNavBar';
 import { ConflictModal } from '../components/common/ConflictModal';
 import { ErrorBoundary } from '../components/common/ErrorBoundary';
 import { loadAddresses } from '../data/address';
+import { isCategoryDark } from '@/theme/categoryThemeBridge';
 
 let Notifications: any = null;
 if (Platform.OS !== 'web') {
@@ -37,7 +38,9 @@ if (Platform.OS !== 'web') {
 const Stack = createNativeStackNavigator<FoodStackParamList>();
 
 function RestaurantMenuWrapper({ route, navigation }: any) {
+  const isDark = isCategoryDark();
   const restaurantId = route.params?.restaurantId || 'paradise-restaurant';
+  const initialSearchQuery = route.params?.initialSearchQuery;
 
   const handleNavigate = (screen: string) => {
     if (screen === 'home') {
@@ -58,7 +61,7 @@ function RestaurantMenuWrapper({ route, navigation }: any) {
   };
 
   return (
-    <View style={styles.menuContainer}>
+    <View style={[styles.menuContainer, { backgroundColor: isDark ? '#000000' : '#F3F4F6' }]}>
       <Header
         activeScreen="restaurant-menu"
         onNavigate={handleNavigate}
@@ -70,6 +73,7 @@ function RestaurantMenuWrapper({ route, navigation }: any) {
       <View style={styles.menuContent}>
         <RestaurantMenuScreen
           restaurantId={restaurantId}
+          initialSearchQuery={initialSearchQuery}
           onBack={() => navigation.goBack()}
         />
       </View>
@@ -85,12 +89,15 @@ function RestaurantMenuWrapper({ route, navigation }: any) {
 }
 
 function CheckoutScreenWrapper({ route, navigation }: any) {
+  const isDark = isCategoryDark();
   const [completedOrder, setCompletedOrder] = useState<any>(null);
 
   return (
     <PaymentCheckoutScreen
       grandTotal={route.params?.grandTotal}
       cartItems={route.params?.cartItems}
+      isDark={isDark}
+      isFoodCategory={true}
       onBack={() => navigation.goBack()}
       onOrderSuccess={(orderData) => {
         setCompletedOrder({
@@ -114,6 +121,8 @@ function CheckoutScreenWrapper({ route, navigation }: any) {
 }
 
 export const RootNavigator: React.FC = () => {
+  const isDark = isCategoryDark();
+
   useEffect(() => {
     loadAddresses();
 
@@ -140,14 +149,14 @@ export const RootNavigator: React.FC = () => {
   }, []);
 
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, { backgroundColor: isDark ? '#000000' : '#F3F4F6' }]}>
       <Stack.Navigator
         initialRouteName="MainTabs"
         screenOptions={{
           headerShown: false,
           animation: 'none',
           contentStyle: {
-            backgroundColor: '#F3F4F6',
+            backgroundColor: isDark ? '#000000' : '#F3F4F6',
           },
         }}
       >

@@ -24,35 +24,36 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
   const isDark = scheme === 'dark';
   const [notifications, setNotifications] = useState(true);
   const [promotions, setPromotions] = useState(true);
+  const dynStyles = getStyles(isDark);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={dynStyles.container}>
       <Header title="Settings" showBack onBack={() => navigation.goBack()} />
 
-      <ScrollView contentContainerStyle={styles.scrollPadding}>
-        <View style={styles.card}>
-          <View style={styles.row}>
-            <Text style={styles.label}>Push Notifications</Text>
+      <ScrollView contentContainerStyle={dynStyles.scrollPadding}>
+        <View style={dynStyles.card}>
+          <View style={dynStyles.row}>
+            <Text style={dynStyles.label}>Push Notifications</Text>
             <Switch
               value={notifications}
               onValueChange={setNotifications}
-              trackColor={{ true: colors.primary }}
+              trackColor={{ true: isDark ? '#5FA300' : colors.primary }}
             />
           </View>
-          <View style={styles.row}>
-            <Text style={styles.label}>Promotions & Offers</Text>
+          <View style={dynStyles.row}>
+            <Text style={dynStyles.label}>Promotions & Offers</Text>
             <Switch
               value={promotions}
               onValueChange={setPromotions}
-              trackColor={{ true: colors.primary }}
+              trackColor={{ true: isDark ? '#5FA300' : colors.primary }}
             />
           </View>
-          <View style={styles.row}>
-            <Text style={styles.label}>Dark Mode (Preview)</Text>
+          <View style={dynStyles.row}>
+            <Text style={dynStyles.label}>Dark Mode (Preview)</Text>
             <Switch
               value={isDark}
               onValueChange={(val) => setTheme(val ? 'dark' : 'light')}
-              trackColor={{ true: colors.primary }}
+              trackColor={{ true: isDark ? '#5FA300' : colors.primary }}
             />
           </View>
         </View>
@@ -61,20 +62,20 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: isDark ? '#000000' : colors.background,
   },
   scrollPadding: {
     padding: spacing.md,
   },
   card: {
-    backgroundColor: colors.white,
+    backgroundColor: isDark ? '#000000' : colors.white,
     borderRadius: spacing.borderRadius.md,
     padding: spacing.md,
     borderWidth: 1,
-    borderColor: colors.borderLight,
+    borderColor: isDark ? 'rgba(255,255,255,0.15)' : colors.borderLight,
   },
   row: {
     flexDirection: 'row',
@@ -82,11 +83,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: colors.borderLight,
+    borderBottomColor: isDark ? 'rgba(255,255,255,0.12)' : colors.borderLight,
   },
   label: {
     fontSize: typography.sizes.sm,
     fontWeight: typography.weights.semibold,
-    color: colors.textPrimary,
+    color: isDark ? '#FFFFFF' : colors.textPrimary,
   },
 });

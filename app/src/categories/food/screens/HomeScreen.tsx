@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -13,24 +13,46 @@ import { FilterBottomSheet } from '../components/home/FilterBottomSheet';
 import { RestaurantList } from '../components/home/RestaurantList';
 import { SearchBar } from '../components/common/SearchBar';
 import { useFilter } from '../context/FilterContext';
+import { useFoodData } from '../context/FoodDataContext';
+import { VoiceSearchModal, parseFoodVoiceQuery } from '../components/VoiceSearchModal';
 import { Sparkles, Award, ShieldCheck } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { isCategoryDark } from '@/theme/categoryThemeBridge';
 
 interface HomeScreenProps {
-  onSelectRestaurant: (restaurantId: string) => void;
+  onSelectRestaurant: (restaurantId: string, initialSearchQuery?: string) => void;
   onNavigate: (screen: 'home' | 'restaurant-menu' | 'orders' | 'favorites') => void;
 }
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({ onSelectRestaurant }) => {
+  const isDark = isCategoryDark();
   const { filters, updateFilter, filteredRestaurants } = useFilter();
+  const { restaurants } = useFoodData();
   const scrollViewRef = useRef<ScrollView>(null);
+  const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
 
   useEffect(() => {
     if (filters.searchQuery.trim() && scrollViewRef.current) {
       scrollViewRef.current.scrollTo({ y: 0, animated: true });
     }
   }, [filters.searchQuery]);
+
+  const handleVoiceResult = (spokenText: string) => {
+    setIsVoiceModalOpen(false);
+    const parsed = parseFoodVoiceQuery(spokenText, restaurants);
+
+    if (parsed.isSpecificItemInRestaurant && parsed.matchedRestaurant) {
+      // 1. Specific item in specific restaurant (e.g. "Biryani from Paradise")
+      onSelectRestaurant(parsed.matchedRestaurant.id, parsed.matchedItemQuery);
+    } else if (parsed.matchedRestaurant && !parsed.matchedItemQuery) {
+      // 2. Restaurant only (e.g. "Paradise", "Bawarchi", "Blue Sea")
+      onSelectRestaurant(parsed.matchedRestaurant.id);
+    } else {
+      // 3. Food item / cuisine (e.g. "Biryani", "Pizza", "Burgers")
+      const query = parsed.matchedItemQuery || parsed.cleanedText;
+      updateFilter('searchQuery', query);
+    }
+  };
 
   const cuisineHighlights = [
     { name: 'All', image: 'https://cdn-icons-png.flaticon.com/512/3565/3565401.png' },
@@ -45,7 +67,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSelectRestaurant }) =>
   ];
 
   return (
-    <ScrollView ref={scrollViewRef} style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView ref={scrollViewRef} style={[styles.container, isDark && { backgroundColor: '#000000' }]} showsVerticalScrollIndicator={false}>
       {/* 1. Top Discount Carousel (Auto-slides every 3s, click navigates to menu) */}
       <DiscountCarousel onSelectRestaurant={onSelectRestaurant} />
 
@@ -54,7 +76,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSelectRestaurant }) =>
         <SearchBar
           value={filters.searchQuery}
           onChangeText={(q) => updateFilter('searchQuery', q)}
-          placeholder="Search restaurants, dishes or cuisines..."
+          onVoicePress={() => setIsVoiceModalOpen(true)}
         />
 
         {/* Popular Quick Pills */}
@@ -78,12 +100,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSelectRestaurant }) =>
                     updateFilter('searchQuery', isSelected ? '' : item.name);
                   }
                 }}
-                style={[styles.cuisineChip, isSelected && styles.cuisineChipActive]}
+                style={[
+                  styles.cuisineChip,
+                  isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.15)' },
+                  isSelected && (isDark ? { backgroundColor: '#FFFFFF', borderColor: '#FFFFFF' } : styles.cuisineChipActive),
+                ]}
               >
                 <Text
                   style={[
                     styles.cuisineChipText,
-                    isSelected && { color: '#111827', fontWeight: 'bold' },
+                    isDark && { color: '#FFFFFF' },
+                    isSelected && { color: isDark ? '#000000' : '#111827', fontWeight: 'bold' },
                   ]}
                 >
                   {item.name}
@@ -100,10 +127,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSelectRestaurant }) =>
           <View style={styles.sparkleIcon}>
             <Sparkles size={12} color="#65A30D" />
           </View>
-          <Text style={styles.sectionTitle}>Curated Partner Restaurants</Text>
+          <Text style={[styles.sectionTitle, isDark && { color: '#FFFFFF' }]}>Curated Partner Restaurants</Text>
         </View>
 
-        <Text style={styles.restaurantCountText}>
+        <Text style={[styles.restaurantCountText, isDark && { color: '#A3E635' }]}>
           {filteredRestaurants.length} spots
         </Text>
       </View>
@@ -120,18 +147,18 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSelectRestaurant }) =>
       {/* 5. Quality & Trust Banner */}
       <View style={styles.trustBannerWrap}>
         <LinearGradient
-          colors={isCategoryDark() ? ['#1D1E22', '#24262B', '#121214'] : ['#FFFFFF', '#F9FAFB', '#F3F4F6']}
+          colors={isDark ? ['#000000', '#000000'] : ['#FFFFFF', '#F9FAFB', '#F3F4F6']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={styles.trustBanner}
+          style={[styles.trustBanner, isDark && { borderColor: 'rgba(255, 255, 255, 0.15)' }]}
         >
           <View style={styles.trustLeft}>
             <View style={styles.awardCircle}>
               <Award size={22} color="#65A30D" />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.trustTitle}>OneBuddy Freshness Guarantee</Text>
-              <Text style={styles.trustSub}>
+              <Text style={[styles.trustTitle, isDark && { color: '#FFFFFF' }]}>OneBuddy Freshness Guarantee</Text>
+              <Text style={[styles.trustSub, isDark && { color: '#E5E7EB' }]}>
                 Prepared fresh in hygienic kitchens and delivered under 25 mins.
               </Text>
             </View>
@@ -146,6 +173,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSelectRestaurant }) =>
 
       {/* Bottom Filter Sheet Modal */}
       <FilterBottomSheet />
+
+      {/* Voice Search Modal */}
+      <VoiceSearchModal
+        visible={isVoiceModalOpen}
+        onClose={() => setIsVoiceModalOpen(false)}
+        onResult={handleVoiceResult}
+        restaurants={restaurants}
+      />
     </ScrollView>
   );
 };

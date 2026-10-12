@@ -13,6 +13,7 @@ import { colors } from "../theme/colors";
 import { initialCategories } from "../types";
 import type { Category, SentimentValue } from "../types";
 import { useCart } from "../../context/CartContext";
+import { isCategoryDark } from '@/theme/categoryThemeBridge';
 
 import Header from "../feedback/Header";
 import Hero from "../feedback/Hero";
@@ -34,7 +35,8 @@ export default function FeedbackFormScreen({ order, onComplete }: FeedbackFormSc
   const insets = useSafeAreaInsets();
   const bottomInset = Math.max(insets.bottom, Platform.OS === 'android' ? 14 : 10);
   const { clearCart } = useCart();
-  const [rating, setRating] = useState(4);
+  const isDark = isCategoryDark();
+  const [rating, setRating] = useState(5);
   const [categories, setCategories] = useState<Category[]>(initialCategories);
   const [itemRatings, setItemRatings] = useState<Record<string, SentimentValue>>({});
   const [riderRating, setRiderRating] = useState<SentimentValue | null>(null);
@@ -67,14 +69,14 @@ export default function FeedbackFormScreen({ order, onComplete }: FeedbackFormSc
 
   if (submitted) {
     return (
-      <View style={styles.screen}>
+      <View style={[styles.screen, isDark && { backgroundColor: '#000000' }]}>
         <ThankYouView onReset={handleReset} />
       </View>
     );
   }
 
   return (
-    <View style={styles.screen}>
+    <View style={[styles.screen, isDark && { backgroundColor: '#000000' }]}>
       <Header onBack={onComplete} />
 
       <ScrollView
@@ -85,7 +87,7 @@ export default function FeedbackFormScreen({ order, onComplete }: FeedbackFormSc
         <Hero />
         <OrderCard order={order} />
 
-        <Text style={styles.sectionLabel}>Rate your overall experience</Text>
+        <Text style={[styles.sectionLabel, isDark && { color: '#FFFFFF' }]}>Rate your overall experience</Text>
         <StarRating rating={rating} onChange={setRating} />
 
         <CategoryList categories={categories} onChange={setCategoryValue} />
@@ -101,23 +103,23 @@ export default function FeedbackFormScreen({ order, onComplete }: FeedbackFormSc
           onChange={setRiderRating}
         />
 
-        <Text style={styles.sectionLabel}>Additional Comments (Optional)</Text>
+        <Text style={[styles.sectionLabel, isDark && { color: '#FFFFFF' }]}>Additional Comments (Optional)</Text>
         <CommentsInput value={comments} onChange={setComments} />
 
-        <Text style={styles.sectionLabel}>Add a photo (Optional)</Text>
+        <Text style={[styles.sectionLabel, isDark && { color: '#FFFFFF' }]}>Add a photo (Optional)</Text>
         <PhotoPicker photo={photo} onChange={setPhoto} />
       </ScrollView>
 
-      <View style={[styles.footer, { paddingBottom: bottomInset + 16 }]}>
+      <View style={[styles.footer, { paddingBottom: bottomInset + 16 }, isDark && { borderTopColor: 'rgba(255, 255, 255, 0.1)' }]}>
         <TouchableOpacity
           onPress={handleSubmit}
           disabled={submitting}
-          style={[styles.submitBtn, { opacity: submitting ? 0.7 : 1 }]}
+          style={[styles.submitBtn, isDark && { backgroundColor: '#FFFFFF' }, { opacity: submitting ? 0.7 : 1 }]}
         >
           {submitting ? (
-            <ActivityIndicator color="#111827" />
+            <ActivityIndicator color={isDark ? '#000000' : '#111827'} />
           ) : (
-            <Text style={styles.submitText}>Submit Feedback</Text>
+            <Text style={[styles.submitText, isDark && { color: '#000000' }]}>Submit Feedback</Text>
           )}
         </TouchableOpacity>
       </View>

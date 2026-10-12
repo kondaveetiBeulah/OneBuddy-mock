@@ -18,6 +18,7 @@ export default function StarRating({ rating, onChange }: Props) {
             key={n}
             onPress={() => onChange(n)}
             style={styles.btn}
+            activeOpacity={0.7}
             accessibilityLabel={`${n} star`}
           >
             <Star
@@ -35,7 +36,7 @@ export default function StarRating({ rating, onChange }: Props) {
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: "row", justifyContent: "center", gap: 8, marginBottom: 4 },
+  row: { flexDirection: "row", justifyContent: "center", gap: 8, marginBottom: 6 },
   btn: { padding: 4 },
-  word: { textAlign: "center", color: colors.orange, fontWeight: "700", fontSize: 14, marginBottom: 24 },
+  word: { textAlign: "center", color: colors.orange, fontWeight: "700", fontSize: 16, marginBottom: 20 },
 });

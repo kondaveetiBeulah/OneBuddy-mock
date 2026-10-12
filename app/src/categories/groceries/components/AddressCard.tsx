@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Address } from '../types/user.types';
 import { colors, typography, spacing } from '../theme';
+import { useGroceryColors } from '../theme/colors';
+import { isCategoryDark } from '@/theme/categoryThemeBridge';
 
 interface AddressCardProps {
   address: Address;
@@ -19,6 +21,9 @@ export const AddressCard: React.FC<AddressCardProps> = ({
   onEdit,
   onDelete,
 }) => {
+  const groceryColors = useGroceryColors();
+  const isDark = isCategoryDark() || groceryColors.cardBackground === '#000000';
+  const dynStyles = getStyles(isDark);
   const getIcon = () => {
     switch (address.type) {
       case 'home':
@@ -32,19 +37,19 @@ export const AddressCard: React.FC<AddressCardProps> = ({
 
   return (
     <TouchableOpacity
-      style={[styles.container, selected && styles.selectedContainer]}
+      style={[dynStyles.container, selected && dynStyles.selectedContainer]}
       onPress={() => onSelect && onSelect(address)}
       activeOpacity={0.8}
     >
-      <View style={styles.headerRow}>
-        <View style={styles.typeBadge}>
-          <Ionicons name={getIcon()} size={14} color={colors.primary} />
-          <Text style={styles.typeText}>{address.type.toUpperCase()}</Text>
+      <View style={dynStyles.headerRow}>
+        <View style={dynStyles.typeBadge}>
+          <Ionicons name={getIcon()} size={14} color={isDark ? '#FFFFFF' : colors.primary} />
+          <Text style={dynStyles.typeText}>{address.type.toUpperCase()}</Text>
         </View>
 
         {address.isDefault && (
-          <View style={styles.defaultBadge}>
-            <Text style={styles.defaultText}>DEFAULT</Text>
+          <View style={dynStyles.defaultBadge}>
+            <Text style={dynStyles.defaultText}>DEFAULT</Text>
           </View>
         )}
 
@@ -52,43 +57,43 @@ export const AddressCard: React.FC<AddressCardProps> = ({
           <Ionicons
             name="checkmark-circle"
             size={22}
-            color={colors.primary}
-            style={styles.checkIcon}
+            color={isDark ? '#FFFFFF' : colors.primary}
+            style={dynStyles.checkIcon}
           />
         )}
       </View>
 
-      <Text style={styles.nameText}>{address.name}</Text>
-      <Text style={styles.addressText}>
+      <Text style={dynStyles.nameText}>{address.name}</Text>
+      <Text style={dynStyles.addressText}>
         {address.houseNumber}, {address.street}, {address.area}
       </Text>
-      <Text style={styles.addressText}>
+      <Text style={dynStyles.addressText}>
         {address.city}, {address.state} - {address.pincode}
       </Text>
       {address.landmark ? (
-        <Text style={styles.landmarkText}>Landmark: {address.landmark}</Text>
+        <Text style={dynStyles.landmarkText}>Landmark: {address.landmark}</Text>
       ) : null}
-      <Text style={styles.phoneText}>Phone: {address.phone}</Text>
+      <Text style={dynStyles.phoneText}>Phone: {address.phone}</Text>
 
       {(onEdit || onDelete) && (
-        <View style={styles.actionRow}>
+        <View style={dynStyles.actionRow}>
           {onEdit && (
             <TouchableOpacity
-              style={styles.actionButton}
+              style={dynStyles.actionButton}
               onPress={() => onEdit(address)}
             >
-              <Ionicons name="create-outline" size={16} color={colors.primary} />
-              <Text style={styles.actionText}>Edit</Text>
+              <Ionicons name="create-outline" size={16} color={isDark ? '#FFFFFF' : colors.primary} />
+              <Text style={dynStyles.actionText}>Edit</Text>
             </TouchableOpacity>
           )}
 
           {onDelete && (
             <TouchableOpacity
-              style={styles.actionButton}
+              style={dynStyles.actionButton}
               onPress={() => onDelete(address.id)}
             >
-              <Ionicons name="trash-outline" size={16} color={colors.danger} />
-              <Text style={[styles.actionText, { color: colors.danger }]}>
+              <Ionicons name="trash-outline" size={16} color={isDark ? '#EF4444' : colors.danger} />
+              <Text style={[dynStyles.actionText, { color: isDark ? '#EF4444' : colors.danger }]}>
                 Delete
               </Text>
             </TouchableOpacity>
@@ -99,18 +104,18 @@ export const AddressCard: React.FC<AddressCardProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (isDark: boolean) => StyleSheet.create({
   container: {
-    backgroundColor: colors.cardBackground,
+    backgroundColor: isDark ? '#000000' : colors.cardBackground,
     borderRadius: spacing.borderRadius.md,
     padding: spacing.md,
     marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: isDark ? 'rgba(255,255,255,0.15)' : colors.border,
   },
   selectedContainer: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primaryLight,
+    borderColor: isDark ? '#5FA300' : colors.primary,
+    backgroundColor: isDark ? 'rgba(95,163,0,0.2)' : colors.primaryLight,
     borderWidth: 2,
   },
   headerRow: {
@@ -122,7 +127,7 @@ const styles = StyleSheet.create({
   typeBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.background,
+    backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : colors.background,
     paddingVertical: 2,
     paddingHorizontal: 8,
     borderRadius: spacing.borderRadius.sm,
@@ -131,10 +136,10 @@ const styles = StyleSheet.create({
   typeText: {
     fontSize: 10,
     fontWeight: typography.weights.bold,
-    color: colors.primaryDark,
+    color: isDark ? '#FFFFFF' : colors.primaryDark,
   },
   defaultBadge: {
-    backgroundColor: colors.secondaryLight,
+    backgroundColor: isDark ? 'rgba(255,152,0,0.2)' : colors.secondaryLight,
     paddingVertical: 2,
     paddingHorizontal: 6,
     borderRadius: spacing.borderRadius.sm,
@@ -142,7 +147,7 @@ const styles = StyleSheet.create({
   defaultText: {
     fontSize: 10,
     fontWeight: typography.weights.bold,
-    color: colors.secondaryDark,
+    color: isDark ? '#FFA726' : colors.secondaryDark,
   },
   checkIcon: {
     marginLeft: 'auto',
@@ -150,23 +155,23 @@ const styles = StyleSheet.create({
   nameText: {
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.bold,
-    color: colors.textPrimary,
+    color: isDark ? '#FFFFFF' : colors.textPrimary,
     marginVertical: 2,
   },
   addressText: {
     fontSize: typography.sizes.sm,
-    color: colors.textSecondary,
+    color: isDark ? '#E5E7EB' : colors.textSecondary,
     lineHeight: 18,
   },
   landmarkText: {
     fontSize: typography.sizes.xs,
-    color: colors.textMuted,
+    color: isDark ? '#E5E7EB' : colors.textMuted,
     marginTop: 2,
   },
   phoneText: {
     fontSize: typography.sizes.xs,
     fontWeight: typography.weights.medium,
-    color: colors.textPrimary,
+    color: isDark ? '#FFFFFF' : colors.textPrimary,
     marginTop: spacing.xs,
   },
   actionRow: {
@@ -175,7 +180,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
     paddingTop: spacing.xs,
     borderTopWidth: 1,
-    borderTopColor: colors.borderLight,
+    borderTopColor: isDark ? 'rgba(255,255,255,0.12)' : colors.borderLight,
     gap: spacing.md,
   },
   actionButton: {
@@ -186,6 +191,6 @@ const styles = StyleSheet.create({
   actionText: {
     fontSize: typography.sizes.xs,
     fontWeight: typography.weights.semibold,
-    color: colors.primary,
+    color: isDark ? '#FFFFFF' : colors.primary,
   },
 });

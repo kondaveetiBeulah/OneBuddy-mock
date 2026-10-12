@@ -236,8 +236,16 @@ const CrossSellCard: React.FC<CrossSellCardProps> = ({ item, isAdded, onAdd, onD
     ]).start(() => onAdd(item));
   };
 
+  let isDark = false;
+  try {
+    isDark = isCategoryDark();
+  } catch {}
+  if (!isDark) {
+    isDark = colors.cardBackground === '#000000' || colors.background === '#000000';
+  }
+
   return (
-    <Animated.View style={[styles.crossSellCard, { transform: [{ scale: scaleAnim }] }]}>
+    <Animated.View style={[styles.crossSellCard, isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.15)' }, { transform: [{ scale: scaleAnim }] }]}>
       <Image
         source={{ uri: item.imageUrl }}
         style={styles.crossSellImage}
@@ -263,19 +271,34 @@ const CrossSellCard: React.FC<CrossSellCardProps> = ({ item, isAdded, onAdd, onD
             {item.category}
           </Text>
         )}
-        <Text style={styles.crossSellName} numberOfLines={2}>{item.name}</Text>
+        <Text style={[styles.crossSellName, isDark && { color: '#FFFFFF' }]} numberOfLines={2}>{item.name}</Text>
         <View style={styles.crossSellPriceRow}>
-          <Text style={styles.crossSellPrice}>₹{item.price.toFixed(0)}</Text>
+          <Text style={[styles.crossSellPrice, isDark && { color: '#FFFFFF' }]}>₹{item.price.toFixed(0)}</Text>
           {item.originalPrice && item.originalPrice > item.price && (
             <Text style={styles.crossSellOriginalPrice}>₹{item.originalPrice.toFixed(0)}</Text>
           )}
         </View>
         <TouchableOpacity
           onPress={handleAdd}
-          style={[styles.crossSellAddBtn, isAdded && styles.crossSellAddBtnActive]}
+          style={[
+            styles.crossSellAddBtn,
+            isAdded && styles.crossSellAddBtnActive,
+            isDark && {
+              backgroundColor: isAdded ? '#FFFFFF' : '#000000',
+              borderColor: isAdded ? '#FFFFFF' : 'rgba(255, 255, 255, 0.3)',
+            },
+          ]}
           activeOpacity={0.8}
         >
-          <Text style={[styles.crossSellAddText, isAdded && styles.crossSellAddTextActive]}>
+          <Text
+            style={[
+              styles.crossSellAddText,
+              isAdded && styles.crossSellAddTextActive,
+              isDark && {
+                color: isAdded ? '#000000' : '#FFFFFF',
+              },
+            ]}
+          >
             {isAdded ? '✓ Added' : '+ Add'}
           </Text>
         </TouchableOpacity>
@@ -292,6 +315,14 @@ interface TipChipProps {
 }
 
 const TipChip: React.FC<TipChipProps> = ({ amount, selected, onSelect }) => {
+  let isDark = false;
+  try {
+    isDark = isCategoryDark();
+  } catch {}
+  if (!isDark) {
+    isDark = colors.cardBackground === '#000000' || colors.background === '#000000';
+  }
+
   const bgAnim = useRef(new Animated.Value(selected ? 1 : 0)).current;
 
   const handlePress = () => {
@@ -308,14 +339,29 @@ const TipChip: React.FC<TipChipProps> = ({ amount, selected, onSelect }) => {
 
   const backgroundColor = bgAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [COLORS.surface, COLORS.accent],
+    outputRange: isDark ? ['#000000', '#FFFFFF'] : [COLORS.surface, COLORS.accent],
   });
 
   return (
     <TouchableOpacity onPress={handlePress} activeOpacity={0.8} style={{ flex: 1 }}>
-      <Animated.View style={[styles.tipChip, { backgroundColor }]}>
+      <Animated.View
+        style={[
+          styles.tipChip,
+          isDark && {
+            borderColor: isDark ? 'rgba(255, 255, 255, 0.25)' : undefined,
+          },
+          { backgroundColor },
+        ]}
+      >
         <Text
-          style={[styles.tipChipText, { color: selected ? COLORS.white : COLORS.textPrimary }]}
+          style={[
+            styles.tipChipText,
+            {
+              color: isDark
+                ? (selected ? '#000000' : '#FFFFFF')
+                : (selected ? COLORS.white : COLORS.textPrimary),
+            },
+          ]}
         >
           {amount === 0 ? 'No Tip' : `₹${amount}`}
         </Text>
@@ -1125,17 +1171,15 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation: navProp, onP
       return;
     }
 
-    triggerQuickLoading('Proceeding to payment...', 300, () => {
-      if (onProceed) {
-        onProceed(grandTotal, totalDiscount, selectedTip);
-      } else if (navigation) {
-        navigation.navigate('Payment', {
-          grandTotal,
-          couponDiscount: totalDiscount,
-          tip: selectedTip,
-        } as any);
-      }
-    });
+    if (onProceed) {
+      onProceed(grandTotal, totalDiscount, selectedTip);
+    } else if (navigation) {
+      navigation.navigate('Payment', {
+        grandTotal,
+        couponDiscount: totalDiscount,
+        tip: selectedTip,
+      } as any);
+    }
   };
 
   const handleBack = () => {
@@ -1350,27 +1394,42 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation: navProp, onP
                       onChangeText={setLandmark}
                     />
 
-                    <Text style={styles.formSectionTitle}>Address Label</Text>
+                    <Text style={[styles.formSectionTitle, isDark && { color: '#FFFFFF' }]}>Address Label</Text>
                     <View style={styles.labelRow}>
                       {(['Home', 'Work', 'Other'] as const).map(l => (
                         <TouchableOpacity
                           key={l}
                           onPress={() => setLabel(l)}
-                          style={[styles.labelBtn, label === l && styles.labelBtnActive]}
+                          style={[
+                            styles.labelBtn,
+                            label === l && styles.labelBtnActive,
+                            isDark && {
+                              backgroundColor: label === l ? '#FFFFFF' : '#000000',
+                              borderColor: label === l ? '#FFFFFF' : 'rgba(255, 255, 255, 0.25)',
+                            },
+                          ]}
                           activeOpacity={0.7}
                         >
-                          <Text style={[styles.labelText, label === l && styles.labelTextActive]}>
+                          <Text
+                            style={[
+                              styles.labelText,
+                              label === l && styles.labelTextActive,
+                              isDark && {
+                                color: label === l ? '#000000' : '#FFFFFF',
+                              },
+                            ]}
+                          >
                             {l}
                           </Text>
                         </TouchableOpacity>
                       ))}
                     </View>
 
-                    <Text style={styles.formSectionTitle}>Receiver Details</Text>
+                    <Text style={[styles.formSectionTitle, isDark && { color: '#FFFFFF' }]}>Receiver Details</Text>
                     <View style={styles.inputWrapper}>
-                      <Text style={styles.inputLabel}>Receiver's Name</Text>
+                      <Text style={[styles.inputLabel, isDark && { color: '#E5E7EB' }]}>Receiver's Name</Text>
                       <TextInput
-                        style={styles.formInputLite}
+                        style={[styles.formInputLite, isDark && { color: '#FFFFFF', backgroundColor: '#000000' }]}
                         placeholder="Full Name"
                         placeholderTextColor={COLORS.textMuted}
                         value={receiverName}
@@ -1378,11 +1437,11 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation: navProp, onP
                       />
                     </View>
                     <View style={styles.inputWrapper}>
-                      <Text style={styles.inputLabel}>Receiver's Phone Number</Text>
-                      <View style={styles.phoneInputRow}>
-                        <Text style={styles.phonePrefix}>+91</Text>
+                      <Text style={[styles.inputLabel, isDark && { color: '#E5E7EB' }]}>Receiver's Phone Number</Text>
+                      <View style={[styles.phoneInputRow, isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.25)' }]}>
+                        <Text style={[styles.phonePrefix, isDark && { color: '#E5E7EB' }]}>+91</Text>
                         <TextInput
-                          style={styles.formInputLiteFlex}
+                          style={[styles.formInputLiteFlex, isDark && { color: '#FFFFFF' }]}
                           placeholder="10-digit mobile"
                           placeholderTextColor={COLORS.textMuted}
                           value={receiverPhone}
@@ -1397,18 +1456,25 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation: navProp, onP
                       {editingAddressId && (
                         <TouchableOpacity
                           onPress={handleCancelEdit}
-                          style={styles.addressCancelEditBtn}
+                          style={[
+                            styles.addressCancelEditBtn,
+                            isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.25)' },
+                          ]}
                           activeOpacity={0.7}
                         >
-                          <Text style={styles.addressCancelEditBtnText}>Cancel</Text>
+                          <Text style={[styles.addressCancelEditBtnText, isDark && { color: '#FFFFFF' }]}>Cancel</Text>
                         </TouchableOpacity>
                       )}
                       <TouchableOpacity
                         onPress={handleSaveAddress}
-                        style={[styles.addressSaveBtn, { flex: 1 }]}
+                        style={[
+                          styles.addressSaveBtn,
+                          { flex: 1 },
+                          isDark && { backgroundColor: '#FFFFFF' },
+                        ]}
                         activeOpacity={0.8}
                       >
-                        <Text style={styles.addressSaveBtnText}>
+                        <Text style={[styles.addressSaveBtnText, isDark && { color: '#000000' }]}>
                           {editingAddressId ? 'Update & Deliver Here' : 'Save & Deliver Here'}
                         </Text>
                       </TouchableOpacity>
@@ -1531,10 +1597,14 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation: navProp, onP
               <Text style={styles.emptyCartSub}>Add some fresh groceries to get started!</Text>
               <TouchableOpacity
                 onPress={handleBack}
-                style={[styles.proceedBtn, { marginTop: 16, paddingHorizontal: 24, paddingVertical: 12 }]}
+                style={[
+                  styles.proceedBtn,
+                  { marginTop: 16, paddingHorizontal: 24, paddingVertical: 12 },
+                  isDark && { backgroundColor: '#FFFFFF' },
+                ]}
                 activeOpacity={0.8}
               >
-                <Text style={styles.proceedBtnText}>Start Shopping</Text>
+                <Text style={[styles.proceedBtnText, isDark && { color: '#000000' }]}>Start Shopping</Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -1639,10 +1709,14 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation: navProp, onP
             </View>
             <TouchableOpacity
               onPress={handleApplyCoupon}
-              style={[styles.couponApplyBtn, couponApplied && styles.couponAppliedBtn]}
+              style={[
+                styles.couponApplyBtn,
+                couponApplied && styles.couponAppliedBtn,
+                isDark && { backgroundColor: '#FFFFFF' },
+              ]}
               activeOpacity={0.8}
             >
-              <Text style={styles.couponApplyText}>
+              <Text style={[styles.couponApplyText, isDark && { color: '#000000' }]}>
                 {couponApplied ? 'Applied!' : 'Apply'}
               </Text>
             </TouchableOpacity>
@@ -1750,10 +1824,10 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation: navProp, onP
         </View>
         <AnimatedPressable
           onPress={handleProceed}
-          style={styles.proceedBtn}
+          style={[styles.proceedBtn, isDark && { backgroundColor: '#FFFFFF' }]}
           scaleDown={0.97}
         >
-          <Text style={styles.proceedBtnText}>Proceed to Checkout →</Text>
+          <Text style={[styles.proceedBtnText, isDark && { color: '#000000' }]}>Proceed to Checkout →</Text>
         </AnimatedPressable>
       </View>
 
@@ -1765,18 +1839,18 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation: navProp, onP
         onRequestClose={() => setIsAddOptionModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.addressChoiceModalCard}>
+          <View style={[styles.addressChoiceModalCard, isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.15)', borderWidth: 1 }]}>
             <View style={styles.addressChoiceHeader}>
-              <Text style={styles.addressChoiceTitle}>Add Delivery Address</Text>
+              <Text style={[styles.addressChoiceTitle, isDark && { color: '#FFFFFF' }]}>Add Delivery Address</Text>
               <TouchableOpacity
                 onPress={() => setIsAddOptionModalVisible(false)}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                style={styles.addressChoiceCloseBtn}
+                style={[styles.addressChoiceCloseBtn, isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.2)' }]}
               >
-                <Ionicons name="close" size={18} color={COLORS.textMuted} />
+                <Ionicons name="close" size={18} color={isDark ? '#FFFFFF' : COLORS.textMuted} />
               </TouchableOpacity>
             </View>
-            <Text style={styles.addressChoiceSubtitle}>
+            <Text style={[styles.addressChoiceSubtitle, isDark && { color: '#E5E7EB' }]}>
               Choose how you would like to set your delivery location:
             </Text>
 
@@ -1784,41 +1858,47 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation: navProp, onP
             <TouchableOpacity
               onPress={handleRequestLiveLocation}
               activeOpacity={0.85}
-              style={styles.addressChoiceOptionLive}
+              style={[
+                styles.addressChoiceOptionLive,
+                isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.25)' },
+              ]}
             >
-              <View style={styles.addressChoiceIconBadgeLive}>
-                <Ionicons name="navigate" size={22} color={COLORS.accent} />
+              <View style={[styles.addressChoiceIconBadgeLive, isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.25)' }]}>
+                <Ionicons name="navigate" size={22} color={isDark ? '#FFFFFF' : COLORS.accent} />
               </View>
               <View style={{ flex: 1 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <Text style={styles.addressChoiceOptionTitleLive}>Add Live Location</Text>
+                  <Text style={[styles.addressChoiceOptionTitleLive, isDark && { color: '#FFFFFF' }]}>Add Live Location</Text>
                   <View style={styles.livePill}>
                     <Text style={styles.livePillText}>AUTO GPS</Text>
                   </View>
                 </View>
-                <Text style={styles.addressChoiceOptionSub}>
+                <Text style={[styles.addressChoiceOptionSub, isDark && { color: '#E5E7EB' }]}>
                   Use current location to automatically fill address details
                 </Text>
               </View>
-              <Ionicons name="arrow-forward" size={18} color={COLORS.accent} />
+              <Ionicons name="arrow-forward" size={18} color={isDark ? '#FFFFFF' : COLORS.accent} />
             </TouchableOpacity>
 
             {/* Option 2: Enter New Address */}
             <TouchableOpacity
               onPress={handleManualAddressEntry}
               activeOpacity={0.85}
-              style={styles.addressChoiceOptionManual}
+              style={[
+                styles.addressChoiceOptionManual,
+                isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.25)' },
+              ]}
             >
-              <View style={styles.addressChoiceIconBadgeManual}>
-                <Ionicons name="create-outline" size={22} color={COLORS.textPrimary} />
+              <View style={[styles.addressChoiceIconBadgeManual, isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.25)' }]}>
+                <Ionicons name="create-outline" size={22} color={isDark ? '#FFFFFF' : COLORS.textPrimary} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.addressChoiceOptionTitleManual}>Enter New Address</Text>
-                <Text style={styles.addressChoiceOptionSub}>
+                <Text style={[styles.addressChoiceOptionTitleManual, isDark && { color: '#FFFFFF' }]}>Enter New Address</Text>
+                <Text style={[styles.addressChoiceOptionSub, isDark && { color: '#E5E7EB' }]}>
                   Type house number, street, area, and receiver details manually
                 </Text>
               </View>
-              <Ionicons name="arrow-forward" size={18} color={COLORS.accent} />
+              <Ionicons name="arrow-forward" size={18} color={isDark ? '#FFFFFF' : COLORS.accent} />
             </TouchableOpacity>
           </View>
         </View>
@@ -1832,30 +1912,33 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation: navProp, onP
         onRequestClose={() => setIsLocationPermissionModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.deleteModalCard}>
-            <View style={styles.locationPermissionIconCircle}>
-              <Ionicons name="location" size={26} color={COLORS.accent} />
+          <View style={[styles.deleteModalCard, isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.15)', borderWidth: 1 }]}>
+            <View style={[styles.locationPermissionIconCircle, isDark && { backgroundColor: '#000000', borderColor: '#FFFFFF' }]}>
+              <Ionicons name="location" size={26} color={isDark ? '#FFFFFF' : COLORS.accent} />
             </View>
-            <Text style={styles.deleteModalTitle}>Allow Location Access?</Text>
-            <Text style={styles.deleteModalMessage}>
+            <Text style={[styles.deleteModalTitle, isDark && { color: '#FFFFFF' }]}>Allow Location Access?</Text>
+            <Text style={[styles.deleteModalMessage, isDark && { color: '#E5E7EB' }]}>
               OneBuddy Cart needs your permission to access device GPS to automatically detect and fill your current address.
             </Text>
 
             <View style={styles.deleteModalBtnRow}>
               <TouchableOpacity
                 onPress={() => setIsLocationPermissionModalVisible(false)}
-                style={styles.deleteModalCancelBtn}
+                style={[styles.deleteModalCancelBtn, isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.25)' }]}
                 activeOpacity={0.8}
               >
-                <Text style={styles.deleteModalCancelText}>Cancel</Text>
+                <Text style={[styles.deleteModalCancelText, isDark && { color: '#FFFFFF' }]}>Cancel</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 onPress={handleConfirmLocationAccess}
-                style={[styles.deleteModalConfirmBtn, { backgroundColor: COLORS.accent }]}
+                style={[
+                  styles.deleteModalConfirmBtn,
+                  { backgroundColor: isDark ? '#FFFFFF' : COLORS.accent },
+                ]}
                 activeOpacity={0.8}
               >
-                <Text style={[styles.deleteModalConfirmText, { color: COLORS.white }]}>
+                <Text style={[styles.deleteModalConfirmText, { color: isDark ? '#000000' : COLORS.white }]}>
                   Allow & Auto-Fill
                 </Text>
               </TouchableOpacity>
@@ -1872,25 +1955,30 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation: navProp, onP
         onRequestClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.deleteModalCard}>
-            <Text style={styles.deleteModalTitle}>{confirmModal.title}</Text>
-            <Text style={styles.deleteModalMessage}>{confirmModal.message}</Text>
+          <View style={[styles.deleteModalCard, isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.15)', borderWidth: 1 }]}>
+            <Text style={[styles.deleteModalTitle, isDark && { color: '#FFFFFF' }]}>{confirmModal.title}</Text>
+            <Text style={[styles.deleteModalMessage, isDark && { color: '#E5E7EB' }]}>{confirmModal.message}</Text>
 
             <View style={styles.deleteModalBtnRow}>
               <TouchableOpacity
                 onPress={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
-                style={styles.deleteModalCancelBtn}
+                style={[styles.deleteModalCancelBtn, isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.25)' }]}
                 activeOpacity={0.8}
               >
-                <Text style={styles.deleteModalCancelText}>Cancel</Text>
+                <Text style={[styles.deleteModalCancelText, isDark && { color: '#FFFFFF' }]}>Cancel</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 onPress={confirmModal.onConfirm}
-                style={[styles.deleteModalConfirmBtn, !confirmModal.isDanger && { backgroundColor: COLORS.accent }]}
+                style={[
+                  styles.deleteModalConfirmBtn,
+                  isDark
+                    ? { backgroundColor: '#FFFFFF' }
+                    : (!confirmModal.isDanger && { backgroundColor: COLORS.accent }),
+                ]}
                 activeOpacity={0.8}
               >
-                <Text style={[styles.deleteModalConfirmText, !confirmModal.isDanger && { color: COLORS.white }]}>
+                <Text style={[styles.deleteModalConfirmText, { color: isDark ? '#000000' : COLORS.white }]}>
                   {confirmModal.confirmText || 'Yes remove'}
                 </Text>
               </TouchableOpacity>

@@ -100,8 +100,12 @@ export async function fetchOrders(userId?: string): Promise<Order[]> {
     // Sort orders by createdAt descending
     orders.sort((a, b) => getTimeMs(b.createdAt) - getTimeMs(a.createdAt));
     return orders;
-  } catch (err) {
-    console.error('[GroceryBackend] Error fetching orders:', err);
+  } catch (err: any) {
+    if (err?.code === 'permission-denied' || err?.code === 'unauthenticated' || err?.message?.includes('permission')) {
+      console.warn('[GroceryBackend] Orders read restricted by Firebase security rules. Falling back to local storage.');
+    } else {
+      console.error('[GroceryBackend] Error fetching orders:', err);
+    }
     return [];
   }
 }
@@ -124,8 +128,12 @@ export async function fetchOrderById(orderId: string): Promise<Order | null> {
       }
       return mapOrder(snap.id, data);
     }
-  } catch (err) {
-    console.error(`[GroceryBackend] Error fetching order ${orderId}:`, err);
+  } catch (err: any) {
+    if (err?.code === 'permission-denied' || err?.code === 'unauthenticated' || err?.message?.includes('permission')) {
+      console.warn(`[GroceryBackend] Order ${orderId} read restricted by Firebase security rules. Falling back to local storage.`);
+    } else {
+      console.error(`[GroceryBackend] Error fetching order ${orderId}:`, err);
+    }
   }
   return null;
 }
@@ -177,8 +185,12 @@ export function subscribeOrders(
       orders.sort((a, b) => getTimeMs(b.createdAt) - getTimeMs(a.createdAt));
       onData(orders);
     },
-    (err) => {
-      console.error('[GroceryBackend] Orders subscription error:', err);
+    (err: any) => {
+      if (err?.code === 'permission-denied' || err?.code === 'unauthenticated' || err?.message?.includes('permission')) {
+        console.warn('[GroceryBackend] Orders subscription note: access restricted by permissions.');
+      } else {
+        console.error('[GroceryBackend] Orders subscription error:', err);
+      }
       onError?.(err);
     }
   );

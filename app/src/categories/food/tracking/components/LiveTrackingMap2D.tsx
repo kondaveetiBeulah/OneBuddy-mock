@@ -15,6 +15,7 @@ import Svg, {
   Text as SvgText,
 } from 'react-native-svg';
 import { FONTS } from '../theme';
+import { isCategoryDark } from '@/theme/categoryThemeBridge';
 import { MapControlPanel } from './MapControlPanel';
 
 /**
@@ -268,13 +269,42 @@ export function LiveTrackingMap2D({
   const progressRatio = routeIndex / DENSE_ROUTE.length;
   const remainingEtaMins = Math.max(1, Math.round((1 - progressRatio) * 12));
 
+  const isDark = isCategoryDark();
+  const mapTheme = isDark
+    ? {
+        bg: '#121417',
+        water: '#162838',
+        park: '#142717',
+        parkStroke: '#1E3823',
+        parcelFill: '#1A1D24',
+        parcelStroke: 'rgba(255, 255, 255, 0.08)',
+        roadBorder: '#232730',
+        roadFill: '#1E2128',
+        roadDashed: 'rgba(255, 255, 255, 0.15)',
+        label: '#8E9AAB',
+        watermark: '#64748B',
+      }
+    : {
+        bg: '#F4FAF2',
+        water: '#B2D7FB',
+        park: '#C5EEC0',
+        parkStroke: '#B0E2A8',
+        parcelFill: '#EBF4E8',
+        parcelStroke: '#D4E3D2',
+        roadBorder: '#D0E0CE',
+        roadFill: '#FFFFFF',
+        roadDashed: '#EAF2E8',
+        label: '#526450',
+        watermark: '#475569',
+      };
+
   // Build the complete blue route path d string
   const fullRoutePathD = MAP_ROUTE_WAYPOINTS.map(
-    (pt, i) => `${i === 0 ? 'M' : 'L'} ${pt.x} ${pt.y}`,
+    (pt, i) => `${i === 0 ? 'M' : 'L'} ${pt.x} ${pt.y}`
   ).join(' ');
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: mapTheme.bg }]}>
       {/* Pan & Zoom Animated Map Canvas */}
       <Animated.View
         style={[
@@ -291,7 +321,7 @@ export function LiveTrackingMap2D({
       >
         <Svg width="100%" height="100%" viewBox="0 0 400 480" preserveAspectRatio="xMidYMid slice">
           {/* 1. Base Map Background */}
-          <Rect x="0" y="0" width="400" height="480" fill="#F4FAF2" />
+          <Rect x="0" y="0" width="400" height="480" fill={mapTheme.bg} />
 
           {/* 2. Water Bodies (Canal & Lake) */}
           {/* Bottom-left corner lake */}
@@ -301,17 +331,17 @@ export function LiveTrackingMap2D({
 
           {/* 3. Green Park Areas (OneBuddy fresh mint green) */}
           {/* Top-left park */}
-          <Rect x="28" y="42" width="46" height="34" rx="3" fill="#C5EEC0" stroke="#B0E2A8" strokeWidth="1" />
+          <Rect x="28" y="42" width="46" height="34" rx="3" fill={mapTheme.park} stroke={mapTheme.parkStroke} strokeWidth="1" />
           {/* Middle-left park */}
-          <Path d="M28 135 L68 135 L68 185 L28 178 Z" fill="#C5EEC0" stroke="#B0E2A8" strokeWidth="1" />
+          <Path d="M28 135 L68 135 L68 185 L28 178 Z" fill={mapTheme.park} stroke={mapTheme.parkStroke} strokeWidth="1" />
           {/* Center sector park */}
-          <Path d="M125 155 L175 168 L170 200 L120 188 Z" fill="#C5EEC0" stroke="#B0E2A8" strokeWidth="1" />
+          <Path d="M125 155 L175 168 L170 200 L120 188 Z" fill={mapTheme.park} stroke={mapTheme.parkStroke} strokeWidth="1" />
           {/* Bottom-right park */}
-          <Path d="M245 355 L320 405 L320 440 L260 440 L235 405 Z" fill="#C5EEC0" stroke="#B0E2A8" strokeWidth="1" />
-          <Rect x="265" y="375" width="30" height="24" rx="2" fill="#C5EEC0" />
+          <Path d="M245 355 L320 405 L320 440 L260 440 L235 405 Z" fill={mapTheme.park} stroke={mapTheme.parkStroke} strokeWidth="1" />
+          <Rect x="265" y="375" width="30" height="24" rx="2" fill={mapTheme.park} />
 
           {/* 4. Residential Parcels & Building Blocks */}
-          <G stroke="#D4E3D2" strokeWidth="1.2" fill="#EBF4E8">
+          <G stroke={mapTheme.parcelStroke} strokeWidth="1.2" fill={mapTheme.parcelFill}>
             <Rect x="220" y="14" width="36" height="26" rx="2" />
             <Rect x="260" y="14" width="40" height="26" rx="2" />
             <Rect x="304" y="14" width="44" height="26" rx="2" />
@@ -343,14 +373,14 @@ export function LiveTrackingMap2D({
           {/* Golf Course Rd */}
           <Path
             d="M180 370 L380 470"
-            stroke="#D0E0CE"
+            stroke={mapTheme.roadBorder}
             strokeWidth="30"
             strokeLinecap="round"
             fill="none"
           />
           <Path
             d="M180 370 L380 470"
-            stroke="#FFFFFF"
+            stroke={mapTheme.roadFill}
             strokeWidth="26"
             strokeLinecap="round"
             fill="none"
@@ -359,7 +389,7 @@ export function LiveTrackingMap2D({
           {/* Sector 16 Main Rd (Main curved highway) */}
           <Path
             d="M245 405 L190 310 L130 190 L90 110 L50 10"
-            stroke="#D0E0CE"
+            stroke={mapTheme.roadBorder}
             strokeWidth="32"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -367,7 +397,7 @@ export function LiveTrackingMap2D({
           />
           <Path
             d="M245 405 L190 310 L130 190 L90 110 L50 10"
-            stroke="#FFFFFF"
+            stroke={mapTheme.roadFill}
             strokeWidth="28"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -376,7 +406,7 @@ export function LiveTrackingMap2D({
           {/* Subtle center line for Sector 16 Main Rd */}
           <Path
             d="M245 405 L190 310 L130 190 L90 110 L50 10"
-            stroke="#EAF2E8"
+            stroke={mapTheme.roadDashed}
             strokeWidth="1.5"
             strokeDasharray="8 6"
             fill="none"
@@ -386,14 +416,14 @@ export function LiveTrackingMap2D({
           {/* Sector 18B Rd */}
           <Path
             d="M190 310 L380 405"
-            stroke="#D0E0CE"
+            stroke={mapTheme.roadBorder}
             strokeWidth="18"
             strokeLinecap="round"
             fill="none"
           />
           <Path
             d="M190 310 L380 405"
-            stroke="#FFFFFF"
+            stroke={mapTheme.roadFill}
             strokeWidth="15"
             strokeLinecap="round"
             fill="none"
@@ -402,14 +432,14 @@ export function LiveTrackingMap2D({
           {/* Sector 18A Rd */}
           <Path
             d="M200 240 L380 330"
-            stroke="#D0E0CE"
+            stroke={mapTheme.roadBorder}
             strokeWidth="16"
             strokeLinecap="round"
             fill="none"
           />
           <Path
             d="M200 240 L380 330"
-            stroke="#FFFFFF"
+            stroke={mapTheme.roadFill}
             strokeWidth="13"
             strokeLinecap="round"
             fill="none"
@@ -418,13 +448,13 @@ export function LiveTrackingMap2D({
           {/* Cross Street connecting to Sector 18A */}
           <Path
             d="M275 14 L275 320"
-            stroke="#D0E0CE"
+            stroke={mapTheme.roadBorder}
             strokeWidth="15"
             fill="none"
           />
           <Path
             d="M275 14 L275 320"
-            stroke="#FFFFFF"
+            stroke={mapTheme.roadFill}
             strokeWidth="12"
             fill="none"
           />
@@ -432,7 +462,7 @@ export function LiveTrackingMap2D({
           {/* Interior connecting road to Destination crescent */}
           <Path
             d="M110 140 L256 215 L256 160 L154 90"
-            stroke="#D0E0CE"
+            stroke={mapTheme.roadBorder}
             strokeWidth="16"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -440,7 +470,7 @@ export function LiveTrackingMap2D({
           />
           <Path
             d="M110 140 L256 215 L256 160 L154 90"
-            stroke="#FFFFFF"
+            stroke={mapTheme.roadFill}
             strokeWidth="13"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -450,14 +480,14 @@ export function LiveTrackingMap2D({
           {/* Crescent Cul-de-Sac Loop */}
           <Path
             d="M148 40 L160 90 L136 120"
-            stroke="#D0E0CE"
+            stroke={mapTheme.roadBorder}
             strokeWidth="12"
             strokeLinecap="round"
             fill="none"
           />
           <Path
             d="M148 40 L160 90 L136 120"
-            stroke="#FFFFFF"
+            stroke={mapTheme.roadFill}
             strokeWidth="9"
             strokeLinecap="round"
             fill="none"
@@ -470,7 +500,7 @@ export function LiveTrackingMap2D({
             y="320"
             fontSize="10"
             fontWeight="600"
-            fill="#526450"
+            fill={mapTheme.label}
             fontFamily={FONTS.body}
             transform="rotate(-55, 172, 320)"
           >
@@ -483,7 +513,7 @@ export function LiveTrackingMap2D({
             y="410"
             fontSize="10"
             fontWeight="600"
-            fill="#526450"
+            fill={mapTheme.label}
             fontFamily={FONTS.body}
             transform="rotate(26, 245, 410)"
           >
@@ -496,7 +526,7 @@ export function LiveTrackingMap2D({
             y="360"
             fontSize="9.5"
             fontWeight="600"
-            fill="#526450"
+            fill={mapTheme.label}
             fontFamily={FONTS.body}
             transform="rotate(27, 290, 360)"
           >
@@ -509,7 +539,7 @@ export function LiveTrackingMap2D({
             y="266"
             fontSize="9.5"
             fontWeight="600"
-            fill="#526450"
+            fill={mapTheme.label}
             fontFamily={FONTS.body}
             transform="rotate(26, 300, 266)"
           >

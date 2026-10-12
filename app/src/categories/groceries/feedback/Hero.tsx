@@ -11,7 +11,7 @@ export default function Hero() {
           <Text style={styles.heartText}>♥</Text>
         </View>
       </View>
-      <Text style={styles.thanksTitle}>Thank you for your grocery order!</Text>
+      <Text style={styles.thanksTitle}>Thank you for your order!</Text>
       <Text style={styles.thanksSub}>We'd love to hear about your experience.</Text>
     </View>
   );

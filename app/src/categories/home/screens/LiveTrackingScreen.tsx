@@ -185,19 +185,27 @@ export const LiveTrackingScreen: React.FC<LiveTrackingScreenProps> = ({
       <View style={[styles.floatingHeader, { paddingTop: Math.max(insets.top, 12) }]}>
         <TouchableOpacity
           onPress={() => navigation.navigate('MainTabs', { initialTab: 'Home' })}
-          style={styles.headerCircleBtn}
+          style={[
+            styles.headerCircleBtn,
+            isDark && { backgroundColor: 'rgba(29, 30, 34, 0.94)', borderColor: 'rgba(255, 255, 255, 0.12)', borderWidth: 1 },
+          ]}
           activeOpacity={0.8}
         >
-          <ArrowLeft size={20} color={COLORS.textPrimary} />
+          <ArrowLeft size={20} color={isDark ? '#F1F1EC' : COLORS.textPrimary} />
         </TouchableOpacity>
 
-        <View style={styles.headerCenterCard}>
+        <View
+          style={[
+            styles.headerCenterCard,
+            isDark && { backgroundColor: 'rgba(29, 30, 34, 0.94)', borderColor: 'rgba(255, 255, 255, 0.12)', borderWidth: 1 },
+          ]}
+        >
           <View style={styles.pulseLiveDot} />
           <View>
-            <Text style={styles.headerOrderText}>
+            <Text style={[styles.headerOrderText, isDark && { color: '#F1F1EC' }]}>
               Order #{activeBooking?.bookingId || 'HS-482190'}
             </Text>
-            <Text style={styles.headerCategoryText}>
+            <Text style={[styles.headerCategoryText, isDark && { color: '#9BA08F' }]}>
               {activeBooking?.category.title || 'Home Service'}
             </Text>
           </View>
@@ -205,24 +213,36 @@ export const LiveTrackingScreen: React.FC<LiveTrackingScreenProps> = ({
 
         <TouchableOpacity
           onPress={() => navigation.navigate('MainTabs', { initialTab: 'Home' })}
-          style={styles.headerCircleBtn}
+          style={[
+            styles.headerCircleBtn,
+            isDark && { backgroundColor: 'rgba(29, 30, 34, 0.94)', borderColor: 'rgba(255, 255, 255, 0.12)', borderWidth: 1 },
+          ]}
           activeOpacity={0.8}
         >
-          <Home size={18} color={COLORS.textPrimary} />
+          <Home size={18} color={isDark ? '#F1F1EC' : COLORS.textPrimary} />
         </TouchableOpacity>
       </View>
 
       {/* Floating Simulator Bar */}
-      <View style={styles.floatingSimBar}>
+      <View
+        style={[
+          styles.floatingSimBar,
+          isDark && { backgroundColor: 'rgba(18, 18, 20, 0.94)', borderColor: 'rgba(255, 255, 255, 0.12)', borderWidth: 1 },
+        ]}
+      >
         <Text style={styles.simTitle}>SIMULATE:</Text>
         <TouchableOpacity
-          style={[styles.simBtn, currentStageIndex <= 1 && styles.disabledSimBtn]}
+          style={[
+            styles.simBtn,
+            isDark && { backgroundColor: '#24262B' },
+            currentStageIndex <= 1 && styles.disabledSimBtn,
+          ]}
           disabled={currentStageIndex <= 1}
           onPress={rewindToPreviousStage}
           activeOpacity={0.7}
         >
-          <RotateCcw size={12} color={COLORS.textPrimary} />
-          <Text style={styles.simBtnText}>Prev</Text>
+          <RotateCcw size={12} color={isDark ? '#F1F1EC' : COLORS.textPrimary} />
+          <Text style={[styles.simBtnText, isDark && { color: '#F1F1EC' }]}>Prev</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -243,7 +263,7 @@ export const LiveTrackingScreen: React.FC<LiveTrackingScreenProps> = ({
       {/* 2. Scrollable Detail Bottom Sheet (Fixed to screen below map) */}
       <ScrollView
         showsVerticalScrollIndicator={false}
-        style={styles.bottomSheetScroll}
+        style={[styles.bottomSheetScroll, { backgroundColor: colors.surface }]}
         contentContainerStyle={[
           styles.bottomSheetContent,
           { paddingBottom: 110 + insets.bottom },
@@ -251,34 +271,35 @@ export const LiveTrackingScreen: React.FC<LiveTrackingScreenProps> = ({
       >
         {/* Drag Handle Indicator */}
         <View style={styles.sheetHandleRow}>
-          <View style={styles.sheetHandle} />
+          <View style={[styles.sheetHandle, isDark && { backgroundColor: '#3E424B' }]} />
         </View>
 
         {/* Live Status Banner */}
         <View
           style={[
             styles.statusBanner,
-            currentStage === 'ARRIVED' ? styles.arrivedBanner : null,
+            isDark && { backgroundColor: colors.surfaceSubtle, borderColor: colors.border },
+            currentStage === 'ARRIVED' ? (isDark ? styles.arrivedBannerDark : styles.arrivedBanner) : null,
           ]}
         >
           <View style={styles.statusBannerTopRow}>
             <View style={styles.statusTitleRow}>
               {currentStage === 'ARRIVED' ? (
-                <CheckCircle size={18} color="#15803D" style={{ marginRight: 6 }} />
+                <CheckCircle size={18} color={isDark ? '#4ADE80' : '#15803D'} style={{ marginRight: 6 }} />
               ) : (
                 <Clock size={16} color={COLORS.primary} style={{ marginRight: 6 }} />
               )}
-              <Text style={styles.statusBannerTitle}>{banner.title}</Text>
+              <Text style={[styles.statusBannerTitle, { color: colors.textPrimary }]}>{banner.title}</Text>
             </View>
 
-            <View style={[styles.statusBannerBadge, { backgroundColor: banner.badgeBg }]}>
-              <Text style={[styles.statusBannerBadgeText, { color: banner.badgeColor }]}>
+            <View style={[styles.statusBannerBadge, { backgroundColor: isDark ? (currentStage === 'COMPLETED' || currentStage === 'ARRIVED' || currentStage === 'EN_ROUTE' ? 'rgba(84, 183, 19, 0.2)' : 'rgba(234, 179, 8, 0.2)') : banner.badgeBg }]}>
+              <Text style={[styles.statusBannerBadgeText, { color: isDark ? (currentStage === 'COMPLETED' || currentStage === 'ARRIVED' || currentStage === 'EN_ROUTE' ? '#66D21E' : '#FBBF24') : banner.badgeColor }]}>
                 {banner.badge}
               </Text>
             </View>
           </View>
 
-          <Text style={styles.statusBannerSub}>{banner.subtitle}</Text>
+          <Text style={[styles.statusBannerSub, { color: colors.textSecondary }]}>{banner.subtitle}</Text>
         </View>
 
         {/* OTP Card (Visible when technician is ARRIVED) */}
@@ -290,12 +311,12 @@ export const LiveTrackingScreen: React.FC<LiveTrackingScreenProps> = ({
 
         {/* Service Completed Callout - Message only, review modal opens automatically */}
         {currentStage === 'COMPLETED' && (
-          <View style={[styles.sectionMargin, styles.completedBannerBox]}>
+          <View style={[styles.sectionMargin, isDark ? styles.completedBannerBoxDark : styles.completedBannerBox]}>
             <View style={styles.completedHeaderRow}>
-              <CheckCircle size={22} color="#15803D" style={{ marginRight: 8 }} />
-              <Text style={styles.completedHeaderTitle}>All Tasks Completed!</Text>
+              <CheckCircle size={22} color={isDark ? '#4ADE80' : '#15803D'} style={{ marginRight: 8 }} />
+              <Text style={[styles.completedHeaderTitle, isDark && { color: '#4ADE80' }]}>All Tasks Completed!</Text>
             </View>
-            <Text style={styles.completedHeaderSub}>
+            <Text style={[styles.completedHeaderSub, isDark && { color: '#86EFAC' }]}>
               Your service request has been successfully finished.
             </Text>
           </View>
@@ -303,8 +324,8 @@ export const LiveTrackingScreen: React.FC<LiveTrackingScreenProps> = ({
 
         {/* Assigned Provider Card */}
         <View style={styles.sectionMargin}>
-          <Text style={styles.sectionTitle}>Assigned Service Professional</Text>
-          <Card style={styles.providerCard} variant="elevated">
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Assigned Service Professional</Text>
+          <Card style={[styles.providerCard, { backgroundColor: colors.surface }]} variant="elevated">
             <View style={styles.providerRow}>
               <Image
                 source={{
@@ -316,7 +337,7 @@ export const LiveTrackingScreen: React.FC<LiveTrackingScreenProps> = ({
               />
               <View style={styles.providerMeta}>
                 <View style={styles.providerNameRow}>
-                  <Text style={styles.providerName}>{provider?.name || 'Rajesh Kumar'}</Text>
+                  <Text style={[styles.providerName, { color: colors.textPrimary }]}>{provider?.name || 'Rajesh Kumar'}</Text>
                   <View style={styles.proBadge}>
                     <Award size={10} color="#FFFFFF" style={{ marginRight: 2 }} />
                     <Text style={styles.proBadgeText}>{provider?.badge || 'Super Pro'}</Text>
@@ -325,15 +346,15 @@ export const LiveTrackingScreen: React.FC<LiveTrackingScreenProps> = ({
 
                 <View style={styles.ratingRow}>
                   <RatingStars rating={provider?.rating || 4.9} size={12} />
-                  <Text style={styles.ratingValue}>{provider?.rating || 4.9}</Text>
-                  <Text style={styles.jobsValue}>
+                  <Text style={[styles.ratingValue, { color: colors.textPrimary }]}>{provider?.rating || 4.9}</Text>
+                  <Text style={[styles.jobsValue, { color: colors.textMuted }]}>
                     ({provider?.jobsCompleted || 486}+ jobs)
                   </Text>
                 </View>
 
                 <View style={styles.vehicleRow}>
-                  <Car size={12} color={COLORS.textSecondary} />
-                  <Text style={styles.vehicleText}>
+                  <Car size={12} color={colors.textSecondary} />
+                  <Text style={[styles.vehicleText, { color: colors.textSecondary }]}>
                     {provider?.vehicleNo || 'KA 03 EJ 4821'} ({provider?.experienceYears || 6} yrs exp)
                   </Text>
                 </View>
@@ -342,19 +363,25 @@ export const LiveTrackingScreen: React.FC<LiveTrackingScreenProps> = ({
               {/* Call & Message Direct Actions */}
               <View style={styles.quickActions}>
                 <TouchableOpacity
-                  style={styles.actionCircleBtn}
+                  style={[
+                    styles.actionCircleBtn,
+                    isDark && { backgroundColor: 'rgba(84, 183, 19, 0.2)' },
+                  ]}
                   onPress={handleCall}
                   activeOpacity={0.75}
                 >
-                  <Phone size={16} color={COLORS.primary} />
+                  <Phone size={16} color={isDark ? '#66D21E' : COLORS.primary} />
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  style={[styles.actionCircleBtn, { backgroundColor: COLORS.secondaryLight }]}
+                  style={[
+                    styles.actionCircleBtn,
+                    { backgroundColor: isDark ? 'rgba(59, 130, 246, 0.2)' : COLORS.secondaryLight },
+                  ]}
                   onPress={() => setChatVisible(true)}
                   activeOpacity={0.75}
                 >
-                  <MessageSquare size={16} color={COLORS.secondary} />
+                  <MessageSquare size={16} color={isDark ? '#60A5FA' : COLORS.secondary} />
                 </TouchableOpacity>
               </View>
             </View>
@@ -363,26 +390,26 @@ export const LiveTrackingScreen: React.FC<LiveTrackingScreenProps> = ({
 
         {/* Order Progress Timeline (With Done progress indicator) */}
         <View style={styles.sectionMargin}>
-          <Text style={styles.sectionTitle}>Order Progress</Text>
-          <Card style={styles.timelineCard} variant="outlined">
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Order Progress</Text>
+          <Card style={[styles.timelineCard, { backgroundColor: colors.surface }]} variant="outlined">
             <StatusTimeline currentStage={currentStage} />
           </Card>
         </View>
 
         {/* Scheduled Destination Summary */}
         <View style={styles.sectionMargin}>
-          <Text style={styles.sectionTitle}>Service Location</Text>
-          <Card style={styles.addressCard} variant="flat">
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Service Location</Text>
+          <Card style={[styles.addressCard, { backgroundColor: colors.surfaceSubtle }]} variant="flat">
             <View style={styles.addressRow}>
-              <View style={styles.pinCircle}>
-                <MapPin size={16} color={COLORS.primary} />
+              <View style={[styles.pinCircle, isDark && { backgroundColor: 'rgba(84, 183, 19, 0.2)' }]}>
+                <MapPin size={16} color={isDark ? '#66D21E' : COLORS.primary} />
               </View>
               <View style={styles.addressTextWrapper}>
-                <Text style={styles.addressLabel}>{activeBooking?.address.label || 'Home'}</Text>
-                <Text style={styles.addressStreet} numberOfLines={2}>
+                <Text style={[styles.addressLabel, { color: colors.textPrimary }]}>{activeBooking?.address.label || 'Home'}</Text>
+                <Text style={[styles.addressStreet, { color: colors.textSecondary }]} numberOfLines={2}>
                   {activeBooking?.address.houseNo}, {activeBooking?.address.street}
                 </Text>
-                <Text style={styles.addressCity}>
+                <Text style={[styles.addressCity, { color: colors.textMuted }]}>
                   {activeBooking?.address.city} - {activeBooking?.address.pincode}
                 </Text>
               </View>
@@ -545,6 +572,10 @@ const styles = StyleSheet.create({
   arrivedBanner: {
     backgroundColor: '#F0FDF4',
     borderColor: '#86EFAC',
+  },
+  arrivedBannerDark: {
+    backgroundColor: 'rgba(34, 197, 94, 0.15)',
+    borderColor: 'rgba(34, 197, 94, 0.35)',
   },
   statusBannerTopRow: {
     flexDirection: 'row',
@@ -712,6 +743,14 @@ const styles = StyleSheet.create({
     padding: SPACING.md,
     borderWidth: 1.5,
     borderColor: '#86EFAC',
+    ...SHADOWS.sm,
+  },
+  completedBannerBoxDark: {
+    backgroundColor: 'rgba(34, 197, 94, 0.15)',
+    borderRadius: RADII.xl,
+    padding: SPACING.md,
+    borderWidth: 1.5,
+    borderColor: 'rgba(34, 197, 94, 0.35)',
     ...SHADOWS.sm,
   },
   completedHeaderRow: {

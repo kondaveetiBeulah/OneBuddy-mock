@@ -78,18 +78,18 @@ export const AddAddressScreen: React.FC<AddAddressScreenProps> = ({ onBack, onSa
   const isDark = isCategoryDark();
 
   return (
-    <View style={[styles.container, isDark && { backgroundColor: '#121214' }]}>
+    <View style={[styles.container, isDark && { backgroundColor: '#000000' }]}>
       {/* Header */}
-      <View style={[styles.header, { paddingTop: topInset + 12 }, isDark && { borderBottomColor: 'rgba(255, 255, 255, 0.08)' }]}>
+      <View style={[styles.header, { paddingTop: topInset + 12 }, isDark && { borderBottomColor: 'rgba(255, 255, 255, 0.1)' }]}>
         <TouchableOpacity 
           onPress={onBack} 
-          style={[styles.backBtn, isDark && { backgroundColor: 'rgba(255, 255, 255, 0.06)' }]}
+          style={[styles.backBtn, isDark && { backgroundColor: 'rgba(255, 255, 255, 0.1)' }]}
           activeOpacity={0.5}
           hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
         >
-          <ChevronLeft size={24} color={isDark ? '#F1F1EC' : '#111827'} />
+          <ChevronLeft size={24} color={isDark ? '#FFFFFF' : '#111827'} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, isDark && { color: '#F1F1EC' }]}>{initialData ? 'Edit Address Details' : 'Add Address Details'}</Text>
+        <Text style={[styles.headerTitle, isDark && { color: '#FFFFFF' }]}>{initialData ? 'Edit Address Details' : 'Add Address Details'}</Text>
       </View>
 
       <KeyboardAvoidingView 
@@ -99,32 +99,32 @@ export const AddAddressScreen: React.FC<AddAddressScreenProps> = ({ onBack, onSa
         <ScrollView 
           contentContainerStyle={[styles.content, { paddingBottom: bottomInset + 30 }]}
           showsVerticalScrollIndicator={true}
-          indicatorStyle={isDark ? "black" : "white"}
+          indicatorStyle={isDark ? "white" : "black"}
           keyboardShouldPersistTaps="handled"
         >
           {/* Add Address Section */}
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, isDark && { color: '#F1F1EC' }]}>Add address</Text>
+            <Text style={[styles.sectionTitle, isDark && { color: '#FFFFFF' }]}>Add address</Text>
 
             <View style={styles.inputsContainer}>
               <TextInput
-                style={[styles.input, isDark && { backgroundColor: '#1D1E22', color: '#F1F1EC', borderColor: 'rgba(255, 255, 255, 0.08)' }]}
+                style={[styles.input, isDark && { backgroundColor: '#000000', color: '#FFFFFF', borderColor: 'rgba(255, 255, 255, 0.2)' }]}
                 placeholder="House No. & Floor"
-                placeholderTextColor={isDark ? '#9BA08F' : '#6B7280'}
+                placeholderTextColor={isDark ? 'rgba(255, 255, 255, 0.4)' : '#6B7280'}
                 value={houseNo}
                 onChangeText={setHouseNo}
               />
               <TextInput
-                style={[styles.input, isDark && { backgroundColor: '#1D1E22', color: '#F1F1EC', borderColor: 'rgba(255, 255, 255, 0.08)' }]}
+                style={[styles.input, isDark && { backgroundColor: '#000000', color: '#FFFFFF', borderColor: 'rgba(255, 255, 255, 0.2)' }]}
                 placeholder="Building & Block No. (Optional)"
-                placeholderTextColor={isDark ? '#9BA08F' : '#6B7280'}
+                placeholderTextColor={isDark ? 'rgba(255, 255, 255, 0.4)' : '#6B7280'}
                 value={building}
                 onChangeText={setBuilding}
               />
               <TextInput
-                style={[styles.input, isDark && { backgroundColor: '#1D1E22', color: '#F1F1EC', borderColor: 'rgba(255, 255, 255, 0.08)' }]}
+                style={[styles.input, isDark && { backgroundColor: '#000000', color: '#FFFFFF', borderColor: 'rgba(255, 255, 255, 0.2)' }]}
                 placeholder="Landmark & Area Name (Optional)"
-                placeholderTextColor={isDark ? '#9BA08F' : '#6B7280'}
+                placeholderTextColor={isDark ? 'rgba(255, 255, 255, 0.4)' : '#6B7280'}
                 value={landmark}
                 onChangeText={setLandmark}
               />
@@ -133,73 +133,85 @@ export const AddAddressScreen: React.FC<AddAddressScreenProps> = ({ onBack, onSa
 
           {/* Add Address Label Section */}
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, isDark && { color: '#F1F1EC' }]}>Add address label</Text>
+            <Text style={[styles.sectionTitle, isDark && { color: '#FFFFFF' }]}>Add address label</Text>
             <View style={styles.labelsContainer}>
               <TouchableOpacity
-                style={[styles.labelBtn, isDark && { backgroundColor: '#1D1E22', borderColor: 'rgba(255, 255, 255, 0.08)' }, label === 'Home' && styles.labelBtnActive]}
+                style={[
+                  styles.labelBtn,
+                  isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.2)' },
+                  label === 'Home' && (isDark ? { backgroundColor: '#FFFFFF', borderColor: '#FFFFFF' } : styles.labelBtnActive),
+                ]}
                 onPress={() => setLabel('Home')}
               >
-                <Home size={16} color={label === 'Home' ? '#F43F5E' : (isDark ? '#9BA08F' : '#6B7280')} />
-                <Text style={[styles.labelText, isDark && { color: '#9BA08F' }, label === 'Home' && styles.labelTextActive]}>Home</Text>
+                <Home size={16} color={label === 'Home' ? (isDark ? '#000000' : '#F43F5E') : (isDark ? '#FFFFFF' : '#6B7280')} />
+                <Text style={[styles.labelText, isDark && { color: '#FFFFFF' }, label === 'Home' && (isDark ? { color: '#000000', fontWeight: 'bold' } : styles.labelTextActive)]}>Home</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.labelBtn, isDark && { backgroundColor: '#1D1E22', borderColor: 'rgba(255, 255, 255, 0.08)' }, label === 'Work' && styles.labelBtnActive]}
+                style={[
+                  styles.labelBtn,
+                  isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.2)' },
+                  label === 'Work' && (isDark ? { backgroundColor: '#FFFFFF', borderColor: '#FFFFFF' } : styles.labelBtnActive),
+                ]}
                 onPress={() => setLabel('Work')}
               >
-                <Building size={16} color={label === 'Work' ? '#F43F5E' : (isDark ? '#9BA08F' : '#6B7280')} />
-                <Text style={[styles.labelText, isDark && { color: '#9BA08F' }, label === 'Work' && styles.labelTextActive]}>Work</Text>
+                <Building size={16} color={label === 'Work' ? (isDark ? '#000000' : '#F43F5E') : (isDark ? '#FFFFFF' : '#6B7280')} />
+                <Text style={[styles.labelText, isDark && { color: '#FFFFFF' }, label === 'Work' && (isDark ? { color: '#000000', fontWeight: 'bold' } : styles.labelTextActive)]}>Work</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.labelBtn, isDark && { backgroundColor: '#1D1E22', borderColor: 'rgba(255, 255, 255, 0.08)' }, label === 'Other' && styles.labelBtnActive]}
+                style={[
+                  styles.labelBtn,
+                  isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.2)' },
+                  label === 'Other' && (isDark ? { backgroundColor: '#FFFFFF', borderColor: '#FFFFFF' } : styles.labelBtnActive),
+                ]}
                 onPress={() => setLabel('Other')}
               >
-                <MapPin size={16} color={label === 'Other' ? '#F43F5E' : (isDark ? '#9BA08F' : '#6B7280')} />
-                <Text style={[styles.labelText, isDark && { color: '#9BA08F' }, label === 'Other' && styles.labelTextActive]}>Other</Text>
+                <MapPin size={16} color={label === 'Other' ? (isDark ? '#000000' : '#F43F5E') : (isDark ? '#FFFFFF' : '#6B7280')} />
+                <Text style={[styles.labelText, isDark && { color: '#FFFFFF' }, label === 'Other' && (isDark ? { color: '#000000', fontWeight: 'bold' } : styles.labelTextActive)]}>Other</Text>
               </TouchableOpacity>
             </View>
           </View>
 
           {/* Add Receiver Details Section */}
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, isDark && { color: '#F1F1EC' }]}>Add receiver details</Text>
+            <Text style={[styles.sectionTitle, isDark && { color: '#FFFFFF' }]}>Add receiver details</Text>
 
             <View style={styles.receiverInputsContainer}>
               <View style={styles.receiverInputWrapper}>
-                <View style={[styles.floatingLabel, isDark && { backgroundColor: '#1D1E22' }]}>
-                  <Text style={[styles.floatingLabelText, isDark && { color: '#9BA08F' }]}>Receiver's Name</Text>
+                <View style={[styles.floatingLabel, isDark && { backgroundColor: '#000000' }]}>
+                  <Text style={[styles.floatingLabelText, isDark && { color: '#E5E7EB' }]}>Receiver's Name</Text>
                 </View>
                 <TextInput
-                  style={[styles.input, styles.receiverInput, isDark && { backgroundColor: '#1D1E22', color: '#F1F1EC', borderColor: 'rgba(255, 255, 255, 0.08)' }]}
+                  style={[styles.input, styles.receiverInput, isDark && { backgroundColor: '#000000', color: '#FFFFFF', borderColor: 'rgba(255, 255, 255, 0.2)' }]}
                   value={receiverName}
                   onChangeText={setReceiverName}
-                  placeholderTextColor={isDark ? '#9BA08F' : '#6B7280'}
+                  placeholderTextColor={isDark ? 'rgba(255, 255, 255, 0.4)' : '#6B7280'}
                 />
                 {receiverName.length > 0 && (
                   <TouchableOpacity onPress={() => setReceiverName('')} style={styles.clearBtn}>
-                    <X size={14} color={isDark ? '#F1F1EC' : '#111827'} />
+                    <X size={14} color={isDark ? '#FFFFFF' : '#111827'} />
                   </TouchableOpacity>
                 )}
               </View>
 
               <View style={styles.receiverInputWrapper}>
-                <View style={[styles.floatingLabel, isDark && { backgroundColor: '#1D1E22' }]}>
-                  <Text style={[styles.floatingLabelText, isDark && { color: '#9BA08F' }]}>Receiver's Phone Number</Text>
+                <View style={[styles.floatingLabel, isDark && { backgroundColor: '#000000' }]}>
+                  <Text style={[styles.floatingLabelText, isDark && { color: '#E5E7EB' }]}>Receiver's Phone Number</Text>
                 </View>
-                <View style={[styles.input, styles.phoneInputContainer, isDark && { backgroundColor: '#1D1E22', borderColor: 'rgba(255, 255, 255, 0.08)' }, isPhoneInvalid && styles.inputError]}>
-                  <Text style={[styles.phonePrefix, isDark && { color: '#F1F1EC', borderRightColor: 'rgba(255, 255, 255, 0.08)' }]}>+91</Text>
+                <View style={[styles.input, styles.phoneInputContainer, isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.2)' }, isPhoneInvalid && styles.inputError]}>
+                  <Text style={[styles.phonePrefix, isDark && { color: '#FFFFFF', borderRightColor: 'rgba(255, 255, 255, 0.2)' }]}>+91</Text>
                   <TextInput
-                    style={[styles.phoneInput, isDark && { color: '#F1F1EC' }]}
+                    style={[styles.phoneInput, isDark && { color: '#FFFFFF' }]}
                     value={receiverPhone}
                     onChangeText={(text) => setReceiverPhone(text.replace(/[^0-9]/g, ''))}
                     keyboardType="phone-pad"
                     maxLength={15}
-                    placeholderTextColor={isDark ? '#9BA08F' : '#6B7280'}
+                    placeholderTextColor={isDark ? 'rgba(255, 255, 255, 0.4)' : '#6B7280'}
                   />
                   {receiverPhone.length > 0 && (
                     <TouchableOpacity onPress={() => setReceiverPhone('')} style={styles.clearBtn}>
-                      <X size={14} color={isDark ? '#F1F1EC' : '#111827'} />
+                      <X size={14} color={isDark ? '#FFFFFF' : '#111827'} />
                     </TouchableOpacity>
                   )}
                 </View>
@@ -212,15 +224,15 @@ export const AddAddressScreen: React.FC<AddAddressScreenProps> = ({ onBack, onSa
         </ScrollView>
 
         {/* Footer */}
-        <View style={[styles.footer, isDark && { backgroundColor: '#1D1E22', borderTopColor: 'rgba(255, 255, 255, 0.08)' }]}>
+        <View style={[styles.footer, isDark && { backgroundColor: '#000000', borderTopColor: 'rgba(255, 255, 255, 0.1)' }]}>
           <TouchableOpacity onPress={handleSave} disabled={!isSaveEnabled} activeOpacity={0.8}>
             {isSaveEnabled ? (
-              <View style={[styles.saveBtn, { backgroundColor: '#F43F5E' }]}>
-                <Text style={[styles.saveBtnText, { color: '#FFF' }]}>{initialData ? 'Update Address' : 'Save Address'}</Text>
+              <View style={[styles.saveBtn, isDark ? { backgroundColor: '#FFFFFF' } : { backgroundColor: '#F43F5E' }]}>
+                <Text style={[styles.saveBtnText, isDark ? { color: '#000000' } : { color: '#FFF' }]}>{initialData ? 'Update Address' : 'Save Address'}</Text>
               </View>
             ) : (
-              <View style={[styles.saveBtn, styles.saveBtnDisabled]}>
-                <Text style={[styles.saveBtnText, styles.saveBtnTextDisabled]}>{initialData ? 'Update Address' : 'Save Address'}</Text>
+              <View style={[styles.saveBtn, styles.saveBtnDisabled, isDark && { backgroundColor: 'rgba(255, 255, 255, 0.1)' }]}>
+                <Text style={[styles.saveBtnText, styles.saveBtnTextDisabled, isDark && { color: 'rgba(255, 255, 255, 0.3)' }]}>{initialData ? 'Update Address' : 'Save Address'}</Text>
               </View>
             )}
           </TouchableOpacity>

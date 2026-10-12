@@ -10,6 +10,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing } from '../theme';
+import { useGroceryColors } from '../theme/colors';
+import { isCategoryDark } from '@/theme/categoryThemeBridge';
 import { LoadingState } from '../components/LoadingState';
 import { orderService } from '../services/orderService';
 import { Order } from '../types/order.types';
@@ -32,6 +34,9 @@ export const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = (
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [showFeedback, setShowFeedback] = useState(false);
+  const groceryColors = useGroceryColors();
+  const isDark = isCategoryDark() || groceryColors.cardBackground === '#000000';
+  const dynStyles = getStyles(isDark);
 
   useEffect(() => {
     fetchOrder();
@@ -103,65 +108,65 @@ export const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = (
 
   // Default view: "Thank You for Your Order" Page
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={dynStyles.container}>
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={dynStyles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.contentWrapper}>
+        <View style={dynStyles.contentWrapper}>
           {/* Success Animated Badge */}
-          <View style={styles.successBadgeWrapper}>
-            <View style={styles.iconCircle}>
-              <Ionicons name="checkmark" size={44} color={colors.white} />
+          <View style={dynStyles.successBadgeWrapper}>
+            <View style={dynStyles.iconCircle}>
+              <Ionicons name="checkmark" size={44} color={isDark ? '#000000' : colors.white} />
             </View>
           </View>
 
           {/* Thank You Heading */}
-          <Text style={styles.title}>Thank You for Your Order! 🎉</Text>
-          <Text style={styles.subtitle}>
+          <Text style={dynStyles.title}>Thank You for Your Order! 🎉</Text>
+          <Text style={dynStyles.subtitle}>
             Your order has been placed successfully and is being packed fresh at 1Buddy.
           </Text>
 
           {/* Order Details Card */}
-          <View style={styles.card}>
-            <View style={styles.cardHeaderRow}>
+          <View style={dynStyles.card}>
+            <View style={dynStyles.cardHeaderRow}>
               <View>
-                <Text style={styles.cardLabel}>Order Number</Text>
-                <Text style={styles.cardOrderId}>#{order.id}</Text>
+                <Text style={dynStyles.cardLabel}>Order Number</Text>
+                <Text style={dynStyles.cardOrderId}>#{order.id}</Text>
               </View>
-              <View style={styles.statusPill}>
-                <Ionicons name="checkmark-circle" size={14} color={colors.primaryDark} />
-                <Text style={styles.statusPillText}>Confirmed</Text>
+              <View style={dynStyles.statusPill}>
+                <Ionicons name="checkmark-circle" size={14} color={isDark ? '#5FA300' : colors.primaryDark} />
+                <Text style={dynStyles.statusPillText}>Confirmed</Text>
               </View>
             </View>
 
-            <View style={styles.divider} />
+            <View style={dynStyles.divider} />
 
             {/* Delivery & Payment Details */}
-            <View style={styles.infoRow}>
-              <View style={styles.iconBox}>
-                <Ionicons name="time-outline" size={18} color={colors.primary} />
+            <View style={dynStyles.infoRow}>
+              <View style={dynStyles.iconBox}>
+                <Ionicons name="time-outline" size={18} color={isDark ? '#FFFFFF' : colors.primary} />
               </View>
-              <View style={styles.infoCol}>
-                <Text style={styles.infoLabel}>Estimated Delivery</Text>
-                <Text style={styles.infoValue}>{order.estimatedDelivery || 'Within 25-35 mins'}</Text>
+              <View style={dynStyles.infoCol}>
+                <Text style={dynStyles.infoLabel}>Estimated Delivery</Text>
+                <Text style={dynStyles.infoValue}>{order.estimatedDelivery || 'Within 25-35 mins'}</Text>
               </View>
             </View>
 
-            <View style={styles.infoRow}>
-              <View style={styles.iconBox}>
-                <Ionicons name="location-outline" size={18} color={colors.primary} />
+            <View style={dynStyles.infoRow}>
+              <View style={dynStyles.iconBox}>
+                <Ionicons name="location-outline" size={18} color={isDark ? '#FFFFFF' : colors.primary} />
               </View>
-              <View style={styles.infoCol}>
+              <View style={dynStyles.infoCol}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
-                  <Text style={styles.infoLabel}>Delivery Address</Text>
+                  <Text style={dynStyles.infoLabel}>Delivery Address</Text>
                   {order.deliveryAddress?.type && (
-                    <View style={styles.addressTypePill}>
-                      <Text style={styles.addressTypePillText}>{order.deliveryAddress.type.toUpperCase()}</Text>
+                    <View style={dynStyles.addressTypePill}>
+                      <Text style={dynStyles.addressTypePillText}>{order.deliveryAddress.type.toUpperCase()}</Text>
                     </View>
                   )}
                 </View>
-                <Text style={styles.infoValue}>
+                <Text style={dynStyles.infoValue}>
                   {[
                     order.deliveryAddress?.houseNumber,
                     order.deliveryAddress?.street,
@@ -172,73 +177,73 @@ export const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = (
                     .join(', ') || 'Selected Address'}
                 </Text>
                 {(order.deliveryAddress?.name || order.deliveryAddress?.phone) && (
-                  <Text style={styles.infoReceiverText}>
+                  <Text style={dynStyles.infoReceiverText}>
                     Receiver: {order.deliveryAddress.name}{order.deliveryAddress.phone ? ` • +91 ${order.deliveryAddress.phone.replace('+91', '').trim()}` : ''}
                   </Text>
                 )}
               </View>
             </View>
 
-            <View style={styles.infoRow}>
-              <View style={styles.iconBox}>
-                <Ionicons name="card-outline" size={18} color={colors.primary} />
+            <View style={dynStyles.infoRow}>
+              <View style={dynStyles.iconBox}>
+                <Ionicons name="card-outline" size={18} color={isDark ? '#FFFFFF' : colors.primary} />
               </View>
-              <View style={styles.infoCol}>
-                <Text style={styles.infoLabel}>Payment Mode</Text>
-                <Text style={styles.infoValue}>
+              <View style={dynStyles.infoCol}>
+                <Text style={dynStyles.infoLabel}>Payment Mode</Text>
+                <Text style={dynStyles.infoValue}>
                   {order.paymentMethod ? order.paymentMethod.replace(/_/g, ' ').toUpperCase() : 'PAID ONLINE'}
                 </Text>
               </View>
             </View>
 
-            <View style={styles.divider} />
+            <View style={dynStyles.divider} />
 
             {/* Items Summary */}
-            <Text style={styles.itemsHeading}>Items Purchased ({order.items?.length || 0})</Text>
-            <View style={styles.itemsList}>
+            <Text style={dynStyles.itemsHeading}>Items Purchased ({order.items?.length || 0})</Text>
+            <View style={dynStyles.itemsList}>
               {order.items?.map((item, idx) => (
-                <View key={item.id || idx} style={styles.itemRow}>
+                <View key={item.id || idx} style={dynStyles.itemRow}>
                   {item.productImage ? (
-                    <Image source={{ uri: item.productImage }} style={styles.itemImg} resizeMode="contain" />
+                    <Image source={{ uri: item.productImage }} style={dynStyles.itemImg} resizeMode="contain" />
                   ) : (
-                    <View style={styles.itemImgPlaceholder}>
-                      <Ionicons name="basket-outline" size={16} color={colors.textMuted} />
+                    <View style={dynStyles.itemImgPlaceholder}>
+                      <Ionicons name="basket-outline" size={16} color={isDark ? '#E5E7EB' : colors.textMuted} />
                     </View>
                   )}
-                  <View style={styles.itemDetails}>
-                    <Text style={styles.itemName} numberOfLines={1}>
+                  <View style={dynStyles.itemDetails}>
+                    <Text style={dynStyles.itemName} numberOfLines={1}>
                       {item.productName}
                     </Text>
-                    <Text style={styles.itemMeta}>
+                    <Text style={dynStyles.itemMeta}>
                       Qty: {item.quantity} {item.unit ? `• ${item.unit}` : ''}
                     </Text>
                   </View>
-                  <Text style={styles.itemPrice}>
+                  <Text style={dynStyles.itemPrice}>
                     {formatCurrency((item.discountPrice || item.price) * item.quantity)}
                   </Text>
                 </View>
               ))}
             </View>
 
-            <View style={styles.divider} />
+            <View style={dynStyles.divider} />
 
             {/* Total Row */}
-            <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Total Amount Paid</Text>
-              <Text style={styles.totalValue}>{formatCurrency(order.total)}</Text>
+            <View style={dynStyles.totalRow}>
+              <Text style={dynStyles.totalLabel}>Total Amount Paid</Text>
+              <Text style={dynStyles.totalValue}>{formatCurrency(order.total)}</Text>
             </View>
           </View>
 
           {/* Action Buttons */}
-          <View style={styles.actionContainer}>
+          <View style={dynStyles.actionContainer}>
             {/* Live Track Order Button */}
             <TouchableOpacity
-              style={styles.liveTrackBtn}
+              style={dynStyles.liveTrackBtn}
               onPress={handleLiveTrackOrder}
               activeOpacity={0.88}
             >
-              <Ionicons name="navigate-circle-outline" size={22} color={colors.white} />
-              <Text style={styles.liveTrackBtnText}>Live Track Order</Text>
+              <Ionicons name="navigate-circle-outline" size={22} color={isDark ? '#000000' : colors.white} />
+              <Text style={dynStyles.liveTrackBtnText}>Live Track Order</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -247,10 +252,10 @@ export const OrderConfirmationScreen: React.FC<OrderConfirmationScreenProps> = (
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: isDark ? '#000000' : colors.background,
   },
   scrollContent: {
     paddingVertical: 20,
@@ -270,10 +275,10 @@ const styles = StyleSheet.create({
     width: 76,
     height: 76,
     borderRadius: 38,
-    backgroundColor: colors.primary,
+    backgroundColor: isDark ? '#FFFFFF' : colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: colors.primary,
+    shadowColor: isDark ? '#FFFFFF' : colors.primary,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.35,
     shadowRadius: 12,
@@ -282,13 +287,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 22,
     fontWeight: typography.weights.bold,
-    color: colors.textPrimary,
+    color: isDark ? '#FFFFFF' : colors.textPrimary,
     textAlign: 'center',
     marginTop: 4,
   },
   subtitle: {
     fontSize: typography.sizes.sm,
-    color: colors.textSecondary,
+    color: isDark ? '#E5E7EB' : colors.textSecondary,
     textAlign: 'center',
     marginTop: 4,
     marginBottom: 20,
@@ -297,12 +302,12 @@ const styles = StyleSheet.create({
   },
   card: {
     width: '100%',
-    backgroundColor: colors.white,
+    backgroundColor: isDark ? '#000000' : colors.white,
     borderRadius: spacing.borderRadius.lg,
     padding: 16,
     borderWidth: 1,
-    borderColor: colors.borderLight,
-    shadowColor: colors.black,
+    borderColor: isDark ? 'rgba(255,255,255,0.15)' : colors.borderLight,
+    shadowColor: isDark ? '#FFFFFF' : colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
@@ -316,34 +321,34 @@ const styles = StyleSheet.create({
   },
   cardLabel: {
     fontSize: typography.sizes.xs,
-    color: colors.textMuted,
+    color: isDark ? '#E5E7EB' : colors.textMuted,
     fontWeight: typography.weights.medium,
   },
   cardOrderId: {
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.bold,
-    color: colors.textPrimary,
+    color: isDark ? '#FFFFFF' : colors.textPrimary,
     marginTop: 2,
   },
   statusPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: colors.primaryLight,
+    backgroundColor: isDark ? 'rgba(95,163,0,0.2)' : colors.primaryLight,
     paddingVertical: 4,
     paddingHorizontal: 10,
     borderRadius: spacing.borderRadius.round,
     borderWidth: 1,
-    borderColor: colors.primaryMedium,
+    borderColor: isDark ? '#5FA300' : colors.primaryMedium,
   },
   statusPillText: {
     fontSize: typography.sizes.xs,
     fontWeight: typography.weights.bold,
-    color: colors.primaryDark,
+    color: isDark ? '#FFFFFF' : colors.primaryDark,
   },
   divider: {
     height: 1,
-    backgroundColor: colors.borderLight,
+    backgroundColor: isDark ? 'rgba(255,255,255,0.15)' : colors.borderLight,
     marginVertical: 14,
   },
   infoRow: {
@@ -356,7 +361,7 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: colors.primaryLight,
+    backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
@@ -366,38 +371,38 @@ const styles = StyleSheet.create({
   },
   infoLabel: {
     fontSize: 11.5,
-    color: colors.textMuted,
+    color: isDark ? '#E5E7EB' : colors.textMuted,
   },
   infoValue: {
     fontSize: 13.5,
     fontWeight: typography.weights.semibold,
-    color: colors.textPrimary,
+    color: isDark ? '#FFFFFF' : colors.textPrimary,
     marginTop: 1,
     lineHeight: 18,
   },
   addressTypePill: {
-    backgroundColor: colors.primaryLight,
+    backgroundColor: isDark ? 'rgba(95,163,0,0.2)' : colors.primaryLight,
     paddingHorizontal: 6,
     paddingVertical: 1,
     borderRadius: 4,
     borderWidth: 1,
-    borderColor: colors.primaryMedium,
+    borderColor: isDark ? '#5FA300' : colors.primaryMedium,
   },
   addressTypePillText: {
     fontSize: 9,
     fontWeight: typography.weights.bold,
-    color: colors.primaryDark,
+    color: isDark ? '#FFFFFF' : colors.primaryDark,
   },
   infoReceiverText: {
     fontSize: 12,
     fontWeight: typography.weights.semibold,
-    color: colors.textSecondary,
+    color: isDark ? '#E5E7EB' : colors.textSecondary,
     marginTop: 4,
   },
   itemsHeading: {
     fontSize: typography.sizes.sm,
     fontWeight: typography.weights.bold,
-    color: colors.textPrimary,
+    color: isDark ? '#FFFFFF' : colors.textPrimary,
     marginBottom: 10,
   },
   itemsList: {
@@ -412,14 +417,14 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 6,
-    backgroundColor: colors.background,
+    backgroundColor: isDark ? '#000000' : colors.background,
     flexShrink: 0,
   },
   itemImgPlaceholder: {
     width: 36,
     height: 36,
     borderRadius: 6,
-    backgroundColor: colors.background,
+    backgroundColor: isDark ? '#000000' : colors.background,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
@@ -430,17 +435,17 @@ const styles = StyleSheet.create({
   itemName: {
     fontSize: 13,
     fontWeight: typography.weights.semibold,
-    color: colors.textPrimary,
+    color: isDark ? '#FFFFFF' : colors.textPrimary,
   },
   itemMeta: {
     fontSize: 11,
-    color: colors.textMuted,
+    color: isDark ? '#E5E7EB' : colors.textMuted,
     marginTop: 1,
   },
   itemPrice: {
     fontSize: 13,
     fontWeight: typography.weights.bold,
-    color: colors.textPrimary,
+    color: isDark ? '#FFFFFF' : colors.textPrimary,
   },
   totalRow: {
     flexDirection: 'row',
@@ -450,12 +455,12 @@ const styles = StyleSheet.create({
   totalLabel: {
     fontSize: typography.sizes.sm + 1,
     fontWeight: typography.weights.bold,
-    color: colors.textPrimary,
+    color: isDark ? '#FFFFFF' : colors.textPrimary,
   },
   totalValue: {
     fontSize: typography.sizes.lg,
     fontWeight: typography.weights.bold,
-    color: colors.primaryDark,
+    color: isDark ? '#FFFFFF' : colors.primaryDark,
   },
   actionContainer: {
     width: '100%',
@@ -465,11 +470,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.primary,
+    backgroundColor: isDark ? '#FFFFFF' : colors.primary,
     paddingVertical: 16,
     borderRadius: spacing.borderRadius.md,
     gap: 8,
-    shadowColor: colors.primary,
+    shadowColor: isDark ? '#FFFFFF' : colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
@@ -477,7 +482,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   liveTrackBtnText: {
-    color: colors.white,
+    color: isDark ? '#000000' : colors.white,
     fontSize: 16,
     fontWeight: typography.weights.bold,
   },
@@ -485,11 +490,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.primary,
+    backgroundColor: isDark ? '#FFFFFF' : colors.primary,
     paddingVertical: 14,
     borderRadius: spacing.borderRadius.md,
     gap: 8,
-    shadowColor: colors.primary,
+    shadowColor: isDark ? '#FFFFFF' : colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
@@ -497,7 +502,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   feedbackBtnText: {
-    color: colors.white,
+    color: isDark ? '#000000' : colors.white,
     fontSize: 15,
     fontWeight: typography.weights.bold,
   },
@@ -505,16 +510,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.white,
+    backgroundColor: isDark ? '#000000' : colors.white,
     borderWidth: 1.5,
-    borderColor: colors.primary,
+    borderColor: isDark ? '#FFFFFF' : colors.primary,
     paddingVertical: 13,
     borderRadius: spacing.borderRadius.md,
     gap: 8,
     width: '100%',
   },
   continueShoppingText: {
-    color: colors.primary,
+    color: isDark ? '#FFFFFF' : colors.primary,
     fontSize: 15,
     fontWeight: typography.weights.bold,
   },

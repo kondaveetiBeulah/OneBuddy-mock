@@ -5,6 +5,7 @@ import { COLORS } from '../constants/theme';
 import { OneBuddyOverlay } from './OneBuddyOverlay';
 
 export const PROVIDER_DEFAULT = null;
+export const MapZoomContext = React.createContext<number>(1.0);
 
 const MAP_WIDTH = Dimensions.get('window').width;
 const MAP_HEIGHT = Dimensions.get('window').height;
@@ -31,38 +32,110 @@ const coordinateToPosition = (latitude: number, longitude: number) => {
   };
 };
 
-export const Marker = ({ coordinate, pinColor, title, subtitle, isDestination = false, type }: any) => {
+export const Marker = ({
+  coordinate,
+  pinColor,
+  title,
+  subtitle,
+  isDestination = false,
+  type,
+  showCallout = true,
+  calloutPlacement = 'auto',
+  rideType = 'auto',
+}: any) => {
+  const mapZoom = React.useContext(MapZoomContext) || 1.0;
   if (!coordinate) return null;
   const position = coordinateToPosition(coordinate.latitude, coordinate.longitude);
   const isDrop = isDestination || type === 'drop' || type === 'destination';
+  const isVehicle = type === 'vehicle';
+  const placeBottom = calloutPlacement === 'bottom';
 
   return (
     <View style={[styles.markerContainer, { top: position.top as any, left: position.left as any }]}>
-      {isDrop ? (
-        <View style={styles.dropMarkerWrapper}>
-          {title ? (
-            <View style={styles.uberCalloutCard}>
-              <Text style={styles.uberCalloutText} numberOfLines={2}>{title}</Text>
-              <Ionicons name="chevron-forward" size={13} color="#0F172A" />
-            </View>
-          ) : null}
-          <View style={styles.uberDropSquare} />
-        </View>
-      ) : (
-        <View style={styles.pickupMarkerWrapper}>
-          <View style={styles.uberPickupBadge}>
-            <View style={styles.uberPickupMinBox}>
-              <Text style={styles.uberPickupMinNumber}>3</Text>
-              <Text style={styles.uberPickupMinLabel}>MIN</Text>
-            </View>
-            <View style={styles.uberPickupTextBox}>
-              <Text style={styles.uberPickupTitle} numberOfLines={2}>{title || 'Kshatriya Foods'}</Text>
-              <Ionicons name="chevron-forward" size={13} color="#0F172A" />
-            </View>
+      {showCallout && title ? (
+        <View
+          style={[
+            styles.markerCalloutContainer,
+            placeBottom && styles.markerCalloutContainerBottom,
+          ]}
+        >
+          {placeBottom && (
+            <View
+              style={[
+                styles.markerCalloutArrowBottom,
+                isVehicle
+                  ? styles.vehicleCalloutArrowBottom
+                  : isDrop
+                  ? styles.dropCalloutArrowBottom
+                  : styles.pickupCalloutArrowBottom,
+              ]}
+            />
+          )}
+          <View
+            style={[
+              styles.markerCalloutCard,
+              isVehicle
+                ? styles.vehicleCalloutCard
+                : isDrop
+                ? styles.dropCalloutCard
+                : styles.pickupCalloutCard,
+            ]}
+          >
+            {isVehicle ? (
+              <View style={styles.vehicleTagBadge}>
+                <Ionicons
+                  name={rideType === 'bike' ? 'bicycle' : rideType === 'cab' ? 'car' : 'car-outline'}
+                  size={11}
+                  color="#FFFFFF"
+                />
+                <Text style={styles.vehicleTagText}>ASSIGNED</Text>
+              </View>
+            ) : isDrop ? (
+              <View style={styles.dropCalloutDot} />
+            ) : (
+              <View style={styles.pickupCalloutSquare} />
+            )}
+            <Text
+              style={[
+                styles.markerCalloutText,
+                isVehicle && styles.vehicleCalloutText,
+                isDrop && styles.dropCalloutText,
+              ]}
+              numberOfLines={1}
+            >
+              {title}
+            </Text>
           </View>
-          <View style={styles.uberPickupCircle} />
+          {!placeBottom && (
+            <View
+              style={[
+                styles.markerCalloutArrow,
+                isVehicle
+                  ? styles.vehicleCalloutArrow
+                  : isDrop
+                  ? styles.dropCalloutArrow
+                  : styles.pickupCalloutArrow,
+              ]}
+            />
+          )}
         </View>
-      )}
+      ) : null}
+
+      <View style={styles.markerPinWrapper}>
+        {isVehicle ? (
+          <View style={styles.vehiclePinCircle}>
+            <Ionicons
+              name={rideType === 'bike' ? 'bicycle' : rideType === 'cab' ? 'car' : 'car-outline'}
+              size={15}
+              color="#16A34A"
+            />
+          </View>
+        ) : isDrop ? (
+          <View style={styles.uberDropCircle} />
+        ) : (
+          <View style={styles.uberPickupSquare} />
+        )}
+      </View>
     </View>
   );
 };
@@ -103,15 +176,16 @@ export const MapView = ({
   overlayTop = '11%',
   overlayLeft = '50%',
   overlaySize = 54,
+  zoomControlsStyle,
   initialRegion,
   onRegionChange
 }: any) => {
   const MIN_ZOOM = 1.0;
-  const MAX_ZOOM = 2.5;
+  const MAX_ZOOM = 3.0;
   const [zoom, setZoom] = useState(MIN_ZOOM);
 
-  const handleZoomIn = () => setZoom(prev => Math.min(Number((prev + 0.2).toFixed(1)), MAX_ZOOM));
-  const handleZoomOut = () => setZoom(prev => Math.max(Number((prev - 0.2).toFixed(1)), MIN_ZOOM));
+  const handleZoomIn = () => setZoom(prev => Math.min(MAX_ZOOM, Number((prev + 0.5).toFixed(1))));
+  const handleZoomOut = () => setZoom(prev => Math.max(MIN_ZOOM, Number((prev - 0.5).toFixed(1))));
 
   // Render a clean solid black route line directly connecting pickup and drop with road bends
   const renderRoute = () => {
@@ -178,36 +252,59 @@ export const MapView = ({
   };
 
   return (
-    <View style={[styles.container, style]}>
-      <View style={[styles.mapInner, { transform: [{ scale: zoom }] }]}>
-        <Image
-          source={require('../assets/mock_map.jpg')}
-          style={styles.mapImage}
-          resizeMode="cover"
-        />
-        {renderRoute()}
+    <MapZoomContext.Provider value={zoom}>
+      <View style={[styles.container, style]}>
+        <View style={[styles.mapInner, { transform: [{ scale: zoom }] }]}>
+          <Image
+            source={require('../assets/mock_map.jpg')}
+            style={styles.mapImage}
+            resizeMode="cover"
+          />
 
-        {/* Surrounding Places / Landmark Badges */}
-        {showLandmarks && DEFAULT_LANDMARKS.map((landmark) => (
-          <View
-            key={landmark.id}
-            style={[
-              styles.landmarkContainer,
-              { top: landmark.top as any, left: landmark.left as any }
-            ]}
-          >
-            {landmark.type !== 'area' ? (
-              <View style={styles.landmarkBadge}>
-                <Ionicons name={landmark.icon || 'location'} size={11} color={landmark.color || '#475569'} style={{ marginRight: 3 }} />
-                <Text style={styles.landmarkText} numberOfLines={1}>{landmark.name}</Text>
+          {/* Surrounding Places / Landmark Badges */}
+          {showLandmarks && DEFAULT_LANDMARKS.map((landmark) => (
+            <View
+              key={landmark.id}
+              style={[
+                styles.landmarkContainer,
+                { top: landmark.top as any, left: landmark.left as any }
+              ]}
+            >
+              {landmark.type !== 'area' ? (
+                <View style={styles.landmarkBadge}>
+                  <Ionicons name={landmark.icon || 'location'} size={11} color={landmark.color || '#475569'} style={{ marginRight: 3 }} />
+                  <Text style={styles.landmarkText} numberOfLines={1}>{landmark.name}</Text>
+                </View>
+              ) : (
+                <View style={styles.areaBadge}>
+                  <Text style={styles.areaText}>{landmark.name}</Text>
+                </View>
+              )}
+            </View>
+          ))}
+
+          {showsUserLocation && (
+            <View style={styles.userLocationContainer}>
+              <View style={styles.userLocationPulse} />
+              <View style={styles.userLocationDot} />
+              <View style={styles.userLocationTag}>
+                <Text style={styles.userLocationTagText}>You are here</Text>
               </View>
-            ) : (
-              <View style={styles.areaBadge}>
-                <Text style={styles.areaText}>{landmark.name}</Text>
-              </View>
-            )}
-          </View>
-        ))}
+            </View>
+          )}
+          {/* OneBuddy Logo and Vehicle Orbit Animation in the designated area */}
+          {showOneBuddyOverlay && (
+            <OneBuddyOverlay
+              top={overlayTop}
+              left={overlayLeft}
+              size={overlaySize}
+              rideType={rideType}
+            />
+          )}
+        </View>
+
+        {/* Route line connecting pickup and drop - remains stationary during map zoom */}
+        {renderRoute()}
 
         {showsUserLocation && (
           <View style={styles.userLocationContainer}>
@@ -218,40 +315,34 @@ export const MapView = ({
             </View>
           </View>
         )}
-        {/* OneBuddy Logo and Vehicle Orbit Animation in the designated area */}
-        {showOneBuddyOverlay && (
-          <OneBuddyOverlay
-            top={overlayTop}
-            left={overlayLeft}
-            size={overlaySize}
-            rideType={rideType}
-          />
-        )}
 
+        {/* Pickup and drop location markers - remain stationary during map zoom */}
         {children}
-      </View>
 
-      {/* Zoom Controls */}
-      <View style={styles.zoomControls}>
-        <TouchableOpacity
-          style={[styles.zoomButton, zoom >= MAX_ZOOM && styles.zoomButtonDisabled]}
-          onPress={handleZoomIn}
-          disabled={zoom >= MAX_ZOOM}
-          accessibilityLabel="Zoom In"
-        >
-          <Ionicons name="add" size={24} color={zoom >= MAX_ZOOM ? '#CBD5E1' : COLORS.textLight} />
-        </TouchableOpacity>
-        <View style={styles.zoomDivider} />
-        <TouchableOpacity
-          style={[styles.zoomButton, zoom <= MIN_ZOOM && styles.zoomButtonDisabled]}
-          onPress={handleZoomOut}
-          disabled={zoom <= MIN_ZOOM}
-          accessibilityLabel="Zoom Out"
-        >
-          <Ionicons name="remove" size={24} color={zoom <= MIN_ZOOM ? '#CBD5E1' : COLORS.textLight} />
-        </TouchableOpacity>
+        {/* Zoom Controls matching Ride Home Screen design & position */}
+        <View style={[styles.zoomControls, zoomControlsStyle]}>
+          <TouchableOpacity
+            style={[styles.zoomButton, zoom >= MAX_ZOOM && styles.zoomButtonDisabled]}
+            onPress={handleZoomIn}
+            disabled={zoom >= MAX_ZOOM}
+            accessibilityLabel="Zoom in"
+            activeOpacity={0.7}
+          >
+            <Ionicons name="add" size={24} color={zoom >= MAX_ZOOM ? '#CBD5E1' : '#0F172A'} />
+          </TouchableOpacity>
+          <View style={styles.zoomDivider} />
+          <TouchableOpacity
+            style={[styles.zoomButton, zoom <= MIN_ZOOM && styles.zoomButtonDisabled]}
+            onPress={handleZoomOut}
+            disabled={zoom <= MIN_ZOOM}
+            accessibilityLabel="Zoom out"
+            activeOpacity={0.7}
+          >
+            <Ionicons name="remove" size={24} color={zoom <= MIN_ZOOM ? '#CBD5E1' : '#0F172A'} />
+          </TouchableOpacity>
+        </View>
       </View>
-    </View>
+    </MapZoomContext.Provider>
   );
 };
 
@@ -273,145 +364,277 @@ const styles = StyleSheet.create({
   zoomControls: {
     position: 'absolute',
     right: 16,
-    bottom: '40%',
-    backgroundColor: COLORS.background,
-    borderRadius: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    bottom: 16,
+    overflow: 'hidden',
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
     elevation: 4,
+    shadowColor: '#000',
+    shadowOpacity: 0.16,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 2 },
+    zIndex: 20,
   },
   zoomButton: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 42,
     justifyContent: 'center',
     alignItems: 'center',
   },
   zoomButtonDisabled: {
-    opacity: 0.4,
+    opacity: 0.35,
   },
   zoomDivider: {
-    height: 1,
-    backgroundColor: COLORS.border,
-    marginHorizontal: 8,
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: '#CBD5E1',
   },
   markerContainer: {
     position: 'absolute',
+    width: 22,
+    height: 22,
+    marginLeft: -11,
+    marginTop: -11,
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 15,
+    zIndex: 25,
   },
-  dropMarkerWrapper: {
-    flexDirection: 'row',
+  markerCalloutContainer: {
+    position: 'absolute',
+    bottom: 24,
+    left: -89,
     alignItems: 'center',
-    transform: [{ translateX: -80 }, { translateY: -16 }],
+    width: 200,
+    zIndex: 35,
   },
-  uberCalloutCard: {
+  markerCalloutContainerBottom: {
+    bottom: undefined,
+    top: 24,
+  },
+  markerCalloutCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    paddingVertical: 5,
     paddingHorizontal: 9,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#CBD5E1',
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 0,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.18,
     shadowRadius: 3,
-    elevation: 4,
-    marginRight: 6,
-    maxWidth: 190,
+    elevation: 5,
+    maxWidth: 196,
   },
-  uberCalloutText: {
-    fontSize: 11.5,
+  dropCalloutCard: {
+    borderWidth: 0,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.18,
+    shadowRadius: 4,
+  },
+  pickupCalloutCard: {
+    borderWidth: 0,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.18,
+    shadowRadius: 4,
+  },
+  dropTagBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#54B713',
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    borderRadius: 4,
+    marginRight: 6,
+    gap: 2,
+  },
+  dropTagText: {
+    fontSize: 9.5,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
+  },
+  markerCalloutText: {
+    fontSize: 12,
     fontWeight: '700',
     color: '#0F172A',
-    marginRight: 3,
     includeFontPadding: false,
   },
-  uberDropSquare: {
+  dropCalloutText: {
+    fontSize: 13,
+    fontWeight: '900',
+    color: '#0F172A',
+  },
+  pickupCalloutSquare: {
+    width: 8,
+    height: 8,
+    borderRadius: 2,
+    backgroundColor: '#EF4444',
+    marginRight: 6,
+  },
+  pickupCalloutDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 2,
+    backgroundColor: '#EF4444',
+    marginRight: 6,
+  },
+  dropCalloutDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#54B713',
+    marginRight: 6,
+  },
+  markerCalloutArrow: {
+    width: 0,
+    height: 0,
+    borderLeftWidth: 5,
+    borderRightWidth: 5,
+    borderTopWidth: 5,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderTopColor: '#FFFFFF',
+  },
+  markerCalloutArrowBottom: {
+    width: 0,
+    height: 0,
+    borderLeftWidth: 5,
+    borderRightWidth: 5,
+    borderBottomWidth: 5,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderBottomColor: '#FFFFFF',
+  },
+  dropCalloutArrow: {
+    borderTopColor: '#FFFFFF',
+  },
+  pickupCalloutArrow: {
+    borderTopColor: '#FFFFFF',
+  },
+  dropCalloutArrowBottom: {
+    borderBottomColor: '#FFFFFF',
+  },
+  pickupCalloutArrowBottom: {
+    borderBottomColor: '#FFFFFF',
+  },
+  markerPinWrapper: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 22,
+    height: 22,
+  },
+  uberPickupSquare: {
     width: 14,
     height: 14,
-    backgroundColor: '#000000',
     borderRadius: 2,
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
+    backgroundColor: '#EF4444',
+    borderWidth: 0,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.35,
+    shadowOpacity: 0.25,
     shadowRadius: 2,
     elevation: 4,
   },
-  pickupMarkerWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    transform: [{ translateX: -90 }, { translateY: -16 }],
-  },
-  uberPickupBadge: {
-    flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#CBD5E1',
-    overflow: 'hidden',
+  uberDropCircle: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: '#54B713',
+    borderWidth: 0,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.18,
-    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.25,
+    shadowRadius: 2,
     elevation: 4,
-    marginRight: 6,
-    maxWidth: 210,
   },
-  uberPickupMinBox: {
-    backgroundColor: '#000000',
-    paddingHorizontal: 6,
-    paddingVertical: 4,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  uberPickupMinNumber: {
-    color: '#FFFFFF',
-    fontSize: 10,
-    fontWeight: '900',
-    lineHeight: 12,
-    includeFontPadding: false,
-  },
-  uberPickupMinLabel: {
-    color: '#FFFFFF',
-    fontSize: 7,
-    fontWeight: '800',
-    lineHeight: 9,
-    includeFontPadding: false,
-  },
-  uberPickupTextBox: {
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-  },
-  uberPickupTitle: {
-    fontSize: 11.5,
-    fontWeight: '700',
-    color: '#0F172A',
-    marginRight: 3,
-    maxWidth: 130,
-    includeFontPadding: false,
+  // Compatibility aliases
+  uberDropSquare: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: '#54B713',
+    borderWidth: 0,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.25,
+    shadowRadius: 2,
+    elevation: 4,
   },
   uberPickupCircle: {
     width: 14,
     height: 14,
-    borderRadius: 7,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 4,
-    borderColor: '#000000',
+    borderRadius: 2,
+    backgroundColor: '#EF4444',
+    borderWidth: 0,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.35,
+    shadowOpacity: 0.25,
     shadowRadius: 2,
     elevation: 4,
+  },
+  vehicleCalloutCard: {
+    borderColor: '#16A34A',
+    borderWidth: 2,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 10,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.28,
+    shadowRadius: 6,
+  },
+  vehicleTagBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#16A34A',
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    borderRadius: 4,
+    marginRight: 6,
+    gap: 3,
+  },
+  vehicleTagText: {
+    fontSize: 9.5,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
+  },
+  vehicleCalloutText: {
+    fontSize: 12.5,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  vehicleCalloutArrow: {
+    borderTopColor: '#16A34A',
+  },
+  vehicleCalloutArrowBottom: {
+    borderBottomColor: '#16A34A',
+  },
+  vehiclePinCircle: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2.5,
+    borderColor: '#16A34A',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 6,
   },
   routeContainer: {
     position: 'absolute',

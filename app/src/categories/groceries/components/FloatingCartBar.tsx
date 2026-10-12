@@ -28,6 +28,8 @@ export const FloatingCartBar: React.FC<FloatingCartBarProps> = ({
   const totalAmount = getCartTotal();
   const priceSummary = getPriceSummary();
 
+  const isDark = colors.cardBackground === '#000000' || colors.background === '#000000';
+
   if (cartCount === 0 || cartItems.length === 0) {
     return null;
   }
@@ -40,7 +42,14 @@ export const FloatingCartBar: React.FC<FloatingCartBarProps> = ({
   return (
     <View style={[styles.outerContainer, { bottom: bottomOffset }]}>
       <TouchableOpacity
-        style={[styles.container, { backgroundColor: colors.primary, shadowColor: colors.primaryDark }]}
+        style={[
+          styles.container,
+          {
+            backgroundColor: isDark ? '#000000' : colors.primary,
+            shadowColor: isDark ? '#000000' : colors.primaryDark,
+            borderColor: isDark ? 'rgba(255, 255, 255, 0.25)' : 'rgba(255, 255, 255, 0.15)',
+          },
+        ]}
         onPress={onPress}
         activeOpacity={0.92}
       >
@@ -54,12 +63,12 @@ export const FloatingCartBar: React.FC<FloatingCartBarProps> = ({
                 source={{ uri: item.product.image }}
                 style={[
                   styles.thumbImage,
-                  { marginLeft: idx === 0 ? 0 : -10, zIndex: 10 - idx, borderColor: colors.white, backgroundColor: colors.white },
+                  { marginLeft: idx === 0 ? 0 : -10, zIndex: 10 - idx, borderColor: isDark ? '#000000' : colors.white, backgroundColor: colors.white },
                 ]}
               />
             ))}
             {extraItemsCount > 0 && (
-              <View style={[styles.extraBadge, { marginLeft: -10, zIndex: 5, backgroundColor: colors.primaryDark, borderColor: colors.white }]}>
+              <View style={[styles.extraBadge, { marginLeft: -10, zIndex: 5, backgroundColor: isDark ? '#333333' : colors.primaryDark, borderColor: isDark ? '#000000' : colors.white }]}>
                 <Text style={styles.extraBadgeText}>+{extraItemsCount}</Text>
               </View>
             )}
@@ -85,12 +94,12 @@ export const FloatingCartBar: React.FC<FloatingCartBarProps> = ({
         </View>
 
         {/* Right Section: View Cart Button */}
-        <View style={[styles.rightSection, { backgroundColor: colors.primaryDark }]}>
-          <Text style={styles.viewCartText}>View Cart</Text>
-          <View style={[styles.cartIconCircle, { backgroundColor: colors.white }]}>
-            <Ionicons name="cart" size={16} color={colors.primary as string} />
+        <View style={[styles.rightSection, { backgroundColor: isDark ? '#FFFFFF' : colors.primaryDark }]}>
+          <Text style={[styles.viewCartText, isDark && { color: '#000000' }]}>View Cart</Text>
+          <View style={[styles.cartIconCircle, { backgroundColor: isDark ? '#000000' : colors.white }]}>
+            <Ionicons name="cart" size={16} color={(isDark ? '#FFFFFF' : colors.primary) as string} />
           </View>
-          <Ionicons name="chevron-forward" size={16} color={colors.white as string} />
+          <Ionicons name="chevron-forward" size={16} color={(isDark ? '#000000' : colors.white) as string} />
         </View>
       </TouchableOpacity>
     </View>

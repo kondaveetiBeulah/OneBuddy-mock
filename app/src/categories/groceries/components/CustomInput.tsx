@@ -7,7 +7,8 @@ import {
   TextInputProps,
   ViewStyle,
 } from 'react-native';
-import { colors, typography, spacing } from '../theme';
+import { typography, spacing } from '../theme';
+import { useGroceryColors } from '../theme/colors';
 
 interface CustomInputProps extends TextInputProps {
   label?: string;
@@ -26,19 +27,20 @@ export const CustomInput: React.FC<CustomInputProps> = ({
   style,
   ...props
 }) => {
+  const colors = useGroceryColors();
   return (
     <View style={[styles.container, containerStyle]}>
-      {label && <Text style={styles.label}>{label}</Text>}
-      <View style={[styles.inputWrapper, error ? styles.errorBorder : null]}>
+      {label && <Text style={[styles.label, { color: colors.textPrimary }]}>{label}</Text>}
+      <View style={[styles.inputWrapper, { backgroundColor: colors.cardBackground, borderColor: colors.border }, error ? styles.errorBorder : null]}>
         {leftIcon && <View style={styles.iconLeft}>{leftIcon}</View>}
         <TextInput
-          style={[styles.input, style]}
+          style={[styles.input, { color: colors.textPrimary }, style]}
           placeholderTextColor={colors.textMuted}
           {...props}
         />
         {rightIcon && <View style={styles.iconRight}>{rightIcon}</View>}
       </View>
-      {error && <Text style={styles.errorText}>{error}</Text>}
+      {error && <Text style={[styles.errorText, { color: colors.danger }]}>{error}</Text>}
     </View>
   );
 };
@@ -51,26 +53,22 @@ const styles = StyleSheet.create({
   label: {
     fontSize: typography.sizes.sm,
     fontWeight: typography.weights.medium,
-    color: colors.textPrimary,
     marginBottom: spacing.xs,
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.white,
     borderWidth: 1,
-    borderColor: colors.border,
     borderRadius: spacing.borderRadius.md,
     paddingHorizontal: spacing.md,
     height: 48,
   },
   errorBorder: {
-    borderColor: colors.danger,
+    borderColor: '#EF4444',
   },
   input: {
     flex: 1,
     fontSize: typography.sizes.md,
-    color: colors.textPrimary,
     paddingVertical: spacing.xs,
   },
   iconLeft: {
@@ -81,7 +79,6 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: typography.sizes.xs,
-    color: colors.danger,
     marginTop: 4,
   },
 });

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -44,6 +44,34 @@ const DEFAULT_REGION: Region = {
   longitude: 78.3915,
   latitudeDelta: 0.08,
   longitudeDelta: 0.08,
+};
+
+const getMockLocationCoordinates = (name: string): { top: string; left: string } => {
+  const lower = name.toLowerCase().trim();
+  if (lower.includes('hitec') || lower.includes('cyber')) return { top: '65%', left: '75%' };
+  if (lower.includes('kukatpally') || lower.includes('road number 6') || lower.includes('131a')) return { top: '25%', left: '22%' };
+  if (lower.includes('madhapur') || lower.includes('shilparamam')) return { top: '32%', left: '68%' };
+  if (lower.includes('gachibowli')) return { top: '72%', left: '30%' };
+  if (lower.includes('kphb') || lower.includes('jntu')) return { top: '30%', left: '42%' };
+  if (lower.includes('banjara') || lower.includes('jubilee')) return { top: '38%', left: '78%' };
+  if (lower.includes('secunderabad') || lower.includes('lakeshore')) return { top: '18%', left: '48%' };
+  if (lower.includes('charminar') || lower.includes('tr square') || lower.includes('yadagirigutta')) return { top: '72%', left: '55%' };
+  if (lower.includes('airport')) return { top: '75%', left: '70%' };
+
+  let hash = 0;
+  for (let i = 0; i < lower.length; i++) {
+    hash = (hash << 5) - hash + lower.charCodeAt(i);
+    hash |= 0;
+  }
+  const roadPositions = [
+    { top: '28%', left: '66%' },
+    { top: '24%', left: '32%' },
+    { top: '64%', left: '68%' },
+    { top: '68%', left: '28%' },
+    { top: '35%', left: '55%' },
+    { top: '72%', left: '60%' },
+  ];
+  return roadPositions[Math.abs(hash) % roadPositions.length];
 };
 
 type VehicleKind = 'bike' | 'auto' | 'mini' | 'xl4' | 'xl7' | 'premier';
@@ -135,6 +163,80 @@ export default function RideScreen({
   const [customSchedule, setCustomSchedule] = useState(false);
   const [customDate, setCustomDate] = useState('');
   const [customTime, setCustomTime] = useState('');
+
+  const [pickupRowLayout, setPickupRowLayout] = useState<{ y: number; height: number }>({ y: 4, height: 58 });
+  const [dropRowLayout, setDropRowLayout] = useState<{ y: number; height: number }>({ y: 63, height: 62 });
+
+  const routeConnectorLayout = useMemo(() => {
+    const pickupCenterY = pickupRowLayout.y + pickupRowLayout.height / 2;
+    const dropCenterY = dropRowLayout.y + dropRowLayout.height / 2;
+    const top = pickupCenterY + 6 + 3;
+    const bottom = dropCenterY - 6 - 3;
+    const height = Math.max(0, bottom - top);
+    const count = Math.max(4, Math.min(8, Math.round(height / 7.5)));
+    return { top, height, count };
+  }, [pickupRowLayout, dropRowLayout]);
+
+  const activeLocationName = (searchQuery.trim() || selectedDestination?.title || '').trim();
+  const destinationPos = useMemo(() => {
+    return activeLocationName ? getMockLocationCoordinates(activeLocationName) : null;
+  }, [activeLocationName]);
+
+  const renderHomeRoute = (pos: { top: string; left: string }) => {
+    const x1 = 50;
+    const y1 = 50;
+    const x2 = parseFloat(pos.left);
+    const y2 = parseFloat(pos.top);
+
+    const minX = Math.min(x1, x2);
+    const maxX = Math.max(x1, x2);
+    const midY = y1 + (y2 - y1) * 0.5;
+    const lineWidth = 4;
+
+    return (
+      <View style={StyleSheet.absoluteFill} pointerEvents="none">
+        <View
+          style={{
+            position: 'absolute',
+            top: `${Math.min(y1, midY)}%`,
+            left: `${x1}%`,
+            marginLeft: -lineWidth / 2,
+            width: lineWidth,
+            height: `${Math.abs(midY - y1)}%`,
+            backgroundColor: '#0F172A',
+            borderRadius: 2,
+            zIndex: 14,
+          }}
+        />
+        <View
+          style={{
+            position: 'absolute',
+            top: `${midY}%`,
+            marginTop: -lineWidth / 2,
+            left: `${minX}%`,
+            width: `${Math.max(maxX - minX, 2)}%`,
+            height: lineWidth,
+            backgroundColor: '#0F172A',
+            borderRadius: 2,
+            zIndex: 14,
+          }}
+        />
+        <View
+          style={{
+            position: 'absolute',
+            top: `${Math.min(midY, y2)}%`,
+            left: `${x2}%`,
+            marginLeft: -lineWidth / 2,
+            width: lineWidth,
+            height: `${Math.abs(y2 - midY)}%`,
+            backgroundColor: '#0F172A',
+            borderRadius: 2,
+            zIndex: 14,
+          }}
+        />
+      </View>
+    );
+  };
   const [mapZoom, setMapZoom] = useState(1);
   const mapZoomRef = useRef(1);
   const mapZoomStart = useRef(1);
@@ -528,7 +630,7 @@ export default function RideScreen({
     setSelectedDestination(item);
     saveDestinationToRecent(item);
     setSearchMode(false);
-    setShowRideOptions(true);
+    setShowRideOptions(false);
   }, [isTripActive, notifyActiveTrip, saveDestinationToRecent]);
 
   const openRideResults = useCallback(() => {
@@ -536,24 +638,25 @@ export default function RideScreen({
       notifyActiveTrip();
       return;
     }
-    const query = searchQuery.trim();
+    const query = (searchQuery.trim() || selectedDestination?.title || activeLocationName || '').trim();
     if (!query) return;
     const matchingDestination = destinations.find(
       (item) => item.title.toLowerCase() === query.toLowerCase()
     );
-    const destToUse: DestinationItem = matchingDestination || {
+    const destToUse: DestinationItem = matchingDestination || selectedDestination || {
       id: `custom-${Date.now()}`,
       title: query,
       subtitle: 'Entered destination',
       favorite: false,
     };
     setSelectedDestination(destToUse);
+    setSearchQuery(destToUse.title);
     saveDestinationToRecent(destToUse);
     setSearchMode(false);
     setShowRideOptions(true);
-  }, [isTripActive, notifyActiveTrip, destinations, searchQuery, saveDestinationToRecent]);
+  }, [isTripActive, notifyActiveTrip, destinations, searchQuery, selectedDestination, activeLocationName, saveDestinationToRecent]);
 
-  const canOpenRideResults = searchQuery.trim().length > 0;
+  const canOpenRideResults = searchQuery.trim().length > 0 || selectedDestination != null || activeLocationName.length > 0;
 
   const handleSelectSavedAddress = useCallback((address: string) => {
     if (isTripActive) {
@@ -571,7 +674,7 @@ export default function RideScreen({
     saveDestinationToRecent(destToUse);
     setShowSavedAddresses(false);
     setSearchMode(false);
-    setShowRideOptions(true);
+    setShowRideOptions(false);
   }, [isTripActive, notifyActiveTrip, saveDestinationToRecent]);
 
   const selectPickup = useCallback((address: string) => {
@@ -671,9 +774,10 @@ export default function RideScreen({
     const pickup = pickupCoords
       ? { id: '1', title: pickupAddress || '1373, Madhapur, Hyderabad', subtitle: 'Your location', latitude: pickupCoords.latitude, longitude: pickupCoords.longitude, fare: vehicle.baseFare }
       : { id: '1', title: pickupAddress || '1373, Madhapur, Hyderabad', subtitle: 'Your location', latitude: 17.4483, longitude: 78.3915, fare: vehicle.baseFare };
-    setBookingData({ vehicle, pickup, destination: selectedDestination?.title || 'Destination', price: vehicle.baseFare });
+    const destinationTitle = (selectedDestination?.title || searchQuery.trim() || activeLocationName || 'Destination').trim();
+    setBookingData({ vehicle, pickup, destination: destinationTitle, price: vehicle.baseFare });
     setBookingStep('pickup');
-  }, [selectedVehicle, pickupCoords, pickupAddress, selectedDestination]);
+  }, [selectedVehicle, pickupCoords, pickupAddress, selectedDestination, searchQuery, activeLocationName]);
 
   // ── Booking-flow screen renders ──────────────────────────────────────────
   if (bookingStep === 'pickup') {
@@ -932,12 +1036,12 @@ export default function RideScreen({
 
   if (showRideOptions && selectedDestination) {
     const pickupCoord = {
-      latitude: 17.368,
-      longitude: 78.485,
+      latitude: 17.355,
+      longitude: 78.405,
     };
     const dropCoord = {
-      latitude: 17.382,
-      longitude: 78.498,
+      latitude: 17.425,
+      longitude: 78.475,
     };
 
     return (
@@ -954,11 +1058,13 @@ export default function RideScreen({
             <Marker
               coordinate={pickupCoord}
               title={pickupAddress || 'Kshatriya Foods'}
+              type="pickup"
             />
             <Marker
               coordinate={dropCoord}
-              title={selectedDestination.title || 'Bachpan Play School, Chintal'}
+              title={selectedDestination?.title || searchQuery.trim() || 'Destination'}
               isDestination={true}
+              type="drop"
             />
           </MapView>
 
@@ -971,33 +1077,13 @@ export default function RideScreen({
             ]}
             onPress={() => {
               setShowRideOptions(false);
-              setSearchMode(true);
+              setSearchMode(false);
             }}
           >
             <Ionicons name="arrow-back" size={20} color={isDark ? '#F1F1EC' : '#0f172a'} />
           </TouchableOpacity>
 
-          {/* Floating Route Summary Pill */}
-          <View
-            style={[
-              styles.resultsAddressPill,
-              { top: safeTop },
-              isDark && { backgroundColor: 'rgba(29, 30, 34, 0.95)' },
-            ]}
-          >
-            <View style={styles.resultsAddressRow}>
-              <View style={styles.resultsGreenDot} />
-              <Text style={[styles.resultsAddressText, isDark && { color: '#F1F1EC' }]} numberOfLines={1}>
-                {pickupAddress || 'Current location'}
-              </Text>
-            </View>
-            <View style={[styles.resultsAddressRow, { marginTop: 3 }]}>
-              <View style={styles.resultsOrangeDot} />
-              <Text style={[styles.resultsAddressText, isDark && { color: '#F1F1EC' }]} numberOfLines={1}>
-                {selectedDestination?.title || 'Destination'}
-              </Text>
-            </View>
-          </View>
+
         </View>
 
         <View style={[styles.resultsSheet, isDark && { backgroundColor: '#1D1E22' }]}>
@@ -1209,15 +1295,38 @@ export default function RideScreen({
         )}
 
         <View style={[styles.routeCard, isDark && { backgroundColor: '#1D1E22', borderColor: 'rgba(255, 255, 255, 0.08)' }]}>
+          {/* Visible red connector dots aligned directly between pickup and drop */}
+          {routeConnectorLayout.height > 0 && (
+            <View
+              style={[
+                styles.redDotsConnector,
+                {
+                  top: routeConnectorLayout.top,
+                  height: routeConnectorLayout.height,
+                },
+              ]}
+              pointerEvents="none"
+            >
+              {Array.from({ length: routeConnectorLayout.count }).map((_, idx) => (
+                <View key={idx} style={styles.redRouteDot} />
+              ))}
+            </View>
+          )}
+
           {/* Pickup row */}
           <TouchableOpacity
             style={styles.routeInputRow}
             onPress={() => { setPickupInput(pickupAddress); setShowPickupEditor(true); }}
             activeOpacity={0.75}
+            onLayout={(e) => {
+              const { y, height } = e.nativeEvent.layout;
+              if (Math.abs(y - pickupRowLayout.y) > 0.5 || Math.abs(height - pickupRowLayout.height) > 0.5) {
+                setPickupRowLayout({ y, height });
+              }
+            }}
           >
             <View style={styles.dotColumn}>
               <View style={styles.pickupDotNew} />
-              <View style={[styles.routeConnector, isDark && { borderColor: '#3E424B' }]} />
             </View>
             <View style={styles.routeInputField}>
               <Text style={[styles.routeInputLabel, isDark && { color: '#9BA08F' }]}>PICKUP</Text>
@@ -1226,7 +1335,15 @@ export default function RideScreen({
           </TouchableOpacity>
           <View style={[styles.routeInputDivider, isDark && { backgroundColor: 'rgba(255, 255, 255, 0.08)' }]} />
           {/* Drop row */}
-          <View style={styles.routeInputRow}>
+          <View
+            style={styles.routeInputRow}
+            onLayout={(e) => {
+              const { y, height } = e.nativeEvent.layout;
+              if (Math.abs(y - dropRowLayout.y) > 0.5 || Math.abs(height - dropRowLayout.height) > 0.5) {
+                setDropRowLayout({ y, height });
+              }
+            }}
+          >
             <View style={styles.dotColumn}>
               <View style={styles.dropDotNew} />
             </View>
@@ -1477,40 +1594,79 @@ export default function RideScreen({
 
         <View style={styles.mockMap} {...mapZoomResponder.panHandlers}>
           <View style={[styles.mockMapCanvas, { transform: [{ scale: mapZoom }] }]}>
-            <View style={styles.mockParkOne}><Text style={styles.mockParkText}>Kukatpally</Text></View>
-            <View style={styles.mockParkTwo}><Text style={styles.mockParkText}>HITEC City</Text></View>
+            <View style={styles.mockParkOne}>
+              {!activeLocationName.toLowerCase().includes('kukatpally') && (
+                <Text style={[styles.mockParkText, activeLocationName ? { opacity: 0.45 } : null]}>Kukatpally</Text>
+              )}
+            </View>
+            <View style={styles.mockParkTwo}>
+              {!activeLocationName.toLowerCase().includes('hitec') && (
+                <Text style={[styles.mockParkText, activeLocationName ? { opacity: 0.45 } : null]}>HITEC City</Text>
+              )}
+            </View>
             <View style={[styles.mockRoad, styles.mockRoadOne]} />
             <View style={[styles.mockRoad, styles.mockRoadTwo]} />
             <View style={[styles.mockRoad, styles.mockRoadThree]} />
             <View style={[styles.mockRoad, styles.mockRoadFour]} />
             <View style={[styles.mockRoad, styles.mockRoadFive]} />
-            <View style={styles.mockMapLabel}><Text style={styles.mockMapLabelText}>Hyderabad</Text></View>
-            <View style={[styles.mockMapStreet, styles.mockStreetOne]}><Text style={styles.mockStreetText}>JNTU Road</Text></View>
-            <View style={[styles.mockMapStreet, styles.mockStreetTwo]}><Text style={styles.mockStreetText}>KPHB Main Road</Text></View>
-            <View style={styles.mockLocationPin}>
-              <View style={styles.mockLocationDot} />
+            <View style={[styles.mockMapLabel, activeLocationName ? { opacity: 0.5 } : null]}>
+              <Text style={styles.mockMapLabelText}>Hyderabad</Text>
+            </View>
+            <View style={[styles.mockMapStreet, styles.mockStreetOne, activeLocationName ? { opacity: 0.5 } : null]}>
+              <Text style={styles.mockStreetText}>JNTU Road</Text>
+            </View>
+            <View style={[styles.mockMapStreet, styles.mockStreetTwo, activeLocationName ? { opacity: 0.5 } : null]}>
+              <Text style={styles.mockStreetText}>KPHB Main Road</Text>
             </View>
           </View>
 
-          <View style={[styles.zoomControls, isDark && { backgroundColor: '#1D1E22' }]}>
-            <TouchableOpacity style={styles.zoomButton} onPress={zoomIn} accessibilityLabel="Zoom in">
-              <Ionicons name="add" size={24} color={isDark ? '#F1F1EC' : '#0f172a'} />
-            </TouchableOpacity>
-            <View style={[styles.zoomDivider, isDark && { backgroundColor: '#3E424B' }]} />
-            <TouchableOpacity style={styles.zoomButton} onPress={zoomOut} accessibilityLabel="Zoom out">
-              <Ionicons name="remove" size={24} color={isDark ? '#F1F1EC' : '#0f172a'} />
-            </TouchableOpacity>
+          {/* Pickup location pin - remains stationary during map zoom */}
+          <View style={styles.mockLocationPin}>
+            <View style={styles.mockLocationDot} />
           </View>
+
+          {/* Dynamic destination marker and location name when entered in search bar - remains stationary during map zoom */}
+          {activeLocationName && destinationPos ? (
+            <>
+              {renderHomeRoute(destinationPos)}
+              <View
+                style={[
+                  styles.homeDestMarkerAnchor,
+                  { top: destinationPos.top as any, left: destinationPos.left as any },
+                ]}
+              >
+                {/* Location name callout badge - remains constant size during zoom */}
+                <View style={styles.homeDestCalloutContainer}>
+                  <View style={[styles.homeDestCallout, isDark && { backgroundColor: '#1D1E22' }]}>
+                    <View style={styles.homeDestDropDot} />
+                    <Text style={[styles.homeDestCalloutText, isDark && { color: '#F1F1EC' }]} numberOfLines={1}>
+                      {activeLocationName}
+                    </Text>
+                  </View>
+                  <View style={styles.homeDestCalloutArrow} />
+                </View>
+
+                {/* Marker Pin - remains constant size during zoom */}
+                <View style={styles.homeDestPinWrapper}>
+                  <View style={styles.homeDestPinCircle}>
+                    <View style={styles.homeDestPinDot} />
+                  </View>
+                  <View style={styles.homeDestPulseRing} />
+                </View>
+              </View>
+            </>
+          ) : null}
         </View>
 
-        <TouchableOpacity
-          style={[styles.recenterButton, isDark && { backgroundColor: '#1D1E22' }]}
-          onPress={handleRecenter}
-          disabled={!pickupCoords}
-          accessibilityLabel="Recenter map to my location"
-        >
-          <Ionicons name="locate" size={22} color="#54B713" />
-        </TouchableOpacity>
+        <View style={[styles.zoomControls, isDark && { backgroundColor: '#1D1E22' }]}>
+          <TouchableOpacity style={styles.zoomButton} onPress={zoomIn} accessibilityLabel="Zoom in">
+            <Ionicons name="add" size={24} color={isDark ? '#F1F1EC' : '#0f172a'} />
+          </TouchableOpacity>
+          <View style={[styles.zoomDivider, isDark && { backgroundColor: '#3E424B' }]} />
+          <TouchableOpacity style={styles.zoomButton} onPress={zoomOut} accessibilityLabel="Zoom out">
+            <Ionicons name="remove" size={24} color={isDark ? '#F1F1EC' : '#0f172a'} />
+          </TouchableOpacity>
+        </View>
 
         <View style={[styles.addressPill, isDark && { backgroundColor: 'rgba(29, 30, 34, 0.95)' }]}>
           <View style={styles.addressDot} />
@@ -1525,11 +1681,32 @@ export default function RideScreen({
 
         <View style={[styles.searchBar, isDark && { backgroundColor: '#24262B', borderColor: 'rgba(255, 255, 255, 0.12)' }]}>
           <Ionicons name="search" size={18} color={isDark ? '#9BA08F' : '#555'} style={{ marginRight: 8 }} />
-          <TouchableOpacity style={styles.searchInputButton} onPress={openSearch} activeOpacity={0.8}>
-            <Text style={searchQuery ? [styles.searchInputValue, isDark && { color: '#F1F1EC' }] : [styles.searchInputPlaceholder, isDark && { color: '#9BA08F' }]} numberOfLines={1}>
-              {searchQuery || 'Where do you want to go?'}
-            </Text>
-          </TouchableOpacity>
+          <TextInput
+            style={[styles.homeSearchInput, isDark && { color: '#F1F1EC' }]}
+            placeholder="Where do you want to go?"
+            placeholderTextColor={isDark ? '#9BA08F' : '#94a3b8'}
+            value={searchQuery}
+            onChangeText={(text) => {
+              setSearchQuery(text);
+              if (text.trim().length > 0) {
+                const matched = destinations.find(
+                  (d) => d.title.toLowerCase() === text.trim().toLowerCase()
+                );
+                setSelectedDestination(
+                  matched || {
+                    id: `custom-${Date.now()}`,
+                    title: text.trim(),
+                    subtitle: 'Entered destination',
+                    favorite: false,
+                  }
+                );
+              } else {
+                setSelectedDestination(null);
+              }
+            }}
+            onSubmitEditing={openRideResults}
+            returnKeyType="search"
+          />
           {(searchQuery.length > 0 || selectedDestination) && (
             <TouchableOpacity
               onPress={() => {
@@ -1543,7 +1720,21 @@ export default function RideScreen({
           )}
         </View>
 
-        {selectedDestination && searchQuery.trim().length > 0 && (
+        {activeLocationName ? (
+          <TouchableOpacity
+            style={styles.homeSeeRidesButton}
+            onPress={openRideResults}
+            activeOpacity={0.85}
+          >
+            <Ionicons name="car-outline" size={19} color="#FFFFFF" />
+            <Text style={styles.homeSeeRidesButtonText} numberOfLines={1}>
+              See available rides to {activeLocationName}
+            </Text>
+            <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+          </TouchableOpacity>
+        ) : null}
+
+        {selectedDestination && searchQuery.trim().length > 0 && !activeLocationName && (
           <View style={[styles.selectedBanner, isDark && { backgroundColor: 'rgba(84, 183, 19, 0.15)', borderColor: 'rgba(84, 183, 19, 0.3)' }]}>
             <Ionicons name="location" size={16} color="#54B713" />
             <Text style={[styles.selectedBannerText, isDark && { color: '#F1F1EC' }]} numberOfLines={1}>
@@ -1840,7 +2031,11 @@ export default function RideScreen({
                 <Pressable
                   key={item.id}
                   style={({ pressed }) => [styles.destinationRow, isDark && { borderBottomColor: 'rgba(255, 255, 255, 0.08)' }, pressed && (isDark ? { backgroundColor: '#24262B' } : styles.rowPressed)]}
-                  onPress={() => handleSelectDestination(item)}
+                  onPress={() => {
+                    setSearchQuery(item.title);
+                    setSelectedDestination(item);
+                    saveDestinationToRecent(item);
+                  }}
                 >
                   <View style={[styles.recentIconWrapHome, isDark && { backgroundColor: '#24262B' }]}>
                     <Ionicons name="time-outline" size={18} color="#54B713" />
@@ -2108,15 +2303,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     position: 'relative',
   },
-  routeConnector: {
+  redDotsConnector: {
     position: 'absolute',
-    top: 18,
-    bottom: -36,
-    width: 2,
-    borderLeftWidth: 1.5,
-    borderStyle: 'dotted',
-    borderColor: '#cbd5e1',
-    zIndex: 0,
+    left: 16,
+    width: 20,
+    alignItems: 'center',
+    justifyContent: 'space-evenly',
+    zIndex: 2,
+  },
+  redRouteDot: {
+    width: 3.5,
+    height: 3.5,
+    borderRadius: 2,
+    backgroundColor: '#54B713',
   },
   routeInputRow: {
     flexDirection: 'row',
@@ -2132,19 +2331,17 @@ const styles = StyleSheet.create({
   pickupDotNew: {
     width: 12,
     height: 12,
-    borderRadius: 6,
-    backgroundColor: '#16a34a',
-    borderWidth: 2.5,
-    borderColor: '#bbf7d0',
+    borderRadius: 2,
+    backgroundColor: '#EF4444',
+    borderWidth: 0,
     zIndex: 1,
   },
   dropDotNew: {
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: '#ef4444',
-    borderWidth: 2.5,
-    borderColor: '#fecaca',
+    backgroundColor: '#54B713',
+    borderWidth: 0,
     zIndex: 1,
   },
   routeInputField: { flex: 1 },
@@ -2162,8 +2359,8 @@ const styles = StyleSheet.create({
   routeLine: { position: 'absolute', left: 34, top: 42, bottom: 42, borderLeftWidth: 3, borderStyle: 'dashed', borderColor: '#64748b' },
   routeRow: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 18 },
   routeDot: { width: 18, height: 18, borderRadius: 9, zIndex: 1 },
-  pickupDot: { backgroundColor: '#16a05d' },
-  dropDot: { backgroundColor: '#c2410c' },
+  pickupDot: { backgroundColor: '#EF4444', borderRadius: 3 },
+  dropDot: { backgroundColor: '#54B713' },
   pickupButton: { flex: 1, minHeight: 40, justifyContent: 'center' },
   pickupText: { fontSize: 17, fontWeight: '700', color: '#0f172a' },
   routeDivider: { height: 1.5, backgroundColor: '#e2e8f0', marginLeft: 38, marginVertical: 4 },
@@ -2259,12 +2456,12 @@ const styles = StyleSheet.create({
   mockStreetOne: { top: '35%', left: '8%', transform: [{ rotate: '28deg' }] },
   mockStreetTwo: { top: '67%', right: '8%', transform: [{ rotate: '-18deg' }] },
   mockStreetText: { color: '#718071', fontSize: 10, fontWeight: '600' },
-  mockLocationPin: { position: 'absolute', top: '48%', left: '48%', width: 46, height: 46, borderRadius: 23, backgroundColor: 'rgba(84,183,19,0.22)', justifyContent: 'center', alignItems: 'center' },
-  mockLocationDot: { width: 20, height: 20, borderRadius: 10, backgroundColor: '#54B713', borderWidth: 4, borderColor: '#fff' },
+  mockLocationPin: { position: 'absolute', top: '48%', left: '48%', width: 22, height: 22, marginLeft: -11, marginTop: -11, justifyContent: 'center', alignItems: 'center' },
+  mockLocationDot: { width: 14, height: 14, borderRadius: 2, backgroundColor: '#EF4444', borderWidth: 0, elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.25, shadowRadius: 2 },
   zoomControls: {
     position: 'absolute',
     right: 16,
-    top: 16,
+    bottom: 16,
     overflow: 'hidden',
     borderRadius: 12,
     backgroundColor: '#fff',
@@ -2273,6 +2470,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.16,
     shadowRadius: 5,
     shadowOffset: { width: 0, height: 2 },
+    zIndex: 10,
   },
   zoomButton: { width: 44, height: 42, justifyContent: 'center', alignItems: 'center' },
   zoomDivider: { height: StyleSheet.hairlineWidth, backgroundColor: '#cbd5e1' },
@@ -2330,8 +2528,7 @@ const styles = StyleSheet.create({
     height: 12,
     borderRadius: 6,
     backgroundColor: '#54B713',
-    borderWidth: 2,
-    borderColor: '#fff',
+    borderWidth: 0,
   },
   floatingExitButton: {
     position: 'absolute',
@@ -2349,22 +2546,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     zIndex: 40,
   },
-  recenterButton: {
-    position: 'absolute',
-    right: 16,
-    bottom: 16,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-  },
+
   addressPill: {
     position: 'absolute',
     left: 16,
@@ -2382,7 +2564,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
   },
-  addressDot: { width: 10, height: 10, borderRadius: 5, borderWidth: 2, borderColor: '#54B713', marginRight: 10 },
+  addressDot: { width: 10, height: 10, borderRadius: 2, backgroundColor: '#EF4444', borderWidth: 0, marginRight: 10 },
   addressText: { fontSize: 14, fontWeight: '600', color: '#1e293b', flexShrink: 1 },
   sheet: {
     flex: 1.1,
@@ -2405,6 +2587,116 @@ const styles = StyleSheet.create({
   searchInputButton: { flex: 1, justifyContent: 'center' },
   searchInputPlaceholder: { fontSize: 16, color: '#94a3b8' },
   searchInputValue: { fontSize: 16, fontWeight: '600', color: '#0f172a' },
+  homeSearchInput: {
+    flex: 1,
+    height: 48,
+    fontSize: 15.5,
+    fontWeight: '600',
+    color: '#0f172a',
+    paddingVertical: 0,
+  },
+  homeSeeRidesButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 24,
+    backgroundColor: '#54B713',
+    elevation: 3,
+    shadowColor: '#54B713',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+  },
+  homeSeeRidesButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14.5,
+    fontWeight: '800',
+  },
+  homeDestMarkerAnchor: {
+    position: 'absolute',
+    width: 24,
+    height: 24,
+    marginLeft: -12,
+    marginTop: -12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 25,
+  },
+  homeDestCalloutContainer: {
+    position: 'absolute',
+    bottom: 24,
+    left: -88,
+    alignItems: 'center',
+    width: 200,
+    zIndex: 40,
+  },
+  homeDestCallout: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
+    borderWidth: 0,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 6,
+    maxWidth: 196,
+  },
+  homeDestDropDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#54B713',
+    marginRight: 6,
+  },
+  homeDestCalloutText: {
+    fontSize: 13,
+    fontWeight: '900',
+    color: '#0F172A',
+  },
+  homeDestCalloutArrow: {
+    width: 0,
+    height: 0,
+    borderLeftWidth: 5,
+    borderRightWidth: 5,
+    borderTopWidth: 5,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderTopColor: '#FFFFFF',
+  },
+  homeDestPinWrapper: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 24,
+    height: 24,
+  },
+  homeDestPinCircle: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: '#54B713',
+    borderWidth: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.25,
+    shadowRadius: 2,
+    elevation: 3,
+  },
+  homeDestPinDot: {
+    display: 'none',
+  },
+  homeDestPulseRing: {
+    display: 'none',
+  },
   selectedBanner: {
     flexDirection: 'row',
     alignItems: 'center',

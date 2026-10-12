@@ -1,9 +1,11 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Home, Compass, ClipboardList, Heart, ShoppingBag } from 'lucide-react-native';
+import { Home, ClipboardList, Heart } from 'lucide-react-native';
 import { useCart } from '../../context/CartContext';
 import { useFilter } from '../../context/FilterContext';
+
+import { isCategoryDark } from '@/theme/categoryThemeBridge';
 
 interface BottomNavBarProps {
   activeScreen: string;
@@ -20,9 +22,17 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
   const bottomInset = Math.max(insets.bottom, Platform.OS === 'android' ? 12 : 8);
   const { totalItemCount, favorites } = useCart();
   const { triggerSearchFocus } = useFilter();
+  const isDark = isCategoryDark();
+
+  const getIconColor = (screen: string) => {
+    if (activeScreen === screen) {
+      return isDark ? '#A3E635' : '#65A30D';
+    }
+    return isDark ? '#E5E7EB' : '#6B7280';
+  };
 
   return (
-    <View style={[styles.navBar, { paddingBottom: bottomInset + 8 }]}>
+    <View style={[styles.navBar, { paddingBottom: bottomInset + 8 }, isDark && { backgroundColor: '#000000', borderTopColor: 'rgba(255, 255, 255, 0.15)' }]}>
       {/* Home */}
       <TouchableOpacity
         onPress={() => onNavigate('home')}
@@ -30,29 +40,17 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
       >
         <Home
           size={20}
-          color={activeScreen === 'home' ? '#65A30D' : '#6B7280'}
+          color={getIconColor('home')}
         />
         <Text
           style={[
             styles.navText,
-            activeScreen === 'home' && styles.navTextActive,
+            isDark && { color: '#E5E7EB' },
+            activeScreen === 'home' && (isDark ? { color: '#A3E635', fontWeight: 'bold' } : styles.navTextActive),
           ]}
         >
           Home
         </Text>
-      </TouchableOpacity>
-
-      {/* Explore / Search */}
-      <TouchableOpacity
-        onPress={() => {
-          onNavigate('home');
-          triggerSearchFocus();
-          if (onFocusSearch) onFocusSearch();
-        }}
-        style={styles.navItem}
-      >
-        <Compass size={20} color="#6B7280" />
-        <Text style={styles.navText}>Explore</Text>
       </TouchableOpacity>
 
       {/* Orders */}
@@ -62,12 +60,13 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
       >
         <ClipboardList
           size={20}
-          color={activeScreen === 'orders' ? '#65A30D' : '#6B7280'}
+          color={getIconColor('orders')}
         />
         <Text
           style={[
             styles.navText,
-            activeScreen === 'orders' && styles.navTextActive,
+            isDark && { color: '#E5E7EB' },
+            activeScreen === 'orders' && (isDark ? { color: '#A3E635', fontWeight: 'bold' } : styles.navTextActive),
           ]}
         >
           Orders
@@ -79,21 +78,15 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
         onPress={() => onNavigate('favorites')}
         style={styles.navItem}
       >
-        <View style={styles.iconWrapper}>
-          <Heart
-            size={20}
-            color={activeScreen === 'favorites' ? '#F43F5E' : '#6B7280'}
-          />
-          {favorites.length > 0 && (
-            <View style={styles.favBadge}>
-              <Text style={styles.favBadgeText}>{favorites.length}</Text>
-            </View>
-          )}
-        </View>
+        <Heart
+          size={20}
+          color={getIconColor('favorites')}
+        />
         <Text
           style={[
             styles.navText,
-            activeScreen === 'favorites' && { color: '#F43F5E', fontWeight: 'bold' },
+            isDark && { color: '#E5E7EB' },
+            activeScreen === 'favorites' && (isDark ? { color: '#A3E635', fontWeight: 'bold' } : styles.navTextActive),
           ]}
         >
           Favorites
@@ -148,7 +141,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   favBadgeText: {
-    color: '#111827',
+    color: '#FFFFFF',
     fontSize: 8,
     fontWeight: 'bold',
   },

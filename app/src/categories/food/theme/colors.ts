@@ -36,13 +36,13 @@ export const lightColors = {
 
 export const darkColors = {
   ...lightColors,
-  bgDeep: '#121214',
-  ink: '#1D1E22',
-  inkDark: '#121214',
-  mist: '#F1F1EC',
-  mistDim: '#9BA08F',
-  cardBorders: 'rgba(255, 255, 255, 0.08)',
-  cardBgGlass: 'rgba(29, 30, 34, 0.85)',
+  bgDeep: '#000000',
+  ink: '#000000',
+  inkDark: '#000000',
+  mist: '#FFFFFF',
+  mistDim: '#E5E7EB',
+  cardBorders: 'rgba(255, 255, 255, 0.15)',
+  cardBgGlass: 'rgba(0, 0, 0, 0.95)',
 };
 
 export const COLORS = { ...lightColors };
@@ -80,6 +80,16 @@ export const RESTAURANT_GRADIENTS = {
     colors: ['#4a360d', '#1a1203'] as [string, string],
     border: 'rgba(201, 162, 39, 0.4)',
     accent: '#65A30D',
+  },
+  mehfil: {
+    colors: ['#3e1f18', '#1c0c08'] as [string, string],
+    border: 'rgba(232, 115, 74, 0.4)',
+    accent: '#E8734A',
+  },
+  mefil: {
+    colors: ['#3e1f18', '#1c0c08'] as [string, string],
+    border: 'rgba(232, 115, 74, 0.4)',
+    accent: '#E8734A',
   },
   spiceRoute: {
     colors: ['#44162e', '#190610'] as [string, string],

@@ -43,14 +43,14 @@ export interface Category {
   value: SentimentValue | null;
 }
 
-export const SENTIMENT_FACES = ["😞", "🙁", "😐", "🙂", "😊"] as const;
+export const SENTIMENT_FACES = ['😡', '🙁', '😐', '😊', '😍'] as const;
 
 export const STAR_LABELS: Record<number, string> = {
-  1: "Poor",
-  2: "Fair",
-  3: "Okay",
-  4: "Good",
-  5: "Excellent",
+  1: 'Terrible 😞',
+  2: 'Bad 🙁',
+  3: 'Okay 😐',
+  4: 'Good 😊',
+  5: 'Loved it! 🤩',
 };
 
 export const initialCategories: Category[] = [

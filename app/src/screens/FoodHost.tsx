@@ -40,7 +40,7 @@ function FoodLoadingScreen({ isDark }: { isDark: boolean }) {
         {
           paddingTop: insets.top,
           paddingBottom: insets.bottom,
-          backgroundColor: isDark ? '#121214' : '#FFFFFF',
+          backgroundColor: isDark ? '#000000' : '#FFFFFF',
         },
       ]}
     >
@@ -52,10 +52,10 @@ function FoodLoadingScreen({ isDark }: { isDark: boolean }) {
       >
         <FoodDeliveryIcon width={72} height={72} />
       </View>
-      <Text style={[styles.loadingTitle, isDark && { color: '#F1F1EC' }]}>
+      <Text style={[styles.loadingTitle, isDark && { color: '#FFFFFF' }]}>
         One<Text style={{ color: '#65A30D' }}>Buddy</Text> Food Express
       </Text>
-      <Text style={[styles.loadingSub, isDark && { color: '#9BA08F' }]}>
+      <Text style={[styles.loadingSub, isDark && { color: '#E5E7EB' }]}>
         Loading fresh dishes and menus...
       </Text>
       <ActivityIndicator size="small" color="#65A30D" style={styles.loadingIndicator} />
@@ -84,10 +84,10 @@ export default function FoodHost({
       ...(isDark ? DarkTheme : DefaultTheme),
       colors: {
         ...(isDark ? DarkTheme : DefaultTheme).colors,
-        background: isDark ? '#121214' : '#F3F4F6',
-        card: isDark ? '#1D1E22' : '#FFFFFF',
-        text: isDark ? '#F1F1EC' : '#111827',
-        border: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E5E7EB',
+        background: isDark ? '#000000' : '#F3F4F6',
+        card: isDark ? '#000000' : '#FFFFFF',
+        text: isDark ? '#FFFFFF' : '#111827',
+        border: isDark ? 'rgba(255, 255, 255, 0.15)' : '#E5E7EB',
         primary: '#65A30D',
       },
     }),
@@ -142,12 +142,12 @@ export default function FoodHost({
       key={scheme}
       style={[
         styles.container,
-        { backgroundColor: isDark ? '#121214' : '#F3F4F6' },
+        { backgroundColor: isDark ? '#000000' : '#F3F4F6' },
       ]}
     >
       <StatusBar
         barStyle={isDark ? 'light-content' : 'dark-content'}
-        backgroundColor={isDark ? '#121214' : '#FFFFFF'}
+        backgroundColor={isDark ? '#000000' : '#FFFFFF'}
       />
       <SafeAreaProvider>
         {!isReady ? (

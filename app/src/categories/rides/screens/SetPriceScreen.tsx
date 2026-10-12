@@ -50,13 +50,13 @@ export const SetPriceScreen = ({ route, navigation, onBook, onBack }: SetPricePr
   const destinationTitle = destination || 'Bachpan Play School, Chintal';
 
   const pickupCoord = {
-    latitude: pickup?.latitude || 17.350,
-    longitude: pickup?.longitude || 78.484,
+    latitude: pickup?.latitude || 17.355,
+    longitude: pickup?.longitude || 78.405,
   };
 
   const dropCoord = {
-    latitude: 17.382,
-    longitude: 78.494,
+    latitude: 17.425,
+    longitude: 78.475,
   };
 
   return (

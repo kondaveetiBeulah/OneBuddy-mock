@@ -9,15 +9,17 @@ import {
   PartyPopper,
   CircleDot,
 } from 'lucide-react-native';
-import { TrackingStage, StageInfo } from '../../types';
+import { TrackingStage } from '../../types';
 import { TRACKING_STAGES } from '../../data/mockData';
-import { COLORS, RADII, SPACING } from '../../theme';
+import { useHomeTheme, COLORS, RADII, SPACING } from '../../theme';
 
 interface StatusTimelineProps {
   currentStage: TrackingStage;
 }
 
 export const StatusTimeline: React.FC<StatusTimelineProps> = ({ currentStage }) => {
+  const { isDark, colors } = useHomeTheme();
+
   const stagesOrder: TrackingStage[] = [
     'CONFIRMED',
     'ASSIGNED',
@@ -28,12 +30,11 @@ export const StatusTimeline: React.FC<StatusTimelineProps> = ({ currentStage }) 
   ];
 
   const currentIndex = stagesOrder.indexOf(currentStage);
-  const completedCount = currentIndex + (currentStage === 'ARRIVED' || currentStage === 'IN_PROGRESS' || currentStage === 'COMPLETED' ? 1 : 0);
   const totalStages = stagesOrder.length;
   const progressPercent = Math.round(((currentIndex + (currentStage === 'COMPLETED' ? 1 : 0.5)) / totalStages) * 100);
 
   const renderStageIcon = (key: TrackingStage, isCompleted: boolean, isCurrent: boolean) => {
-    const color = isCompleted || isCurrent ? '#FFFFFF' : COLORS.textMuted;
+    const color = isCompleted || isCurrent ? '#FFFFFF' : (isDark ? '#64748B' : COLORS.textMuted);
     const size = 16;
 
     if (isCompleted) {
@@ -63,7 +64,7 @@ export const StatusTimeline: React.FC<StatusTimelineProps> = ({ currentStage }) 
       {/* Progress Bar Summary Header */}
       <View style={styles.progressSummaryRow}>
         <View style={styles.progressTextWrapper}>
-          <Text style={styles.progressTitle}>
+          <Text style={[styles.progressTitle, { color: colors.textPrimary }]}>
             {currentStage === 'ARRIVED'
               ? 'Professional Arrived at Location'
               : currentStage === 'COMPLETED'
@@ -72,7 +73,7 @@ export const StatusTimeline: React.FC<StatusTimelineProps> = ({ currentStage }) 
               ? 'Service In Progress'
               : `${TRACKING_STAGES[currentIndex]?.label || 'Order Progress'}`}
           </Text>
-          <Text style={styles.progressSubtitle}>
+          <Text style={[styles.progressSubtitle, { color: colors.textSecondary }]}>
             {currentStage === 'ARRIVED'
               ? '4 of 6 milestones reached (Ready to start)'
               : `${currentIndex + 1} of ${totalStages} milestones (${progressPercent}%)`}
@@ -82,13 +83,16 @@ export const StatusTimeline: React.FC<StatusTimelineProps> = ({ currentStage }) 
         <View
           style={[
             styles.stageBadge,
-            currentStage === 'ARRIVED' ? styles.arrivedBadge : styles.defaultBadge,
+            currentStage === 'ARRIVED'
+              ? (isDark ? styles.arrivedBadgeDark : styles.arrivedBadge)
+              : (isDark ? styles.defaultBadgeDark : styles.defaultBadge),
           ]}
         >
           <Text
             style={[
               styles.stageBadgeText,
-              currentStage === 'ARRIVED' && styles.arrivedBadgeText,
+              isDark && { color: '#66D21E' },
+              currentStage === 'ARRIVED' && (isDark ? { color: '#4ADE80' } : styles.arrivedBadgeText),
             ]}
           >
             {currentStage === 'ARRIVED' ? 'ARRIVED ✓' : `${progressPercent}% DONE`}
@@ -97,7 +101,7 @@ export const StatusTimeline: React.FC<StatusTimelineProps> = ({ currentStage }) 
       </View>
 
       {/* Visual Progress Track */}
-      <View style={styles.progressBarTrack}>
+      <View style={[styles.progressBarTrack, isDark && { backgroundColor: colors.surfaceSubtle, borderColor: colors.border }]}>
         <View style={[styles.progressBarFill, { width: `${progressPercent}%` }]} />
       </View>
 
@@ -118,7 +122,7 @@ export const StatusTimeline: React.FC<StatusTimelineProps> = ({ currentStage }) 
                     styles.nodeCircle,
                     isCompleted && styles.completedNode,
                     isCurrent && (stageItem.key === 'ARRIVED' ? styles.arrivedNode : styles.currentNode),
-                    isPending && styles.pendingNode,
+                    isPending && [styles.pendingNode, isDark && { backgroundColor: colors.surfaceSubtle, borderColor: colors.border }],
                   ]}
                 >
                   {renderStageIcon(stageItem.key, isCompleted, isCurrent)}
@@ -128,6 +132,7 @@ export const StatusTimeline: React.FC<StatusTimelineProps> = ({ currentStage }) 
                   <View
                     style={[
                       styles.connectorLine,
+                      isDark && { backgroundColor: colors.border },
                       (isCompleted || (isCurrent && index < currentIndex)) && styles.completedLine,
                     ]}
                   />
@@ -140,23 +145,24 @@ export const StatusTimeline: React.FC<StatusTimelineProps> = ({ currentStage }) 
                   <Text
                     style={[
                       styles.stageTitle,
-                      isCurrent && styles.currentStageTitle,
+                      { color: colors.textPrimary },
+                      isCurrent && [styles.currentStageTitle, isDark && { color: '#66D21E' }],
                       isCompleted && styles.completedStageTitle,
-                      isPending && styles.pendingStageTitle,
+                      isPending && [styles.pendingStageTitle, isDark && { color: '#64748B' }],
                     ]}
                   >
                     {stageItem.label}
                   </Text>
                   {isCurrent && stageItem.key === 'ARRIVED' ? (
-                    <View style={styles.arrivedDoneBadge}>
-                      <Text style={styles.arrivedDoneBadgeText}>DONE • REACHED</Text>
+                    <View style={[styles.arrivedDoneBadge, isDark && styles.arrivedDoneBadgeDark]}>
+                      <Text style={[styles.arrivedDoneBadgeText, isDark && { color: '#4ADE80' }]}>DONE • REACHED</Text>
                     </View>
                   ) : isCurrent ? (
-                    <View style={styles.activeBadge}>
-                      <Text style={styles.activeBadgeText}>ACTIVE NOW</Text>
+                    <View style={[styles.activeBadge, isDark && styles.activeBadgeDark]}>
+                      <Text style={[styles.activeBadgeText, isDark && { color: '#66D21E' }]}>ACTIVE NOW</Text>
                     </View>
                   ) : isCompleted ? (
-                    <View style={styles.doneBadge}>
+                    <View style={[styles.doneBadge, isDark && styles.doneBadgeDark]}>
                       <Text style={styles.doneText}>Done ✓</Text>
                     </View>
                   ) : null}
@@ -165,7 +171,8 @@ export const StatusTimeline: React.FC<StatusTimelineProps> = ({ currentStage }) 
                 <Text
                   style={[
                     styles.stageDescription,
-                    isPending && styles.pendingStageDescription,
+                    { color: colors.textSecondary },
+                    isPending && [styles.pendingStageDescription, isDark && { color: '#64748B' }],
                   ]}
                 >
                   {stageItem.key === 'ARRIVED' && isCurrent
@@ -213,10 +220,18 @@ const styles = StyleSheet.create({
   defaultBadge: {
     backgroundColor: COLORS.primaryLight,
   },
+  defaultBadgeDark: {
+    backgroundColor: 'rgba(84, 183, 19, 0.18)',
+  },
   arrivedBadge: {
     backgroundColor: '#DCFCE7',
     borderWidth: 1,
     borderColor: '#86EFAC',
+  },
+  arrivedBadgeDark: {
+    backgroundColor: 'rgba(34, 197, 94, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(34, 197, 94, 0.35)',
   },
   stageBadgeText: {
     fontSize: 10,
@@ -322,6 +337,9 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: RADII.pill,
   },
+  activeBadgeDark: {
+    backgroundColor: 'rgba(84, 183, 19, 0.18)',
+  },
   activeBadgeText: {
     fontSize: 9,
     fontWeight: '800',
@@ -336,6 +354,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#86EFAC',
   },
+  arrivedDoneBadgeDark: {
+    backgroundColor: 'rgba(34, 197, 94, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(34, 197, 94, 0.35)',
+  },
   arrivedDoneBadgeText: {
     fontSize: 9,
     fontWeight: '800',
@@ -347,6 +370,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 1.5,
     borderRadius: RADII.pill,
+  },
+  doneBadgeDark: {
+    backgroundColor: 'rgba(34, 197, 94, 0.15)',
   },
   doneText: {
     fontSize: 10,

@@ -8,6 +8,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, typography, spacing } from '../theme';
+import { useGroceryColors } from '../theme/colors';
+import { isCategoryDark } from '@/theme/categoryThemeBridge';
 import { Header } from '../components/Header';
 import { OrderCard } from '../components/OrderCard';
 import { EmptyState } from '../components/EmptyState';
@@ -23,6 +25,9 @@ export const OrdersScreen: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const groceryColors = useGroceryColors();
+  const isDark = isCategoryDark() || groceryColors.cardBackground === '#000000';
+  const dynStyles = getStyles(isDark);
 
   useEffect(() => {
     fetchOrders();
@@ -46,7 +51,7 @@ export const OrdersScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={dynStyles.container}>
       <Header title="My Orders" showBack onBack={() => navigation.goBack()} />
 
       {loading && orders.length === 0 ? (
@@ -63,7 +68,7 @@ export const OrdersScreen: React.FC = () => {
         <FlatList
           data={orders}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listPadding}
+          contentContainerStyle={dynStyles.listPadding}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -86,10 +91,10 @@ export const OrdersScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: isDark ? '#000000' : colors.background,
   },
   listPadding: {
     padding: spacing.md,

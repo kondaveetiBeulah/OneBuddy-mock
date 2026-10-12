@@ -19,9 +19,9 @@ export const ComboHighlight: React.FC<ComboHighlightProps> = ({ comboItem, resta
   const isDark = isCategoryDark();
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, isDark && { borderColor: 'rgba(255, 255, 255, 0.15)', shadowOpacity: 0 }]}>
       <LinearGradient
-        colors={isDark ? ['#1D1E22', '#24262B', '#121214'] : ['#FFFFFF', '#F9FAFB', '#F3F4F6']}
+        colors={isDark ? ['#000000', '#000000'] : ['#FFFFFF', '#F9FAFB', '#F3F4F6']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.gradient}
@@ -29,15 +29,15 @@ export const ComboHighlight: React.FC<ComboHighlightProps> = ({ comboItem, resta
         <View style={styles.content}>
           {/* Top Tag */}
           <View style={styles.tagRow}>
-            <View style={styles.comboHeaderTag}>
-              <Sparkles size={11} color={isDark ? '#F1F1EC' : '#111827'} />
-              <Text style={styles.comboHeaderText}>SIGNATURE MEGA COMBO</Text>
+            <View style={[styles.comboHeaderTag, isDark && { backgroundColor: '#FFFFFF' }]}>
+              <Sparkles size={11} color={isDark ? '#000000' : '#111827'} />
+              <Text style={[styles.comboHeaderText, isDark && { color: '#000000' }]}>SIGNATURE MEGA COMBO</Text>
             </View>
             <DietaryBadge type={comboItem.dietary} size="sm" />
           </View>
 
-          <Text style={styles.title}>{comboItem.name}</Text>
-          <Text style={styles.desc} numberOfLines={2}>{comboItem.description}</Text>
+          <Text style={[styles.title, isDark && { color: '#FFFFFF' }]}>{comboItem.name}</Text>
+          <Text style={[styles.desc, isDark && { color: '#E5E7EB' }]} numberOfLines={2}>{comboItem.description}</Text>
 
           {/* Included Dishes */}
           {comboItem.comboIncludes ? (
@@ -45,7 +45,7 @@ export const ComboHighlight: React.FC<ComboHighlightProps> = ({ comboItem, resta
               {comboItem.comboIncludes.slice(0, 4).map((inc, idx) => (
                 <View key={idx} style={styles.includeRow}>
                   <CheckCircle size={10} color="#65A30D" />
-                  <Text style={styles.includeText} numberOfLines={1}>{inc}</Text>
+                  <Text style={[styles.includeText, isDark && { color: '#E5E7EB' }]} numberOfLines={1}>{inc}</Text>
                 </View>
               ))}
             </View>
@@ -54,7 +54,7 @@ export const ComboHighlight: React.FC<ComboHighlightProps> = ({ comboItem, resta
           {/* Pricing & Stepper */}
           <View style={styles.bottomRow}>
             <View style={styles.priceCol}>
-              <Text style={styles.price}>₹{comboItem.price}</Text>
+              <Text style={[styles.price, isDark && { color: '#A3E635' }]}>₹{comboItem.price}</Text>
               {comboItem.originalPrice ? (
                 <Text style={styles.origPrice}>₹{comboItem.originalPrice}</Text>
               ) : null}
@@ -70,7 +70,7 @@ export const ComboHighlight: React.FC<ComboHighlightProps> = ({ comboItem, resta
           </View>
         </View>
 
-        <View style={styles.imageWrap}>
+        <View style={[styles.imageWrap, isDark && { borderColor: 'rgba(255, 255, 255, 0.15)' }]}>
           <Image source={{ uri: comboItem.image }} style={styles.image} />
         </View>
       </LinearGradient>

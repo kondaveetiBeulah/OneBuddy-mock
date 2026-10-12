@@ -85,6 +85,7 @@ export interface PaymentCheckoutScreenProps {
     title?: string;
     subtitle?: string;
     isDark?: boolean;
+    isFoodCategory?: boolean;
 }
 
 // ─── Preset Data ───────────────────────────────────────────────────────────
@@ -196,7 +197,10 @@ export default function PaymentCheckoutScreen({
     title = 'Payment Checkout',
     subtitle,
     isDark = false,
+    isFoodCategory = false,
 }: PaymentCheckoutScreenProps) {
+    const isFoodDark = isFoodCategory && isDark;
+    const styles = isFoodDark ? foodDarkStyles : baseStyles;
 
     // ── State Calculations ───────────────────────────────────────────────────
     const subtotal = useMemo(() => {
@@ -384,21 +388,21 @@ export default function PaymentCheckoutScreen({
     }, [bankSearchQuery]);
 
     return (
-        <View style={[styles.safeArea, isDark && { backgroundColor: '#0F172A' }]}>
-            <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={isDark ? '#1E293B' : COLORS.background} />
+        <View style={[styles.safeArea, !isFoodDark && isDark && { backgroundColor: '#0F172A' }]}>
+            <StatusBar barStyle={isFoodDark || isDark ? 'light-content' : 'dark-content'} backgroundColor={isFoodDark ? '#000000' : (isDark ? '#1E293B' : COLORS.background)} />
 
             {/* ── Top Payment Header ── */}
-            <View style={[styles.screenHeader, { paddingTop: topInset + 12 }, isDark && { backgroundColor: '#1E293B', borderBottomColor: '#334155' }]}>
+            <View style={[styles.screenHeader, { paddingTop: topInset + 12 }, !isFoodDark && isDark && { backgroundColor: '#1E293B', borderBottomColor: '#334155' }]}>
                 <TouchableOpacity
                     onPress={onBack}
-                    style={[styles.backButton, isDark && { backgroundColor: '#334155', borderWidth: 1, borderColor: '#64748B' }]}
+                    style={[styles.backButton, !isFoodDark && isDark && { backgroundColor: '#334155', borderWidth: 1, borderColor: '#64748B' }]}
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                     accessibilityLabel="Back"
                 >
-                    <Ionicons name="arrow-back" size={22} color={isDark ? '#FFFFFF' : COLORS.textPrimary} />
+                    <Ionicons name="arrow-back" size={22} color={isFoodDark || isDark ? '#FFFFFF' : COLORS.textPrimary} />
                 </TouchableOpacity>
                 <View style={styles.headerCenter}>
-                    <Text style={[styles.headerTitle, isDark && { color: '#FFFFFF' }]}>{title}</Text>
+                    <Text style={[styles.headerTitle, (isFoodDark || isDark) && { color: '#FFFFFF' }]}>{title}</Text>
                     <View style={styles.secureBadgeRow}>
                         <Ionicons name="shield-checkmark" size={12} color={COLORS.accent} style={{ marginRight: 4 }} />
                         <Text style={styles.secureBadgeText}>{subtitle || '100% Safe & Encrypted'}</Text>
@@ -1154,7 +1158,7 @@ export default function PaymentCheckoutScreen({
 }
 
 // ─── STYLES ────────────────────────────────────────────────────────────────
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
     safeArea: {
         flex: 1,
         backgroundColor: COLORS.background,
@@ -2296,6 +2300,226 @@ const styles = StyleSheet.create({
         color: COLORS.background,
         fontSize: 15,
         fontWeight: '800',
+    },
+});
+
+const foodDarkStyles = StyleSheet.create({
+    ...baseStyles,
+    safeArea: {
+        ...baseStyles.safeArea,
+        backgroundColor: '#000000',
+    },
+    screenHeader: {
+        ...baseStyles.screenHeader,
+        backgroundColor: '#000000',
+        borderBottomColor: 'rgba(255, 255, 255, 0.15)',
+    },
+    backButton: {
+        ...baseStyles.backButton,
+        backgroundColor: '#000000',
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.2)',
+    },
+    headerTitle: {
+        ...baseStyles.headerTitle,
+        color: '#FFFFFF',
+    },
+    sectionMainTitle: {
+        ...baseStyles.sectionMainTitle,
+        color: '#FFFFFF',
+    },
+    sectionSubtitle: {
+        ...baseStyles.sectionSubtitle,
+        color: '#E5E7EB',
+    },
+    rpListItemCard: {
+        ...baseStyles.rpListItemCard,
+        backgroundColor: '#000000',
+        borderColor: 'rgba(255, 255, 255, 0.15)',
+    },
+    rpListItemCardActive: {
+        ...baseStyles.rpListItemCardActive,
+        backgroundColor: '#000000',
+        borderColor: '#FFFFFF',
+    },
+    rpListTitle: {
+        ...baseStyles.rpListTitle,
+        color: '#FFFFFF',
+    },
+    rpListSub: {
+        ...baseStyles.rpListSub,
+        color: '#E5E7EB',
+    },
+    rpListIconCircle: {
+        ...baseStyles.rpListIconCircle,
+        backgroundColor: '#111111',
+    },
+    rpListExpandedBody: {
+        ...baseStyles.rpListExpandedBody,
+        backgroundColor: '#000000',
+        borderTopColor: 'rgba(255, 255, 255, 0.15)',
+    },
+    rpPrimaryActionBtn: {
+        ...baseStyles.rpPrimaryActionBtn,
+        backgroundColor: '#FFFFFF',
+        shadowColor: '#FFFFFF',
+    },
+    rpPrimaryActionBtnText: {
+        ...baseStyles.rpPrimaryActionBtnText,
+        color: '#000000',
+    },
+    formInput: {
+        ...baseStyles.formInput,
+        color: '#FFFFFF',
+    },
+    textInputWrapper: {
+        ...baseStyles.textInputWrapper,
+        backgroundColor: '#000000',
+        borderColor: 'rgba(255, 255, 255, 0.15)',
+    },
+    vpaInputWrapper: {
+        ...baseStyles.vpaInputWrapper,
+        backgroundColor: '#000000',
+        borderColor: 'rgba(255, 255, 255, 0.15)',
+    },
+    vpaTextInput: {
+        ...baseStyles.vpaTextInput,
+        color: '#FFFFFF',
+    },
+    inputFieldLabel: {
+        ...baseStyles.inputFieldLabel,
+        color: '#FFFFFF',
+    },
+    upiAppTile: {
+        ...baseStyles.upiAppTile,
+        backgroundColor: '#000000',
+        borderColor: 'rgba(255, 255, 255, 0.15)',
+    },
+    upiAppTileName: {
+        ...baseStyles.upiAppTileName,
+        color: '#FFFFFF',
+    },
+    bankCard: {
+        ...baseStyles.bankCard,
+        backgroundColor: '#000000',
+        borderColor: 'rgba(255, 255, 255, 0.15)',
+    },
+    bankCardName: {
+        ...baseStyles.bankCardName,
+        color: '#E5E7EB',
+    },
+    bankCardNameSelected: {
+        ...baseStyles.bankCardNameSelected,
+        color: '#FFFFFF',
+    },
+    walletCard: {
+        ...baseStyles.walletCard,
+        backgroundColor: '#000000',
+        borderColor: 'rgba(255, 255, 255, 0.15)',
+    },
+    walletName: {
+        ...baseStyles.walletName,
+        color: '#FFFFFF',
+    },
+    walletBalanceText: {
+        ...baseStyles.walletBalanceText,
+        color: '#E5E7EB',
+    },
+    codDetailsList: {
+        ...baseStyles.codDetailsList,
+        backgroundColor: '#000000',
+    },
+    codDetailText: {
+        ...baseStyles.codDetailText,
+        color: '#FFFFFF',
+    },
+    rpHeaderCard: {
+        ...baseStyles.rpHeaderCard,
+        backgroundColor: '#000000',
+        borderColor: 'rgba(255, 255, 255, 0.15)',
+    },
+    rpMerchantName: {
+        ...baseStyles.rpMerchantName,
+        color: '#FFFFFF',
+    },
+    rpAmountValue: {
+        ...baseStyles.rpAmountValue,
+        color: '#FFFFFF',
+    },
+    rpAmountBanner: {
+        ...baseStyles.rpAmountBanner,
+        backgroundColor: '#000000',
+        borderColor: 'rgba(255, 255, 255, 0.15)',
+    },
+    rpBreakdownBox: {
+        ...baseStyles.rpBreakdownBox,
+        backgroundColor: '#000000',
+    },
+    rpBreakdownItemPrice: {
+        ...baseStyles.rpBreakdownItemPrice,
+        color: '#FFFFFF',
+    },
+    receiptModalCard: {
+        ...baseStyles.receiptModalCard,
+        backgroundColor: '#000000',
+        borderColor: 'rgba(255, 255, 255, 0.15)',
+    },
+    digitalReceiptBody: {
+        ...baseStyles.digitalReceiptBody,
+        backgroundColor: '#000000',
+        borderColor: 'rgba(255, 255, 255, 0.15)',
+    },
+    receiptTrackerBox: {
+        ...baseStyles.receiptTrackerBox,
+        backgroundColor: '#111111',
+    },
+    closeReceiptBtn: {
+        ...baseStyles.closeReceiptBtn,
+        backgroundColor: '#FFFFFF',
+    },
+    closeReceiptBtnText: {
+        ...baseStyles.closeReceiptBtnText,
+        color: '#000000',
+    },
+    receiptMainTitle: {
+        ...baseStyles.receiptMainTitle,
+        color: '#FFFFFF',
+    },
+    receiptSubTitle: {
+        ...baseStyles.receiptSubTitle,
+        color: '#E5E7EB',
+    },
+    receiptMerchantName: {
+        ...baseStyles.receiptMerchantName,
+        color: '#FFFFFF',
+    },
+    receiptDetailKey: {
+        ...baseStyles.receiptDetailKey,
+        color: '#E5E7EB',
+    },
+    receiptDetailVal: {
+        ...baseStyles.receiptDetailVal,
+        color: '#FFFFFF',
+    },
+    receiptDetailValBold: {
+        ...baseStyles.receiptDetailValBold,
+        color: '#FFFFFF',
+    },
+    receiptItemsHeading: {
+        ...baseStyles.receiptItemsHeading,
+        color: '#FFFFFF',
+    },
+    receiptItemSingleName: {
+        ...baseStyles.receiptItemSingleName,
+        color: '#FFFFFF',
+    },
+    receiptItemSinglePrice: {
+        ...baseStyles.receiptItemSinglePrice,
+        color: '#FFFFFF',
+    },
+    trackerHeading: {
+        ...baseStyles.trackerHeading,
+        color: '#FFFFFF',
     },
 });
 

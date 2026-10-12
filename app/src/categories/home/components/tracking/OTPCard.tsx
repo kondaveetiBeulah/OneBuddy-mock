@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { ShieldCheck, Copy, Check } from 'lucide-react-native';
-import { COLORS, RADII, SPACING, SHADOWS } from '../../theme';
+import { useHomeTheme, COLORS, RADII, SPACING, SHADOWS } from '../../theme';
 
 interface OTPCardProps {
   otp: string;
@@ -12,6 +12,7 @@ export const OTPCard: React.FC<OTPCardProps> = ({
   otp,
   providerName = 'the service professional',
 }) => {
+  const { isDark, colors } = useHomeTheme();
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
@@ -22,14 +23,22 @@ export const OTPCard: React.FC<OTPCardProps> = ({
   const digits = otp.split('');
 
   return (
-    <View style={styles.container}>
+    <View
+      style={[
+        styles.container,
+        isDark && {
+          backgroundColor: colors.surfaceSubtle,
+          borderColor: colors.border,
+        },
+      ]}
+    >
       <View style={styles.headerRow}>
-        <View style={styles.iconCircle}>
-          <ShieldCheck size={20} color={COLORS.primary} />
+        <View style={[styles.iconCircle, isDark && { backgroundColor: colors.surface }]}>
+          <ShieldCheck size={20} color={isDark ? '#66D21E' : COLORS.primary} />
         </View>
         <View style={styles.headerText}>
-          <Text style={styles.title}>Service Start PIN (OTP)</Text>
-          <Text style={styles.subtitle}>
+          <Text style={[styles.title, { color: colors.textPrimary }]}>Service Start PIN (OTP)</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
             Share this 4-digit OTP with {providerName} upon arrival to begin work
           </Text>
         </View>
@@ -38,31 +47,42 @@ export const OTPCard: React.FC<OTPCardProps> = ({
       {/* 4 Digit Boxes */}
       <View style={styles.otpRow}>
         {digits.map((digit, idx) => (
-          <View key={idx} style={styles.digitBox}>
-            <Text style={styles.digitText}>{digit}</Text>
+          <View
+            key={idx}
+            style={[
+              styles.digitBox,
+              isDark && {
+                backgroundColor: colors.surface,
+                borderColor: 'rgba(84, 183, 19, 0.4)',
+              },
+            ]}
+          >
+            <Text style={[styles.digitText, isDark ? { color: '#66D21E' } : { color: COLORS.primaryDark }]}>
+              {digit}
+            </Text>
           </View>
         ))}
       </View>
 
-      <View style={styles.footerRow}>
-        <Text style={styles.safetyNote}>
+      <View style={[styles.footerRow, isDark && { borderTopColor: colors.border }]}>
+        <Text style={[styles.safetyNote, { color: colors.textSecondary }]}>
           🔒 Do not share until professional arrives at your door
         </Text>
 
         <TouchableOpacity
-          style={styles.copyBtn}
+          style={[styles.copyBtn, isDark && { backgroundColor: colors.surface }]}
           activeOpacity={0.7}
           onPress={handleCopy}
         >
           {copied ? (
             <>
-              <Check size={14} color={COLORS.success} style={{ marginRight: 4 }} />
-              <Text style={[styles.copyText, { color: COLORS.success }]}>Copied</Text>
+              <Check size={14} color={isDark ? '#4ADE80' : COLORS.success} style={{ marginRight: 4 }} />
+              <Text style={[styles.copyText, { color: isDark ? '#4ADE80' : COLORS.success }]}>Copied</Text>
             </>
           ) : (
             <>
-              <Copy size={14} color={COLORS.primary} style={{ marginRight: 4 }} />
-              <Text style={styles.copyText}>Copy OTP</Text>
+              <Copy size={14} color={isDark ? '#66D21E' : COLORS.primary} style={{ marginRight: 4 }} />
+              <Text style={[styles.copyText, isDark && { color: '#66D21E' }]}>Copy OTP</Text>
             </>
           )}
         </TouchableOpacity>

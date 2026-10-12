@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Order, OrderStatus } from '../types/order.types';
 import { colors, typography, spacing } from '../theme';
+import { useGroceryColors } from '../theme/colors';
+import { isCategoryDark } from '@/theme/categoryThemeBridge';
 import { formatCurrency, formatDate } from '../utils/helpers';
 
 interface OrderCardProps {
@@ -16,6 +18,9 @@ export const OrderCard: React.FC<OrderCardProps> = ({
   onPress,
   onTrackPress,
 }) => {
+  const groceryColors = useGroceryColors();
+  const isDark = isCategoryDark() || groceryColors.cardBackground === '#000000';
+  const dynStyles = getStyles(isDark);
   const getStatusColor = (status: OrderStatus) => {
     switch (status) {
       case 'delivered':
@@ -70,63 +75,63 @@ export const OrderCard: React.FC<OrderCardProps> = ({
 
   return (
     <TouchableOpacity
-      style={styles.container}
+      style={dynStyles.container}
       onPress={() => onPress(order)}
       activeOpacity={0.85}
     >
       {/* Header */}
-      <View style={styles.header}>
+      <View style={dynStyles.header}>
         <View>
-          <Text style={styles.orderId}>{order.id}</Text>
-          <Text style={styles.dateText}>{formatDate(order.createdAt)}</Text>
+          <Text style={dynStyles.orderId}>{order.id}</Text>
+          <Text style={dynStyles.dateText}>{formatDate(order.createdAt)}</Text>
         </View>
 
-        <View style={[styles.statusBadge, { backgroundColor: statusColor + '1A' }]}>
-          <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
-          <Text style={[styles.statusText, { color: statusColor }]}>
+        <View style={[dynStyles.statusBadge, { backgroundColor: isDark ? statusColor + '33' : statusColor + '1A' }]}>
+          <View style={[dynStyles.statusDot, { backgroundColor: statusColor }]} />
+          <Text style={[dynStyles.statusText, { color: isDark ? '#FFFFFF' : statusColor }]}>
             {getStatusText(order.status)}
           </Text>
         </View>
       </View>
 
       {/* Items Preview */}
-      <View style={styles.itemsPreview}>
+      <View style={dynStyles.itemsPreview}>
         {firstThreeItems.map((item) => (
           <Image
             key={item.id}
             source={{ uri: item.productImage }}
-            style={styles.thumbnail}
+            style={dynStyles.thumbnail}
           />
         ))}
         {remainingCount > 0 && (
-          <View style={styles.moreThumbnail}>
-            <Text style={styles.moreText}>+{remainingCount}</Text>
+          <View style={dynStyles.moreThumbnail}>
+            <Text style={dynStyles.moreText}>+{remainingCount}</Text>
           </View>
         )}
       </View>
 
       {/* Delivery Address Section on Specific Order */}
       {addr && (
-        <View style={styles.addressBox}>
-          <View style={styles.addressIconWrap}>
-            <Ionicons name="location-sharp" size={14} color={colors.primary} />
+        <View style={dynStyles.addressBox}>
+          <View style={dynStyles.addressIconWrap}>
+            <Ionicons name="location-sharp" size={14} color={isDark ? '#FFFFFF' : colors.primary} />
           </View>
-          <View style={styles.addressInfoCol}>
-            <View style={styles.addressTopRow}>
-              <Text style={styles.addressLabel}>DELIVERY ADDRESS</Text>
+          <View style={dynStyles.addressInfoCol}>
+            <View style={dynStyles.addressTopRow}>
+              <Text style={dynStyles.addressLabel}>DELIVERY ADDRESS</Text>
               {addr.type && (
-                <View style={styles.addressTypeBadge}>
-                  <Text style={styles.addressTypeBadgeText}>
+                <View style={dynStyles.addressTypeBadge}>
+                  <Text style={dynStyles.addressTypeBadgeText}>
                     {addr.type.toUpperCase()}
                   </Text>
                 </View>
               )}
             </View>
-            <Text style={styles.addressText} numberOfLines={2}>
+            <Text style={dynStyles.addressText} numberOfLines={2}>
               {addressFormatted || 'Delivery Address'}
             </Text>
             {(addr.name || addr.phone) && (
-              <Text style={styles.addressReceiverText}>
+              <Text style={dynStyles.addressReceiverText}>
                 {addr.name}{addr.phone ? ` • +91 ${addr.phone.replace('+91', '').trim()}` : ''}
               </Text>
             )}
@@ -135,28 +140,28 @@ export const OrderCard: React.FC<OrderCardProps> = ({
       )}
 
       {/* Footer */}
-      <View style={styles.footer}>
+      <View style={dynStyles.footer}>
         <View>
-          <Text style={styles.totalLabel}>
+          <Text style={dynStyles.totalLabel}>
             {order.items.reduce((s, i) => s + i.quantity, 0)} Items
           </Text>
-          <Text style={styles.totalValue}>{formatCurrency(order.total)}</Text>
+          <Text style={dynStyles.totalValue}>{formatCurrency(order.total)}</Text>
         </View>
 
         {order.status !== 'delivered' && order.status !== 'cancelled' && onTrackPress && (
           <TouchableOpacity
-            style={styles.trackButton}
+            style={dynStyles.trackButton}
             onPress={() => onTrackPress(order)}
           >
-            <Ionicons name="navigate-outline" size={14} color={colors.white} />
-            <Text style={styles.trackText}>Track Order</Text>
+            <Ionicons name="navigate-outline" size={14} color={isDark ? '#000000' : colors.white} />
+            <Text style={dynStyles.trackText}>Track Order</Text>
           </TouchableOpacity>
         )}
 
         {(order.status === 'delivered' || order.status === 'cancelled') && (
-          <View style={styles.detailsBtnRow}>
-            <Text style={styles.viewDetailsText}>View Details</Text>
-            <Ionicons name="chevron-forward" size={16} color={colors.primary} />
+          <View style={dynStyles.detailsBtnRow}>
+            <Text style={dynStyles.viewDetailsText}>View Details</Text>
+            <Ionicons name="chevron-forward" size={16} color={isDark ? '#FFFFFF' : colors.primary} />
           </View>
         )}
       </View>
@@ -164,15 +169,15 @@ export const OrderCard: React.FC<OrderCardProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (isDark: boolean) => StyleSheet.create({
   container: {
-    backgroundColor: colors.white,
+    backgroundColor: isDark ? '#000000' : colors.white,
     borderRadius: spacing.borderRadius.md,
     padding: spacing.md,
     marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: colors.borderLight,
-    shadowColor: colors.black,
+    borderColor: isDark ? 'rgba(255,255,255,0.15)' : colors.borderLight,
+    shadowColor: isDark ? '#FFFFFF' : colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 4,
@@ -184,16 +189,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingBottom: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: colors.borderLight,
+    borderBottomColor: isDark ? 'rgba(255,255,255,0.12)' : colors.borderLight,
   },
   orderId: {
     fontSize: typography.sizes.sm,
     fontWeight: typography.weights.bold,
-    color: colors.textPrimary,
+    color: isDark ? '#FFFFFF' : colors.textPrimary,
   },
   dateText: {
     fontSize: typography.sizes.xs,
-    color: colors.textMuted,
+    color: isDark ? '#E5E7EB' : colors.textMuted,
     marginTop: 2,
   },
   statusBadge: {
@@ -223,29 +228,29 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: spacing.borderRadius.sm,
-    backgroundColor: colors.background,
+    backgroundColor: isDark ? '#000000' : colors.background,
   },
   moreThumbnail: {
     width: 44,
     height: 44,
     borderRadius: spacing.borderRadius.sm,
-    backgroundColor: colors.primaryLight,
+    backgroundColor: isDark ? 'rgba(95,163,0,0.2)' : colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
   moreText: {
     fontSize: typography.sizes.xs,
     fontWeight: typography.weights.bold,
-    color: colors.primaryDark,
+    color: isDark ? '#FFFFFF' : colors.primaryDark,
   },
   addressBox: {
     flexDirection: 'row',
-    backgroundColor: colors.background,
+    backgroundColor: isDark ? '#000000' : colors.background,
     borderRadius: spacing.borderRadius.sm,
     padding: spacing.sm,
     marginBottom: spacing.sm,
     borderWidth: 1,
-    borderColor: colors.borderLight,
+    borderColor: isDark ? 'rgba(255,255,255,0.15)' : colors.borderLight,
     gap: spacing.sm,
     alignItems: 'flex-start',
   },
@@ -253,7 +258,7 @@ const styles = StyleSheet.create({
     width: 26,
     height: 26,
     borderRadius: 13,
-    backgroundColor: colors.primaryLight,
+    backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 2,
@@ -270,31 +275,31 @@ const styles = StyleSheet.create({
   addressLabel: {
     fontSize: 10,
     fontWeight: typography.weights.bold,
-    color: colors.textMuted,
+    color: isDark ? '#E5E7EB' : colors.textMuted,
     letterSpacing: 0.5,
   },
   addressTypeBadge: {
-    backgroundColor: colors.white,
+    backgroundColor: isDark ? '#000000' : colors.white,
     paddingHorizontal: 6,
     paddingVertical: 1,
     borderRadius: 4,
     borderWidth: 1,
-    borderColor: colors.borderLight,
+    borderColor: isDark ? 'rgba(255,255,255,0.15)' : colors.borderLight,
   },
   addressTypeBadgeText: {
     fontSize: 9,
     fontWeight: typography.weights.bold,
-    color: colors.primaryDark,
+    color: isDark ? '#FFFFFF' : colors.primaryDark,
   },
   addressText: {
     fontSize: 12,
-    color: colors.textPrimary,
+    color: isDark ? '#FFFFFF' : colors.textPrimary,
     lineHeight: 16,
   },
   addressReceiverText: {
     fontSize: 11,
     fontWeight: typography.weights.semibold,
-    color: colors.textSecondary,
+    color: isDark ? '#E5E7EB' : colors.textSecondary,
     marginTop: 3,
   },
   footer: {
@@ -303,28 +308,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: spacing.xs,
     borderTopWidth: 1,
-    borderTopColor: colors.borderLight,
+    borderTopColor: isDark ? 'rgba(255,255,255,0.12)' : colors.borderLight,
   },
   totalLabel: {
     fontSize: typography.sizes.xs,
-    color: colors.textMuted,
+    color: isDark ? '#E5E7EB' : colors.textMuted,
   },
   totalValue: {
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.bold,
-    color: colors.textPrimary,
+    color: isDark ? '#FFFFFF' : colors.textPrimary,
   },
   trackButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.primary,
+    backgroundColor: isDark ? '#FFFFFF' : colors.primary,
     paddingVertical: 6,
     paddingHorizontal: spacing.md,
     borderRadius: spacing.borderRadius.md,
     gap: 4,
   },
   trackText: {
-    color: colors.white,
+    color: isDark ? '#000000' : colors.white,
     fontSize: typography.sizes.xs,
     fontWeight: typography.weights.bold,
   },
@@ -335,7 +340,7 @@ const styles = StyleSheet.create({
   viewDetailsText: {
     fontSize: typography.sizes.xs,
     fontWeight: typography.weights.semibold,
-    color: colors.primary,
+    color: isDark ? '#FFFFFF' : colors.primary,
     marginRight: 2,
   },
 });

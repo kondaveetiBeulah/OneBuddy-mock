@@ -34,23 +34,39 @@ export const CustomButton: React.FC<CustomButtonProps> = ({
   textStyle,
 }) => {
   const colors = useGroceryColors();
+  const isDark = colors.cardBackground === '#000000' || colors.background === '#000000';
 
   const getVariantStyle = (): ViewStyle => {
     switch (variant) {
-      case 'primary': return { backgroundColor: colors.primary };
-      case 'secondary': return { backgroundColor: colors.secondary };
-      case 'outline': return { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: colors.primary };
-      case 'text': return { backgroundColor: 'transparent' };
-      case 'danger': return { backgroundColor: colors.danger };
-      default: return { backgroundColor: colors.primary };
+      case 'primary':
+        return { backgroundColor: isDark ? '#FFFFFF' : colors.primary };
+      case 'secondary':
+        return { backgroundColor: colors.secondary };
+      case 'outline':
+        return {
+          backgroundColor: 'transparent',
+          borderWidth: 1.5,
+          borderColor: isDark ? '#FFFFFF' : colors.primary,
+        };
+      case 'text':
+        return { backgroundColor: 'transparent' };
+      case 'danger':
+        return { backgroundColor: colors.danger };
+      default:
+        return { backgroundColor: isDark ? '#FFFFFF' : colors.primary };
     }
   };
 
   const getTextColorStyle = (): TextStyle => {
     switch (variant) {
-      case 'outline': return { color: colors.primary };
-      case 'text': return { color: colors.primary };
-      default: return { color: colors.white };
+      case 'outline':
+        return { color: isDark ? '#FFFFFF' : colors.primary };
+      case 'text':
+        return { color: isDark ? '#FFFFFF' : colors.primary };
+      case 'primary':
+        return { color: isDark ? '#000000' : colors.white };
+      default:
+        return { color: colors.white };
     }
   };
 
@@ -85,7 +101,7 @@ export const CustomButton: React.FC<CustomButtonProps> = ({
     >
       {loading ? (
         <ActivityIndicator
-          color={(variant === 'outline' || variant === 'text' ? colors.primary : colors.white) as string}
+          color={(variant === 'primary' ? (isDark ? '#000000' : colors.white) : (variant === 'outline' || variant === 'text' ? (isDark ? '#FFFFFF' : colors.primary) : colors.white)) as string}
           size="small"
         />
       ) : (

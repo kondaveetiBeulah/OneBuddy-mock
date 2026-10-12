@@ -118,7 +118,7 @@ export default function LiveTrackingScreen({
   };
 
   // Map state
-  const [autoCenter, setAutoCenter] = useState(true);
+  const [autoCenter, setAutoCenter] = useState(false);
   const [isPlaying, setIsPlaying] = useState(!showBookingNotifications);
   const [isMapExpanded, setIsMapExpanded] = useState(false);
 
@@ -390,6 +390,8 @@ export default function LiveTrackingScreen({
           onTogglePlay={() => setIsPlaying((p) => !p)}
           onReset={() => {}}
           driverName={ride.driver.name}
+          pickupSpotName={ride.pickupSpotName}
+          dropSpotName={ride.dropSpotName}
           autoCenterEnabled={autoCenter}
           onToggleAutoCenter={setAutoCenter}
           bottomOffset={12}

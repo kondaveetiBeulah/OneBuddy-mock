@@ -7,6 +7,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, spacing } from '../theme';
+import { useGroceryColors } from '../theme/colors';
+import { isCategoryDark } from '@/theme/categoryThemeBridge';
 import { Header } from '../components/Header';
 import { CustomInput } from '../components/CustomInput';
 import { CustomButton } from '../components/CustomButton';
@@ -26,6 +28,9 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
   const [email, setEmail] = useState(user?.email || 'anjali@example.com');
   const [phone, setPhone] = useState(user?.phone || '9876543210');
   const [loading, setLoading] = useState(false);
+  const groceryColors = useGroceryColors();
+  const isDark = isCategoryDark() || groceryColors.cardBackground === '#000000';
+  const dynStyles = getStyles(isDark);
 
   const handleSave = async () => {
     setLoading(true);
@@ -40,10 +45,10 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={dynStyles.container}>
       <Header title="Edit Profile" showBack onBack={() => navigation.goBack()} />
 
-      <ScrollView contentContainerStyle={styles.scrollPadding}>
+      <ScrollView contentContainerStyle={dynStyles.scrollPadding}>
         <CustomInput label="Full Name" value={name} onChangeText={setName} />
         <CustomInput
           label="Email Address"
@@ -70,10 +75,10 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.white,
+    backgroundColor: isDark ? '#000000' : colors.white,
   },
   scrollPadding: {
     padding: spacing.md,

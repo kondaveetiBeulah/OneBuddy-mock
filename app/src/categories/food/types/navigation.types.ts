@@ -10,7 +10,7 @@ export type FoodMainTabParamList = {
 
 export type FoodStackParamList = {
   MainTabs: NavigatorScreenParams<FoodMainTabParamList> | undefined;
-  RestaurantMenu: { restaurantId: string };
+  RestaurantMenu: { restaurantId: string; initialSearchQuery?: string };
   Cart: undefined;
   PaymentCheckout: {
     grandTotal: number;

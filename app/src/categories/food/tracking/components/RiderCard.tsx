@@ -64,9 +64,9 @@ const styles = StyleSheet.create({
     gap: 12,
     padding: 12,
     borderRadius: RADIUS.lg,
-    backgroundColor: '#F8FCF7',
+    backgroundColor: COLORS.cardSubtle,
     borderWidth: 1,
-    borderColor: '#DDF0D8',
+    borderColor: COLORS.line,
     marginBottom: 14,
   },
   avatar: {
@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.display,
   },
   riderMeta: {
-    color: '#6B7A68',
+    color: COLORS.mistDim,
     fontSize: 12.5,
     marginTop: 3,
     fontWeight: '500',

@@ -5,8 +5,10 @@ import {
   Easing,
   PanResponder,
   StyleSheet,
+  TouchableOpacity,
   View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import Svg, {
   Circle,
   G,
@@ -14,7 +16,7 @@ import Svg, {
   Rect,
   Text as SvgText,
 } from 'react-native-svg';
-import { FONTS } from '../theme';
+import { FONTS, useRideTheme } from '../theme';
 import type { RideType } from '../types/tracking';
 import { VehicleMapSprite } from './vehicles/VehicleGraphics';
 import { MapControlPanel } from './MapControlPanel';
@@ -60,9 +62,8 @@ export const ONWARD_TRIP_WAYPOINTS = [
   { x: 115, y: 228 },
   { x: 86, y: 228 },  // Turn onto Hitech City Main Rd
   { x: 86, y: 280 },
-  { x: 86, y: 340 },
-  { x: 86, y: 410 },
-  { x: 86, y: 475 },  // Inorbit Mall Destination Pin
+  { x: 86, y: 330 },
+  { x: 86, y: 380 },  // Destination Drop-off Pin
 ];
 
 /**
@@ -102,6 +103,8 @@ export interface LiveTrackingMap2DProps {
   onTogglePlay?: () => void;
   onReset?: () => void;
   driverName?: string;
+  pickupSpotName?: string;
+  dropSpotName?: string;
   autoCenterEnabled?: boolean;
   onToggleAutoCenter?: (enabled: boolean) => void;
   bottomOffset?: number;
@@ -115,7 +118,9 @@ export function LiveTrackingMap2D({
   isPlaying = true,
   onTogglePlay,
   onReset,
-  autoCenterEnabled = true,
+  pickupSpotName = 'Pickup spot',
+  dropSpotName = 'Inorbit Mall',
+  autoCenterEnabled = false,
   onToggleAutoCenter,
   bottomOffset = 16,
   journeyPhase = 'approaching',
@@ -125,13 +130,14 @@ export function LiveTrackingMap2D({
   const [onwardIndex, setOnwardIndex] = useState(0);
   const [isAutoCenter, setIsAutoCenter] = useState(autoCenterEnabled);
 
-  // Pan & Zoom values
+  // Pan & Zoom values - Map stays stationary at (0, 0)
   const panX = useRef(new Animated.Value(0)).current;
   const panY = useRef(new Animated.Value(0)).current;
-  const scale = useRef(new Animated.Value(1.1)).current;
+  const scale = useRef(new Animated.Value(1.0)).current;
 
   const currentPan = useRef({ x: 0, y: 0 });
-  const currentScale = useRef(1.1);
+  const currentScale = useRef(1.0);
+  const [markerScale, setMarkerScale] = useState(1.0);
 
   // Pulse animation for pickup spot marker
   const pulseAnim = useRef(new Animated.Value(0)).current;
@@ -211,31 +217,7 @@ export function LiveTrackingMap2D({
     return DENSE_RIDE_ROUTE[approachIndex] || DENSE_RIDE_ROUTE[0];
   })();
 
-  // Auto-center camera following vehicle smoothly through corners
-  useEffect(() => {
-    if (!isAutoCenter) return;
-
-    // Center of map viewBox is roughly (190, 230)
-    const targetOffsetX = (190 - currentPoint.x) * 0.75;
-    const targetOffsetY = (230 - currentPoint.y) * 0.75;
-
-    Animated.spring(panX, {
-      toValue: targetOffsetX,
-      useNativeDriver: true,
-      damping: 20,
-      stiffness: 90,
-    }).start();
-
-    Animated.spring(panY, {
-      toValue: targetOffsetY,
-      useNativeDriver: true,
-      damping: 20,
-      stiffness: 90,
-    }).start();
-
-    currentPan.current = { x: targetOffsetX, y: targetOffsetY };
-  }, [currentPoint.x, currentPoint.y, isAutoCenter, panX, panY]);
-
+  // The map canvas remains stationary. Only the vehicle marker animates along the street route.
   // Touch Pan gesture handler
   const panResponder = useRef(
     PanResponder.create({
@@ -265,13 +247,34 @@ export function LiveTrackingMap2D({
     if (onToggleAutoCenter) onToggleAutoCenter(next);
 
     if (next) {
-      const targetOffsetX = (190 - currentPoint.x) * 0.75;
-      const targetOffsetY = (230 - currentPoint.y) * 0.75;
-      Animated.spring(panX, { toValue: targetOffsetX, useNativeDriver: true }).start();
-      Animated.spring(panY, { toValue: targetOffsetY, useNativeDriver: true }).start();
-      currentPan.current = { x: targetOffsetX, y: targetOffsetY };
+      const targetX = 200 - currentPoint.x;
+      const targetY = 240 - currentPoint.y;
+      Animated.spring(panX, { toValue: targetX, useNativeDriver: true, friction: 9, tension: 50 }).start();
+      Animated.spring(panY, { toValue: targetY, useNativeDriver: true, friction: 9, tension: 50 }).start();
+      currentPan.current = { x: targetX, y: targetY };
     }
-  }, [isAutoCenter, onToggleAutoCenter, currentPoint, panX, panY]);
+  }, [isAutoCenter, onToggleAutoCenter, panX, panY, currentPoint.x, currentPoint.y]);
+
+  // Auto-follow: smoothly pan map along with driver movement
+  useEffect(() => {
+    if (isAutoCenter) {
+      const targetX = 200 - currentPoint.x;
+      const targetY = 240 - currentPoint.y;
+      currentPan.current = { x: targetX, y: targetY };
+      Animated.spring(panX, {
+        toValue: targetX,
+        useNativeDriver: true,
+        friction: 9,
+        tension: 50,
+      }).start();
+      Animated.spring(panY, {
+        toValue: targetY,
+        useNativeDriver: true,
+        friction: 9,
+        tension: 50,
+      }).start();
+    }
+  }, [isAutoCenter, currentPoint.x, currentPoint.y, panX, panY]);
 
   const fitBounds = useCallback(() => {
     setIsAutoCenter(false);
@@ -281,6 +284,7 @@ export function LiveTrackingMap2D({
     Animated.spring(scale, { toValue: 1.0, useNativeDriver: true }).start();
     currentPan.current = { x: 0, y: 0 };
     currentScale.current = 1.0;
+    setMarkerScale(1.0);
   }, [onToggleAutoCenter, panX, panY, scale]);
 
   // Calculated distance along the extended route:
@@ -314,8 +318,48 @@ export function LiveTrackingMap2D({
   const pickupPoint = RIDE_ROUTE_WAYPOINTS[RIDE_ROUTE_WAYPOINTS.length - 1];
   const destPoint = ONWARD_TRIP_WAYPOINTS[ONWARD_TRIP_WAYPOINTS.length - 1];
 
+  const displayDrop =
+    dropSpotName && dropSpotName.toLowerCase() !== 'drop location'
+      ? dropSpotName
+      : 'Inorbit Mall';
+  const dropText = displayDrop.length > 20 ? displayDrop.slice(0, 18) + '…' : displayDrop;
+  const dropBadgeW = Math.max(90, Math.min(150, dropText.length * 7.5 + 24));
+
+  const displayPickup = pickupSpotName || 'Pickup spot';
+  const pickupText = displayPickup.length > 20 ? displayPickup.slice(0, 18) + '…' : displayPickup;
+  const pickupBadgeW = Math.max(88, Math.min(150, pickupText.length * 7 + 24));
+
+  const { isDark } = useRideTheme();
+  const mapTheme = isDark
+    ? {
+        bg: '#121417',
+        water: '#162838',
+        park: '#142717',
+        parcelFill: '#1A1D24',
+        parcelStroke: 'rgba(255, 255, 255, 0.08)',
+        roadBorder: '#232730',
+        roadFill: '#1E2128',
+        labelDark: '#F1F1EC',
+        labelMedium: '#8E9AAB',
+        labelLight: '#9BA08F',
+        watermark: '#64748B',
+      }
+    : {
+        bg: '#E8ECEF',
+        water: '#B9DCF7',
+        park: '#D2F0CE',
+        parcelFill: '#F4F6F8',
+        parcelStroke: '#DDE3E8',
+        roadBorder: '#D1D9E0',
+        roadFill: '#FFFFFF',
+        labelDark: '#334155',
+        labelMedium: '#4A5568',
+        labelLight: '#718096',
+        watermark: '#475569',
+      };
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: mapTheme.bg }]}>
       {/* Pan & Zoom Animated Map Canvas */}
       <Animated.View
         style={[
@@ -330,24 +374,24 @@ export function LiveTrackingMap2D({
         ]}
         {...panResponder.panHandlers}
       >
-        <Svg width="100%" height="100%" viewBox="0 0 400 520" preserveAspectRatio="xMidYMid slice">
+        <Svg width="100%" height="100%" viewBox="0 0 400 480" preserveAspectRatio="xMidYMid slice">
           {/* 1. Base Map Background (Clean grey-blue Google Maps style) */}
-          <Rect x="0" y="0" width="400" height="520" fill="#E8ECEF" />
+          <Rect x="0" y="0" width="400" height="480" fill={mapTheme.bg} />
 
           {/* 2. Water Bodies (Durgam Cheruvu & Hitech Canal from reference) */}
           {/* Top-left water body */}
-          <Path d="M0 0 L90 0 L60 85 L0 105 Z" fill="#B9DCF7" />
+          <Path d="M0 0 L90 0 L60 85 L0 105 Z" fill={mapTheme.water} />
           {/* Bottom-right Durgam Cheruvu lake */}
-          <Path d="M290 410 C320 400 370 420 400 415 L400 520 L280 520 C280 470 270 435 290 410 Z" fill="#B9DCF7" />
+          <Path d="M290 410 C320 400 370 420 400 415 L400 520 L280 520 C280 470 270 435 290 410 Z" fill={mapTheme.water} />
 
           {/* 3. Parks & Greenery */}
-          <Path d="M20 180 L75 180 L75 220 L20 220 Z" fill="#D2F0CE" />
-          <Path d="M280 18 L360 18 L360 55 L280 55 Z" fill="#D2F0CE" />
-          <Path d="M220 440 L270 440 L270 495 L220 495 Z" fill="#D2F0CE" />
-          <Path d="M20 430 L80 430 L80 480 L20 480 Z" fill="#D2F0CE" />
+          <Path d="M20 180 L75 180 L75 220 L20 220 Z" fill={mapTheme.park} />
+          <Path d="M280 18 L360 18 L360 55 L280 55 Z" fill={mapTheme.park} />
+          <Path d="M220 440 L270 440 L270 495 L220 495 Z" fill={mapTheme.park} />
+          <Path d="M20 430 L80 430 L80 480 L20 480 Z" fill={mapTheme.park} />
 
           {/* 4. Building Parcels & Road Blocks */}
-          <G fill="#F4F6F8" stroke="#DDE3E8" strokeWidth="0.8">
+          <G fill={mapTheme.parcelFill} stroke={mapTheme.parcelStroke} strokeWidth="0.8">
             <Rect x="100" y="30" width="60" height="40" rx="1.5" />
             <Rect x="168" y="30" width="65" height="40" rx="1.5" />
             <Rect x="240" y="30" width="55" height="40" rx="1.5" />
@@ -373,13 +417,13 @@ export function LiveTrackingMap2D({
           {/* Hitech City Main Rd (Left vertical road) */}
           <Path
             d="M86 0 L86 520"
-            stroke="#D1D9E0"
+            stroke={mapTheme.roadBorder}
             strokeWidth="24"
             fill="none"
           />
           <Path
             d="M86 0 L86 520"
-            stroke="#FFFFFF"
+            stroke={mapTheme.roadFill}
             strokeWidth="20"
             fill="none"
           />
@@ -387,13 +431,13 @@ export function LiveTrackingMap2D({
           {/* 100 Ft Road / Taaza Kitchen Road (Horizontal main road) */}
           <Path
             d="M0 228 L400 228"
-            stroke="#D1D9E0"
+            stroke={mapTheme.roadBorder}
             strokeWidth="28"
             fill="none"
           />
           <Path
             d="M0 228 L400 228"
-            stroke="#FFFFFF"
+            stroke={mapTheme.roadFill}
             strokeWidth="24"
             fill="none"
           />
@@ -401,13 +445,13 @@ export function LiveTrackingMap2D({
           {/* Vishnu Marg (Right vertical / diagonal avenue) */}
           <Path
             d="M290 0 L290 228 L300 520"
-            stroke="#D1D9E0"
+            stroke={mapTheme.roadBorder}
             strokeWidth="20"
             fill="none"
           />
           <Path
             d="M290 0 L290 228 L300 520"
-            stroke="#FFFFFF"
+            stroke={mapTheme.roadFill}
             strokeWidth="16"
             fill="none"
           />
@@ -415,13 +459,13 @@ export function LiveTrackingMap2D({
           {/* Dr APJ Abdul Kalam Marg (Southeast road) */}
           <Path
             d="M290 228 L400 320"
-            stroke="#D1D9E0"
+            stroke={mapTheme.roadBorder}
             strokeWidth="22"
             fill="none"
           />
           <Path
             d="M290 228 L400 320"
-            stroke="#FFFFFF"
+            stroke={mapTheme.roadFill}
             strokeWidth="18"
             fill="none"
           />
@@ -429,26 +473,26 @@ export function LiveTrackingMap2D({
           {/* Siddhi Vinayak Nagar Sector Roads */}
           <Path
             d="M86 75 L290 75"
-            stroke="#D1D9E0"
+            stroke={mapTheme.roadBorder}
             strokeWidth="14"
             fill="none"
           />
           <Path
             d="M86 75 L290 75"
-            stroke="#FFFFFF"
+            stroke={mapTheme.roadFill}
             strokeWidth="11"
             fill="none"
           />
 
           <Path
             d="M86 140 L290 140"
-            stroke="#D1D9E0"
+            stroke={mapTheme.roadBorder}
             strokeWidth="16"
             fill="none"
           />
           <Path
             d="M86 140 L290 140"
-            stroke="#FFFFFF"
+            stroke={mapTheme.roadFill}
             strokeWidth="13"
             fill="none"
           />
@@ -456,14 +500,14 @@ export function LiveTrackingMap2D({
           {/* Connecting Lane at x = 140 past Taaza Kitchen */}
           <Path
             d="M140 140 L140 228"
-            stroke="#D1D9E0"
+            stroke={mapTheme.roadBorder}
             strokeWidth="16"
             strokeLinecap="round"
             fill="none"
           />
           <Path
             d="M140 140 L140 228"
-            stroke="#FFFFFF"
+            stroke={mapTheme.roadFill}
             strokeWidth="13"
             strokeLinecap="round"
             fill="none"
@@ -476,7 +520,7 @@ export function LiveTrackingMap2D({
             y="200"
             fontSize="9.5"
             fontWeight="600"
-            fill="#5A6872"
+            fill={mapTheme.labelMedium}
             fontFamily={FONTS.body}
             transform="rotate(-90, 76, 200)"
           >
@@ -489,7 +533,7 @@ export function LiveTrackingMap2D({
             y="70"
             fontSize="10"
             fontWeight="700"
-            fill="#718096"
+            fill={mapTheme.labelLight}
             fontFamily={FONTS.display}
             textAnchor="middle"
             letterSpacing="0.4"
@@ -501,7 +545,7 @@ export function LiveTrackingMap2D({
             y="82"
             fontSize="9"
             fontWeight="600"
-            fill="#718096"
+            fill={mapTheme.labelLight}
             fontFamily={FONTS.display}
             textAnchor="middle"
           >
@@ -514,7 +558,7 @@ export function LiveTrackingMap2D({
             y="390"
             fontSize="14"
             fontWeight="800"
-            fill="#4A5568"
+            fill={mapTheme.labelMedium}
             fontFamily={FONTS.display}
             textAnchor="middle"
             letterSpacing="1.2"
@@ -526,7 +570,7 @@ export function LiveTrackingMap2D({
             y="404"
             fontSize="10"
             fontWeight="600"
-            fill="#718096"
+            fill={mapTheme.labelLight}
             fontFamily={FONTS.body}
             textAnchor="middle"
           >
@@ -539,7 +583,7 @@ export function LiveTrackingMap2D({
             y="190"
             fontSize="10.5"
             fontWeight="700"
-            fill="#334155"
+            fill={mapTheme.labelDark}
             fontFamily={FONTS.body}
           >
             Taaza Kitchen
@@ -551,7 +595,7 @@ export function LiveTrackingMap2D({
             y="180"
             fontSize="9"
             fontWeight="600"
-            fill="#5A6872"
+            fill={mapTheme.labelMedium}
             fontFamily={FONTS.body}
             transform="rotate(90, 298, 180)"
           >
@@ -564,7 +608,7 @@ export function LiveTrackingMap2D({
             y="290"
             fontSize="8.5"
             fontWeight="600"
-            fill="#5A6872"
+            fill={mapTheme.labelMedium}
             fontFamily={FONTS.body}
             transform="rotate(38, 345, 290)"
           >
@@ -582,14 +626,21 @@ export function LiveTrackingMap2D({
             fill="none"
           />
 
-          {/* Destination Pin: Inorbit Mall */}
-          <G transform={`translate(${destPoint.x}, ${destPoint.y})`}>
-            <Circle cx="0" cy="0" r="10" fill="rgba(220, 38, 38, 0.18)" />
-            <Circle cx="0" cy="0" r="5" fill="#DC2626" />
-            <G transform="translate(12, -10)">
-              <Rect x="0" y="0" width="115" height="20" rx="4" fill="#FFFFFF" stroke="#E2E8F0" strokeWidth="0.8" />
-              <SvgText x="57" y="13.5" fontSize="9.5" fontWeight="700" fill="#DC2626" textAnchor="middle" fontFamily={FONTS.display}>
-                Inorbit Mall Drop-off
+          {/* Destination Pin */}
+          <G transform={`translate(${destPoint.x}, ${destPoint.y}) scale(${1 / markerScale})`}>
+            <Circle cx="0" cy="0" r="6" fill="#54B713" />
+            <G transform="translate(10, -11)">
+              <Rect
+                x="0"
+                y="0"
+                width={dropBadgeW}
+                height="22"
+                rx="5"
+                fill="#FFFFFF"
+                stroke="none"
+              />
+              <SvgText x={dropBadgeW / 2} y="15" fontSize="10" fontWeight="800" fill="#54B713" textAnchor="middle" fontFamily={FONTS.display}>
+                {dropText}
               </SvgText>
             </G>
           </G>
@@ -612,14 +663,10 @@ export function LiveTrackingMap2D({
             fill="none"
           />
 
-          {/* 9. Pickup Spot Marker matching reference screenshot */}
-          <G transform={`translate(${pickupPoint.x}, ${pickupPoint.y})`}>
-            {/* Outer Pulsing Ring with OneBuddy Green Tint */}
-            <Circle cx="0" cy="0" r="16" fill="rgba(84, 183, 19, 0.22)" />
-
-            {/* Black Circle with Outer Ring */}
-            <Circle cx="0" cy="0" r="6" stroke="#000000" strokeWidth="2.5" fill="#FFFFFF" />
-            <Circle cx="0" cy="0" r="3.2" fill="#000000" />
+          {/* 9. Pickup Spot Marker */}
+          <G transform={`translate(${pickupPoint.x}, ${pickupPoint.y}) scale(${1 / markerScale})`}>
+            {/* Solid Red Square with no outline */}
+            <Rect x="-6" y="-6" width="12" height="12" rx="2" fill="#EF4444" />
 
             {/* Top Badge: "🚶 2 min" Walking Time */}
             <G transform="translate(-48, -44)">
@@ -630,8 +677,7 @@ export function LiveTrackingMap2D({
                 height="24"
                 rx="4"
                 fill="#FFFFFF"
-                stroke="#D1D5DB"
-                strokeWidth="0.8"
+                stroke="none"
               />
               <SvgText x="8" y="16" fontSize="11" fill="#000000">
                 🚶
@@ -648,28 +694,27 @@ export function LiveTrackingMap2D({
               </SvgText>
             </G>
 
-            {/* Bottom Badge: "Pickup spot" */}
-            <G transform="translate(-64, 12)">
+            {/* Bottom Badge: User's Pickup spot */}
+            <G transform={`translate(-${pickupBadgeW / 2}, 12)`}>
               <Rect
                 x="0"
                 y="0"
-                width="84"
+                width={pickupBadgeW}
                 height="24"
-                rx="4"
+                rx="5"
                 fill="#FFFFFF"
-                stroke="#D1D5DB"
-                strokeWidth="0.8"
+                stroke="none"
               />
               <SvgText
-                x="42"
+                x={pickupBadgeW / 2}
                 y="16.5"
-                fontSize="11"
+                fontSize="10"
                 fontWeight="700"
-                fill="#000000"
+                fill="#EF4444"
                 textAnchor="middle"
                 fontFamily={FONTS.display}
               >
-                Pickup spot
+                {pickupText}
               </SvgText>
             </G>
           </G>
@@ -720,6 +765,37 @@ export function LiveTrackingMap2D({
         }}
         bottomOffset={bottomOffset}
       />
+
+      {/* Zoom In & Out Controls matching Ride Home Screen design & position */}
+      <View style={[styles.zoomControls, { bottom: bottomOffset }]}>
+        <TouchableOpacity
+          style={styles.zoomButton}
+          onPress={() => {
+            const nextScale = Math.min(2.5, Number((currentScale.current + 0.3).toFixed(1)));
+            currentScale.current = nextScale;
+            setMarkerScale(nextScale);
+            Animated.spring(scale, { toValue: nextScale, useNativeDriver: true }).start();
+          }}
+          accessibilityLabel="Zoom in"
+          activeOpacity={0.7}
+        >
+          <Ionicons name="add" size={24} color="#0F172A" />
+        </TouchableOpacity>
+        <View style={styles.zoomDivider} />
+        <TouchableOpacity
+          style={styles.zoomButton}
+          onPress={() => {
+            const nextScale = Math.max(0.8, Number((currentScale.current - 0.3).toFixed(1)));
+            currentScale.current = nextScale;
+            setMarkerScale(nextScale);
+            Animated.spring(scale, { toValue: nextScale, useNativeDriver: true }).start();
+          }}
+          accessibilityLabel="Zoom out"
+          activeOpacity={0.7}
+        >
+          <Ionicons name="remove" size={24} color="#0F172A" />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -734,5 +810,28 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
     height: '100%',
+  },
+  zoomControls: {
+    position: 'absolute',
+    right: 16,
+    overflow: 'hidden',
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOpacity: 0.16,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 2 },
+    zIndex: 26,
+  },
+  zoomButton: {
+    width: 44,
+    height: 42,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  zoomDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: '#CBD5E1',
   },
 });

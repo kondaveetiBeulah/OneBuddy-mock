@@ -91,17 +91,17 @@ export const LocationSearchScreen: React.FC<LocationSearchScreenProps> = ({
   const isDark = isCategoryDark();
 
   return (
-    <View style={[styles.container, isDark && { backgroundColor: '#121214' }]}>
+    <View style={[styles.container, isDark && { backgroundColor: '#000000' }]}>
       {/* Header */}
-      <View style={[styles.header, { paddingTop: topInset + 12 }, isDark && { borderBottomColor: 'rgba(255, 255, 255, 0.08)' }]}>
+      <View style={[styles.header, { paddingTop: topInset + 12 }, isDark && { borderBottomColor: 'rgba(255, 255, 255, 0.1)' }]}>
         <TouchableOpacity 
           onPress={onBack} 
-          style={[styles.backBtn, isDark && { backgroundColor: 'rgba(255, 255, 255, 0.06)' }]}
+          style={[styles.backBtn, isDark && { backgroundColor: 'rgba(255, 255, 255, 0.1)' }]}
           activeOpacity={0.5}
           hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
         >
-          <X size={20} color={isDark ? '#F1F1EC' : '#111827'} />
-          <Text style={[styles.closeText, isDark && { color: '#F1F1EC' }]}>Close</Text>
+          <X size={20} color={isDark ? '#FFFFFF' : '#111827'} />
+          <Text style={[styles.closeText, isDark && { color: '#FFFFFF' }]}>Close</Text>
         </TouchableOpacity>
       </View>
 
@@ -111,24 +111,24 @@ export const LocationSearchScreen: React.FC<LocationSearchScreenProps> = ({
         {/* + Add New Address Toggle Button */}
         <TouchableOpacity
             onPress={() => setIsAddOptionModalVisible(true)}
-            style={[styles.addNewAddressToggleBtn, isDark && { backgroundColor: '#1D1E22', borderColor: 'rgba(101, 163, 13, 0.4)' }]}
+            style={[styles.addNewAddressToggleBtn, isDark && { backgroundColor: '#FFFFFF', borderColor: '#FFFFFF' }]}
             activeOpacity={0.8}
         >
-            <View style={styles.addNewAddressPlusCircle}>
+            <View style={[styles.addNewAddressPlusCircle, isDark && { backgroundColor: '#000000' }]}>
                 <Text style={[styles.addNewAddressPlusText, isDark && { color: '#FFFFFF' }]}>+</Text>
             </View>
-            <Text style={styles.addNewAddressToggleLabel}>Add New Address</Text>
+            <Text style={[styles.addNewAddressToggleLabel, isDark && { color: '#000000' }]}>Add New Address</Text>
         </TouchableOpacity>
 
         {/* Saved Addresses */}
         <View style={styles.recommendedSection}>
-          <Text style={[styles.sectionTitle, isDark && { color: '#9BA08F' }]}>SAVED ADDRESSES</Text>
+          <Text style={[styles.sectionTitle, isDark && { color: '#E5E7EB' }]}>SAVED ADDRESSES</Text>
           <View style={styles.list}>
             {savedAddresses.length > 0 ? (
               savedAddresses.map((loc) => (
                 <TouchableOpacity
                   key={loc.id}
-                  style={[styles.locItem, isDark && { backgroundColor: '#1D1E22', borderColor: 'rgba(255, 255, 255, 0.08)' }, { zIndex: openMenuId === loc.id ? 10 : 1 }]}
+                  style={[styles.locItem, isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.15)' }, { zIndex: openMenuId === loc.id ? 10 : 1 }]}
                   onPress={() => {
                     if (openMenuId) setOpenMenuId(null);
                     else {
@@ -138,25 +138,25 @@ export const LocationSearchScreen: React.FC<LocationSearchScreenProps> = ({
                   }}
                   activeOpacity={0.7}
                 >
-                  <View style={[styles.locIconContainer, isDark && { backgroundColor: 'rgba(255, 255, 255, 0.06)' }]}>
-                    {loc.label === 'Home' ? <Home size={20} color={isDark ? '#9BA08F' : '#6B7280'} /> : loc.label === 'Work' ? <Building size={20} color={isDark ? '#9BA08F' : '#6B7280'} /> : <MapPin size={20} color={isDark ? '#9BA08F' : '#6B7280'} />}
+                  <View style={[styles.locIconContainer, isDark && { backgroundColor: 'rgba(255, 255, 255, 0.1)' }]}>
+                    {loc.label === 'Home' ? <Home size={20} color={isDark ? '#FFFFFF' : '#6B7280'} /> : loc.label === 'Work' ? <Building size={20} color={isDark ? '#FFFFFF' : '#6B7280'} /> : <MapPin size={20} color={isDark ? '#FFFFFF' : '#6B7280'} />}
                   </View>
                   <View style={styles.locDetails}>
-                    <Text style={[styles.locName, isDark && { color: '#F1F1EC' }]}>{loc.label}</Text>
-                    <Text style={[styles.locArea, isDark && { color: '#9BA08F' }]}>{loc.houseNo}, {loc.building ? loc.building + ', ' : ''}{loc.landmark}</Text>
+                    <Text style={[styles.locName, isDark && { color: '#FFFFFF' }]}>{loc.label}</Text>
+                    <Text style={[styles.locArea, isDark && { color: '#E5E7EB' }]}>{loc.houseNo}, {loc.building ? loc.building + ', ' : ''}{loc.landmark}</Text>
                   </View>
                   {onEditAddress && (
                     <View style={{ zIndex: 20 }}>
                       <TouchableOpacity
                         onPress={() => setOpenMenuId(openMenuId === loc.id ? null : loc.id)}
-                        style={[styles.moreBtn, isDark && { backgroundColor: 'rgba(255, 255, 255, 0.06)' }]}
+                        style={[styles.moreBtn, isDark && { backgroundColor: 'rgba(255, 255, 255, 0.1)' }]}
                         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                       >
-                        <MoreVertical size={20} color={isDark ? '#9BA08F' : '#6B7280'} />
+                        <MoreVertical size={20} color={isDark ? '#FFFFFF' : '#6B7280'} />
                       </TouchableOpacity>
 
                       {openMenuId === loc.id && (
-                        <View style={[styles.menuPopup, isDark && { backgroundColor: '#24262B', borderColor: 'rgba(255, 255, 255, 0.1)' }]}>
+                        <View style={[styles.menuPopup, isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.2)' }]}>
                           <TouchableOpacity
                             style={styles.menuItem}
                             onPress={() => {
@@ -164,8 +164,8 @@ export const LocationSearchScreen: React.FC<LocationSearchScreenProps> = ({
                               onEditAddress(loc);
                             }}
                           >
-                            <Edit2 size={16} color={isDark ? '#F1F1EC' : '#111827'} />
-                            <Text style={[styles.menuItemText, isDark && { color: '#F1F1EC' }]}>Edit</Text>
+                            <Edit2 size={16} color={isDark ? '#FFFFFF' : '#111827'} />
+                            <Text style={[styles.menuItemText, isDark && { color: '#FFFFFF' }]}>Edit</Text>
                           </TouchableOpacity>
                           <TouchableOpacity
                             style={styles.menuItem}
@@ -184,7 +184,7 @@ export const LocationSearchScreen: React.FC<LocationSearchScreenProps> = ({
                 </TouchableOpacity>
               ))
             ) : (
-              <Text style={[styles.emptyText, isDark && { color: '#9BA08F' }]}>No saved addresses yet. Add one from the map!</Text>
+              <Text style={[styles.emptyText, isDark && { color: '#E5E7EB' }]}>No saved addresses yet. Add one from the map!</Text>
             )}
           </View>
         </View>
@@ -198,18 +198,18 @@ export const LocationSearchScreen: React.FC<LocationSearchScreenProps> = ({
           onRequestClose={() => setIsAddOptionModalVisible(false)}
       >
           <View style={styles.modalOverlay}>
-              <View style={[styles.deleteModalCard, isDark && { backgroundColor: '#1D1E22', borderColor: 'rgba(255, 255, 255, 0.08)' }]}>
+              <View style={[styles.deleteModalCard, isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.2)' }]}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, width: '100%' }}>
-                      <Text style={[styles.deleteModalTitle, { marginBottom: 0 }, isDark && { color: '#F1F1EC' }]}>📍 Add Delivery Address</Text>
+                      <Text style={[styles.deleteModalTitle, { marginBottom: 0 }, isDark && { color: '#FFFFFF' }]}>📍 Add Delivery Address</Text>
                       <TouchableOpacity
                           onPress={() => setIsAddOptionModalVisible(false)}
                           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                          style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: isDark ? '#24262B' : '#F9FAFB', alignItems: 'center', justifyContent: 'center' }}
+                          style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#F9FAFB', alignItems: 'center', justifyContent: 'center' }}
                       >
-                          <Text style={{ color: isDark ? '#9BA08F' : '#6B7280', fontSize: 14, fontWeight: '700' }}>✕</Text>
+                          <Text style={{ color: isDark ? '#FFFFFF' : '#6B7280', fontSize: 14, fontWeight: '700' }}>✕</Text>
                       </TouchableOpacity>
                   </View>
-                  <Text style={{ fontSize: 13, color: isDark ? '#9BA08F' : '#6B7280', marginBottom: 18, lineHeight: 18, width: '100%' }}>
+                  <Text style={{ fontSize: 13, color: isDark ? '#E5E7EB' : '#6B7280', marginBottom: 18, lineHeight: 18, width: '100%' }}>
                       Choose how you would like to set your delivery location:
                   </Text>
 
@@ -217,41 +217,41 @@ export const LocationSearchScreen: React.FC<LocationSearchScreenProps> = ({
                   <TouchableOpacity
                       onPress={handleRequestLiveLocation}
                       activeOpacity={0.85}
-                      style={[styles.addressChoiceOptionLive, { width: '100%' }, isDark && { backgroundColor: '#24262B', borderColor: '#65A30D' }]}
+                      style={[styles.addressChoiceOptionLive, { width: '100%' }, isDark && { backgroundColor: '#000000', borderColor: '#A3E635' }]}
                   >
                       <View style={styles.addressChoiceIconBadgeLive}>
                           <Text style={{ fontSize: 20 }}>📍</Text>
                       </View>
                       <View style={{ flex: 1 }}>
                           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                              <Text style={styles.addressChoiceOptionTitleLive}>Add Live Location</Text>
+                              <Text style={[styles.addressChoiceOptionTitleLive, isDark && { color: '#FFFFFF' }]}>Add Live Location</Text>
                               <View style={styles.livePill}>
                                   <Text style={[styles.livePillText, isDark && { color: '#FFFFFF' }]}>AUTO GPS</Text>
                               </View>
                           </View>
-                          <Text style={[styles.addressChoiceOptionSub, isDark && { color: '#9BA08F' }]}>
+                          <Text style={[styles.addressChoiceOptionSub, isDark && { color: '#E5E7EB' }]}>
                               Use current location to automatically fill address details
                           </Text>
                       </View>
-                      <Text style={styles.addressChoiceArrow}>→</Text>
+                      <Text style={[styles.addressChoiceArrow, isDark && { color: '#FFFFFF' }]}>→</Text>
                   </TouchableOpacity>
 
                   {/* Option 2: Enter New Address */}
                   <TouchableOpacity
                       onPress={handleManualAddressEntry}
                       activeOpacity={0.85}
-                      style={[styles.addressChoiceOptionManual, { width: '100%', marginBottom: 0 }, isDark && { backgroundColor: '#24262B', borderColor: 'rgba(255, 255, 255, 0.08)' }]}
+                      style={[styles.addressChoiceOptionManual, { width: '100%', marginBottom: 0 }, isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.2)' }]}
                   >
-                      <View style={[styles.addressChoiceIconBadgeManual, isDark && { backgroundColor: '#1D1E22', borderColor: 'rgba(255, 255, 255, 0.08)' }]}>
+                      <View style={[styles.addressChoiceIconBadgeManual, isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.2)' }]}>
                           <Text style={{ fontSize: 20 }}>✍️</Text>
                       </View>
                       <View style={{ flex: 1 }}>
-                          <Text style={[styles.addressChoiceOptionTitleManual, isDark && { color: '#F1F1EC' }]}>Enter New Address</Text>
-                          <Text style={[styles.addressChoiceOptionSub, isDark && { color: '#9BA08F' }]}>
+                          <Text style={[styles.addressChoiceOptionTitleManual, isDark && { color: '#FFFFFF' }]}>Enter New Address</Text>
+                          <Text style={[styles.addressChoiceOptionSub, isDark && { color: '#E5E7EB' }]}>
                               Type house number, street, area, and receiver details manually
                           </Text>
                       </View>
-                      <Text style={styles.addressChoiceArrow}>→</Text>
+                      <Text style={[styles.addressChoiceArrow, isDark && { color: '#FFFFFF' }]}>→</Text>
                   </TouchableOpacity>
               </View>
           </View>
@@ -265,30 +265,30 @@ export const LocationSearchScreen: React.FC<LocationSearchScreenProps> = ({
         onRequestClose={() => setIsLocationPermissionModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-            <View style={[styles.deleteModalCard, isDark && { backgroundColor: '#1D1E22', borderColor: 'rgba(255, 255, 255, 0.08)' }]}>
+            <View style={[styles.deleteModalCard, isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.2)' }]}>
                 <View style={styles.locationPermissionIconCircle}>
                     <Text style={{ fontSize: 24 }}>📍</Text>
                 </View>
-                <Text style={[styles.deleteModalTitle, isDark && { color: '#F1F1EC' }]}>Allow Location Access?</Text>
-                <Text style={[styles.deleteModalMessage, isDark && { color: '#9BA08F' }]}>
+                <Text style={[styles.deleteModalTitle, isDark && { color: '#FFFFFF' }]}>Allow Location Access?</Text>
+                <Text style={[styles.deleteModalMessage, isDark && { color: '#E5E7EB' }]}>
                     Buddy Food needs your permission to access device GPS to automatically detect and fill your current address.
                 </Text>
 
                 <View style={styles.deleteModalBtnRow}>
                     <TouchableOpacity
                         onPress={() => setIsLocationPermissionModalVisible(false)}
-                        style={[styles.deleteModalCancelBtn, isDark && { backgroundColor: '#24262B', borderColor: 'rgba(255, 255, 255, 0.08)' }]}
+                        style={[styles.deleteModalCancelBtn, isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.2)' }]}
                         activeOpacity={0.8}
                     >
-                        <Text style={[styles.deleteModalCancelText, isDark && { color: '#F1F1EC' }]}>Cancel</Text>
+                        <Text style={[styles.deleteModalCancelText, isDark && { color: '#FFFFFF' }]}>Cancel</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
                         onPress={handleConfirmLocationAccess}
-                        style={[styles.deleteModalConfirmBtn, { backgroundColor: '#65A30D', shadowColor: '#65A30D' }]}
+                        style={[styles.deleteModalConfirmBtn, isDark ? { backgroundColor: '#FFFFFF', shadowOpacity: 0 } : { backgroundColor: '#65A30D', shadowColor: '#65A30D' }]}
                         activeOpacity={0.8}
                     >
-                        <Text style={[styles.deleteModalConfirmText, { color: '#FFFFFF' }]}>
+                        <Text style={[styles.deleteModalConfirmText, isDark ? { color: '#000000' } : { color: '#FFFFFF' }]}>
                             Allow & Auto-Fill
                         </Text>
                     </TouchableOpacity>

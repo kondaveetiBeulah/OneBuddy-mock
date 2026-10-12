@@ -35,6 +35,8 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({
   const [cookingRequest, setCookingRequest] = useState('');
   const [quantity, setQuantity] = useState(1); // Local quantity for initial add
 
+  const isDark = isCategoryDark();
+
   if (!isOpen || !item) return null;
 
   const cartQty = getItemQuantity(item.id);
@@ -84,20 +86,20 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({
         <TouchableOpacity
           onPress={onClose}
           activeOpacity={0.8}
-          style={styles.closeBtn}
+          style={[styles.closeBtn, isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.2)' }]}
         >
-          <X size={20} color={isCategoryDark() ? '#F1F1EC' : '#111827'} />
+          <X size={20} color={isDark ? '#FFFFFF' : '#111827'} />
         </TouchableOpacity>
 
         {/* Modal Bottom Sheet Content */}
-        <View style={styles.sheetContainer}>
+        <View style={[styles.sheetContainer, isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.2)' }]}>
           <ScrollView
             style={styles.scrollView}
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
           >
             {/* 1. Hero Food Image & Card Header */}
-            <View style={styles.heroCard}>
+            <View style={[styles.heroCard, isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.15)' }]}>
               <View style={styles.imageWrap}>
                 <Image
                   source={{ uri: item.image }}
@@ -105,7 +107,7 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({
                   style={styles.heroImage}
                 />
                 <LinearGradient
-                  colors={isCategoryDark() ? ['transparent', 'rgba(29, 30, 34, 0.9)'] : ['transparent', 'rgba(0, 0, 0, 0.4)']}
+                  colors={isDark ? ['transparent', 'rgba(0, 0, 0, 0.95)'] : ['transparent', 'rgba(0, 0, 0, 0.4)']}
                   style={styles.imageGradient}
                 />
               </View>
@@ -121,24 +123,24 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({
                         </View>
                       ) : null}
                     </View>
-                    <Text style={styles.dishTitle}>{item.name}</Text>
+                    <Text style={[styles.dishTitle, isDark && { color: '#FFFFFF' }]}>{item.name}</Text>
                   </View>
 
                   {/* Bookmark & Share */}
                   <View style={styles.actionBtns}>
                     <TouchableOpacity
                       onPress={() => toggleFavorite(restaurant.id)}
-                      style={[styles.iconCircle, isBookmarked && styles.bookmarkedCircle]}
+                      style={[styles.iconCircle, isBookmarked && styles.bookmarkedCircle, isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.2)' }]}
                     >
                       <Bookmark
                         size={16}
-                        color={isBookmarked ? '#F43F5E' : '#6B7280'}
+                        color={isBookmarked ? '#F43F5E' : (isDark ? '#FFFFFF' : '#6B7280')}
                         fill={isBookmarked ? '#F43F5E' : 'transparent'}
                       />
                     </TouchableOpacity>
 
-                    <TouchableOpacity onPress={handleShare} style={styles.iconCircle}>
-                      <Share2 size={16} color="#6B7280" />
+                    <TouchableOpacity onPress={handleShare} style={[styles.iconCircle, isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.2)' }]}>
+                      <Share2 size={16} color={isDark ? '#FFFFFF' : '#6B7280'} />
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -149,14 +151,14 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({
                   <Text style={styles.reorderText}>Highly reordered</Text>
                 </View>
 
-                <Text style={styles.dishDesc}>{item.description}</Text>
+                <Text style={[styles.dishDesc, isDark && { color: '#E5E7EB' }]}>{item.description}</Text>
               </View>
             </View>
 
             {/* 2. Quantity / Portion Option Group */}
-            <View style={styles.sectionBox}>
-              <Text style={styles.sectionTitle}>Quantity</Text>
-              <Text style={styles.sectionSub}>Required • Select any 1 option</Text>
+            <View style={[styles.sectionBox, isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.15)' }]}>
+              <Text style={[styles.sectionTitle, isDark && { color: '#FFFFFF' }]}>Quantity</Text>
+              <Text style={[styles.sectionSub, isDark && { color: '#E5E7EB' }]}>Required • Select any 1 option</Text>
 
               <View style={styles.optionList}>
                 {/* Single */}
@@ -165,23 +167,27 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({
                   onPress={() => setSelectedPortion('single')}
                   style={[
                     styles.radioOption,
+                    isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.15)' },
                     selectedPortion === 'single' && styles.radioOptionSelected,
+                    isDark && selectedPortion === 'single' && { backgroundColor: 'rgba(255, 255, 255, 0.08)', borderColor: '#FFFFFF' },
                   ]}
                 >
                   <View style={styles.radioLeft}>
                     <View
                       style={[
                         styles.radioOuter,
+                        isDark && { borderColor: 'rgba(255, 255, 255, 0.4)' },
                         selectedPortion === 'single' && styles.radioOuterSelected,
+                        isDark && selectedPortion === 'single' && { borderColor: '#FFFFFF', backgroundColor: '#FFFFFF' },
                       ]}
                     >
                       {selectedPortion === 'single' ? (
-                        <View style={styles.radioInner} />
+                        <View style={[styles.radioInner, isDark && { backgroundColor: '#000000' }]} />
                       ) : null}
                     </View>
-                    <Text style={styles.radioLabel}>Single</Text>
+                    <Text style={[styles.radioLabel, isDark && { color: '#FFFFFF' }]}>Single</Text>
                   </View>
-                  <Text style={styles.radioPrice}>₹{singlePrice}</Text>
+                  <Text style={[styles.radioPrice, isDark && { color: '#FFFFFF' }]}>₹{singlePrice}</Text>
                 </TouchableOpacity>
 
                 {/* Full */}
@@ -190,45 +196,49 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({
                   onPress={() => setSelectedPortion('full')}
                   style={[
                     styles.radioOption,
+                    isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.15)' },
                     selectedPortion === 'full' && styles.radioOptionSelected,
+                    isDark && selectedPortion === 'full' && { backgroundColor: 'rgba(255, 255, 255, 0.08)', borderColor: '#FFFFFF' },
                   ]}
                 >
                   <View style={styles.radioLeft}>
                     <View
                       style={[
                         styles.radioOuter,
+                        isDark && { borderColor: 'rgba(255, 255, 255, 0.4)' },
                         selectedPortion === 'full' && styles.radioOuterSelected,
+                        isDark && selectedPortion === 'full' && { borderColor: '#FFFFFF', backgroundColor: '#FFFFFF' },
                       ]}
                     >
                       {selectedPortion === 'full' ? (
-                        <View style={styles.radioInner} />
+                        <View style={[styles.radioInner, isDark && { backgroundColor: '#000000' }]} />
                       ) : null}
                     </View>
-                    <Text style={styles.radioLabel}>Full</Text>
+                    <Text style={[styles.radioLabel, isDark && { color: '#FFFFFF' }]}>Full</Text>
                   </View>
-                  <Text style={styles.radioPrice}>₹{fullPrice}</Text>
+                  <Text style={[styles.radioPrice, isDark && { color: '#FFFFFF' }]}>₹{fullPrice}</Text>
                 </TouchableOpacity>
               </View>
             </View>
 
             {/* 3. Add Cooking Request (Optional) */}
-            <View style={styles.sectionBox}>
-              <Text style={styles.sectionTitle}>Add a cooking request (optional)</Text>
-              <Text style={styles.sectionSub}>
+            <View style={[styles.sectionBox, isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.15)' }]}>
+              <Text style={[styles.sectionTitle, isDark && { color: '#FFFFFF' }]}>Add a cooking request (optional)</Text>
+              <Text style={[styles.sectionSub, isDark && { color: '#E5E7EB' }]}>
                 The restaurant will try its best to fulfil your requests. However, refunds or
                 cancellations related to such requests won't be possible.
               </Text>
 
-              <View style={styles.textInputWrap}>
+              <View style={[styles.textInputWrap, isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.2)' }]}>
                 <TextInput
                   value={cookingRequest}
                   onChangeText={(t) => setCookingRequest(t.slice(0, 100))}
                   placeholder="e.g. Don't make it too spicy"
-                  placeholderTextColor="rgba(184, 175, 203, 0.4)"
+                  placeholderTextColor={isDark ? 'rgba(255, 255, 255, 0.4)' : 'rgba(184, 175, 203, 0.4)'}
                   multiline
                   numberOfLines={2}
                   maxLength={100}
-                  style={styles.textInput}
+                  style={[styles.textInput, isDark && { color: '#FFFFFF' }]}
                 />
                 <Text style={styles.charCount}>{100 - cookingRequest.length}</Text>
               </View>
@@ -236,7 +246,7 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({
           </ScrollView>
 
           {/* 4. Bottom Sticky Action Bar */}
-          <View style={styles.bottomBar}>
+          <View style={[styles.bottomBar, isDark && { backgroundColor: '#000000', borderTopColor: 'rgba(255, 255, 255, 0.15)' }]}>
             {savings > 0 ? (
               <View style={styles.discountStrip}>
                 <View style={styles.discountIconCircle}>
@@ -250,22 +260,22 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({
 
             <View style={styles.actionRow}>
               {cartQty > 0 ? (
-                <View style={styles.activeStepperWrap}>
+                <View style={[styles.activeStepperWrap, isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.2)' }]}>
                   <TouchableOpacity
                     onPress={() => updateQuantity(item.id, -1)}
                     style={styles.activeStepBtn}
                   >
-                    <Minus size={20} color="#F43F5E" />
+                    <Minus size={20} color={isDark ? '#FFFFFF' : '#F43F5E'} />
                   </TouchableOpacity>
                   <View style={{ alignItems: 'center', gap: 2 }}>
-                    <Text style={styles.activeQtyText}>{cartQty} added</Text>
-                    <Text style={{ fontSize: 13, fontWeight: '800', color: '#F43F5E' }}>₹{currentUnitPrice * cartQty}</Text>
+                    <Text style={[styles.activeQtyText, isDark && { color: '#FFFFFF' }]}>{cartQty} added</Text>
+                    <Text style={{ fontSize: 13, fontWeight: '800', color: isDark ? '#A3E635' : '#F43F5E' }}>₹{currentUnitPrice * cartQty}</Text>
                   </View>
                   <TouchableOpacity
                     onPress={() => updateQuantity(item.id, 1)}
                     style={styles.activeStepBtn}
                   >
-                    <Plus size={20} color="#F43F5E" />
+                    <Plus size={20} color={isDark ? '#FFFFFF' : '#F43F5E'} />
                   </TouchableOpacity>
                 </View>
               ) : (
@@ -275,15 +285,15 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({
                   style={styles.addBtnWrap}
                 >
                   <LinearGradient
-                    colors={['#F43F5E', '#E11D48']}
+                    colors={isDark ? ['#FFFFFF', '#FFFFFF'] : ['#F43F5E', '#E11D48']}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
                     style={styles.addBtn}
                   >
-                    <Text style={styles.addBtnText}>Add item</Text>
-                    <Text style={styles.addBtnPrice}>₹{totalPrice}</Text>
+                    <Text style={[styles.addBtnText, isDark && { color: '#000000' }]}>Add item</Text>
+                    <Text style={[styles.addBtnPrice, isDark && { color: '#000000' }]}>₹{totalPrice}</Text>
                     {totalOriginalPrice > totalPrice ? (
-                      <Text style={styles.addBtnOrigPrice}>₹{totalOriginalPrice}</Text>
+                      <Text style={[styles.addBtnOrigPrice, isDark && { color: '#4B5563' }]}>₹{totalOriginalPrice}</Text>
                     ) : null}
                   </LinearGradient>
                 </TouchableOpacity>

@@ -326,6 +326,15 @@ export const LocationModal: React.FC<LocationModalProps> = ({
               </TouchableOpacity>
             ))}
           </View>
+
+          {/* Cancel button */}
+          <TouchableOpacity
+            style={styles.cancelBtn}
+            activeOpacity={0.7}
+            onPress={onClose}
+          >
+            <Text style={styles.cancelBtnText}>Cancel / Skip for now</Text>
+          </TouchableOpacity>
         </ScrollView>
       )}
     </ModalContainer>
@@ -551,5 +560,21 @@ const styles = StyleSheet.create({
   formActions: {
     marginTop: SPACING.lg,
     marginBottom: SPACING.md,
+  },
+  cancelBtn: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: SPACING.md,
+    marginTop: SPACING.md,
+    marginBottom: SPACING.sm,
+    borderRadius: RADII.md,
+    backgroundColor: COLORS.surfaceSubtle,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  cancelBtnText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.textSecondary,
   },
 });

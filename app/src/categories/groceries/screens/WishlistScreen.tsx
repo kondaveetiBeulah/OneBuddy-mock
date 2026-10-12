@@ -9,6 +9,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing } from '../theme';
+import { useGroceryColors } from '../theme/colors';
+import { isCategoryDark } from '@/theme/categoryThemeBridge';
 import { Header } from '../components/Header';
 import { ProductCard } from '../components/ProductCard';
 import { EmptyState } from '../components/EmptyState';
@@ -22,15 +24,18 @@ export const WishlistScreen: React.FC = () => {
   const { wishlistItems, clearWishlist } = useWishlist();
   const { addToCart } = useCart();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const groceryColors = useGroceryColors();
+  const isDark = isCategoryDark() || groceryColors.cardBackground === '#000000';
+  const dynStyles = getStyles(isDark);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={dynStyles.container}>
       <Header
         title={`My Wishlist (${wishlistItems.length})`}
         rightIcon={
           wishlistItems.length > 0 ? (
             <TouchableOpacity onPress={clearWishlist}>
-              <Text style={styles.clearText}>Clear All</Text>
+              <Text style={dynStyles.clearText}>Clear All</Text>
             </TouchableOpacity>
           ) : undefined
         }
@@ -51,8 +56,8 @@ export const WishlistScreen: React.FC = () => {
           data={wishlistItems}
           numColumns={2}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.gridPadding}
-          columnWrapperStyle={styles.columnWrapper}
+          contentContainerStyle={dynStyles.gridPadding}
+          columnWrapperStyle={dynStyles.columnWrapper}
           renderItem={({ item }) => (
             <ProductCard
               product={item}
@@ -69,15 +74,15 @@ export const WishlistScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: isDark ? '#000000' : colors.background,
   },
   clearText: {
     fontSize: typography.sizes.xs,
     fontWeight: typography.weights.bold,
-    color: colors.danger,
+    color: isDark ? '#EF4444' : colors.danger,
   },
   gridPadding: {
     padding: spacing.md,
