@@ -50,6 +50,7 @@ import {
   type SheetOption,
 } from '../data/tracking';
 import { COLORS, FONTS, GUTTER, RADIUS } from '../theme';
+import { isCategoryDark } from '@/theme/categoryThemeBridge';
 
 const STAGE_LABELS = ['Assigning\na rider', 'Rider\nassigned', 'Picked\nup', 'Delivered\nto you'];
 
@@ -111,6 +112,7 @@ export default function LiveTrackingScreen({
 }: LiveTrackingScreenProps): React.JSX.Element {
   const insets = useSafeAreaInsets();
   const reduceMotion = useMotionPreference();
+  const isDark = isCategoryDark();
 
   // Resolve dynamic values
   const resolvedRestaurantName = restaurantName || orderDetails?.storeName || ORDER.restaurant;
@@ -392,11 +394,11 @@ export default function LiveTrackingScreen({
           {/* Finish & Rate Order Button */}
           <View style={styles.finishBtnWrapper}>
             <TouchableOpacity
-              style={styles.finishBtn}
+              style={[styles.finishBtn, isDark && { backgroundColor: '#FFFFFF', shadowColor: '#FFFFFF' }]}
               onPress={onFinishAndRate}
               activeOpacity={0.85}
             >
-              <Text style={styles.finishBtnText}>Rate order -&gt;</Text>
+              <Text style={[styles.finishBtnText, isDark && { color: '#000000' }]}>Rate order -&gt;</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -449,7 +451,7 @@ const styles = StyleSheet.create({
     minHeight: 220,
   },
   sheet: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.sheet,
     borderTopLeftRadius: RADIUS.sheet,
     borderTopRightRadius: RADIUS.sheet,
     paddingHorizontal: GUTTER,
@@ -482,7 +484,7 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.display,
   },
   nowBody: {
-    color: '#4B5563',
+    color: COLORS.mistDim,
     fontSize: 13.5,
     lineHeight: 19,
     marginTop: 5,

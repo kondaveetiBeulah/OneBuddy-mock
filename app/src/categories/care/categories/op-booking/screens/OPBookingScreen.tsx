@@ -1628,15 +1628,6 @@ export default function OPBookingScreen({
           },
         ]}
       >
-        {selectedHospital && selectedSlot ? (
-          <View style={styles.bottomPriceCol}>
-            <Text style={styles.bottomPriceLabel}>Consultation Fee</Text>
-            <Text style={styles.bottomPriceValue}>₹{consultationFee}</Text>
-          </View>
-        ) : (
-          <View style={{ flex: 1 }} />
-        )}
-
         <TouchableOpacity
           style={styles.primaryActionBtn}
           onPress={handleNextStep}

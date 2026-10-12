@@ -96,7 +96,10 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       service: 'grocery',
       productId: product.id,
       quantity: nextQty,
-    }).catch((err) => {
+    }).catch((err: any) => {
+      if (err?.code === 'not-found' || err?.code === 'unauthenticated' || err?.message?.includes('not-found')) {
+        return; // Silent fallback when cloud functions are offline or guest mode
+      }
       console.warn('[Grocery CartContext] Background sync note:', err);
     });
   };

@@ -41,7 +41,11 @@ export const AppNavigator: React.FC = () => {
         animation: 'slide_from_right',
       }}
     >
-      <Stack.Screen name="MainTabs" component={MainTabScreen} />
+      <Stack.Screen
+        name="MainTabs"
+        component={MainTabScreen}
+        options={{ animation: 'none' }}
+      />
       <Stack.Screen name="Home" component={HomeScreen} />
       <Stack.Screen name="Bookings" component={BookingsScreen} />
       <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />

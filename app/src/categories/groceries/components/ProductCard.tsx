@@ -71,6 +71,8 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
     return null;
   }
 
+  const isDark = colors.cardBackground === '#000000' || colors.background === '#000000';
+
   const cardColorStyle = {
     backgroundColor: colors.cardBackground,
     borderColor: colors.borderLight,
@@ -97,7 +99,14 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
 
       {/* Favorite Button */}
       <TouchableOpacity
-        style={styles.wishlistButton}
+        style={[
+          styles.wishlistButton,
+          isDark && {
+            backgroundColor: '#000000',
+            borderWidth: 1,
+            borderColor: 'rgba(255, 255, 255, 0.2)',
+          },
+        ]}
         onPress={handleToggleFavorite}
         activeOpacity={0.7}
         hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
@@ -106,7 +115,7 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
           <Ionicons
             name={isFavorite ? 'heart' : 'heart-outline'}
             size={18}
-            color={isFavorite ? colors.danger : colors.textMuted}
+            color={isFavorite ? colors.danger : (isDark ? '#FFFFFF' : colors.textMuted)}
           />
         </Animated.View>
       </TouchableOpacity>
@@ -150,7 +159,16 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
           </View>
 
           {cartQty > 0 ? (
-            <View style={[styles.quantityStepper, { backgroundColor: colors.primary }]}>
+            <View
+              style={[
+                styles.quantityStepper,
+                {
+                  backgroundColor: isDark ? '#000000' : colors.primary,
+                  borderWidth: isDark ? 1 : 0,
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.3)' : undefined,
+                },
+              ]}
+            >
               <TouchableOpacity
                 style={styles.stepperButton}
                 onPress={() => decreaseQuantity(product.id)}
@@ -167,11 +185,17 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
             </View>
           ) : (
             <TouchableOpacity
-              style={[styles.addButton, { backgroundColor: colors.primaryLight, borderColor: colors.primary }]}
+              style={[
+                styles.addButton,
+                {
+                  backgroundColor: isDark ? '#FFFFFF' : colors.primaryLight,
+                  borderColor: isDark ? '#FFFFFF' : colors.primary,
+                },
+              ]}
               onPress={() => onAddToCart(product)}
             >
-              <Ionicons name="add" size={16} color={colors.primary} />
-              <Text style={[styles.addButtonText, { color: colors.primary }]}>ADD</Text>
+              <Ionicons name="add" size={16} color={isDark ? '#000000' : colors.primary} />
+              <Text style={[styles.addButtonText, { color: isDark ? '#000000' : colors.primary }]}>ADD</Text>
             </TouchableOpacity>
           )}
         </View>

@@ -26,6 +26,7 @@ import { collection, doc, setDoc, getDocs, query, where, limit, serverTimestamp 
 
 const BOOKINGS_STORAGE_KEY = '@onebuddy_bookings_history';
 const FEEDBACK_STORAGE_KEY = '@onebuddy_feedback_list';
+const ADDRESS_ALERT_DISMISSED_KEY = '@onebuddy_home_address_alert_dismissed';
 
 interface BookingContextType {
   // Location & Addresses
@@ -34,6 +35,8 @@ interface BookingContextType {
   setCurrentAddress: (address: Address | null) => void;
   addNewAddress: (addressData: Omit<Address, 'id'>) => Address;
   setLiveGpsLocation: (customStreet?: string) => void;
+  isAddressAlertDismissed: boolean;
+  dismissAddressAlert: () => void;
 
   // Category & SubService Selection
   selectedCategory: ServiceCategory;
@@ -93,6 +96,7 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // Address State
   const [savedAddresses, setSavedAddresses] = useState<Address[]>(SAVED_ADDRESSES);
   const [currentAddress, setCurrentAddress] = useState<Address | null>(null);
+  const [isAddressAlertDismissed, setIsAddressAlertDismissed] = useState<boolean>(false);
 
   // Service Selection State (Empty by default to prevent preselected price across categories)
   const [selectedCategory, setSelectedCategory] = useState<ServiceCategory>(SERVICE_CATEGORIES[0]);
@@ -116,10 +120,13 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [feedbackList, setFeedbackList] = useState<FeedbackReview[]>([]);
   const [dismissedFeedbackIds, setDismissedFeedbackIds] = useState<string[]>([]);
 
-  // Load bookings and feedback from local storage on startup and restore ongoing bookings
+  // Load bookings and feedback from local storage on startup
   useEffect(() => {
     const loadStoredData = async () => {
       try {
+        // Clean up any legacy persistent dismissed key so the alert can show on each category entry
+        AsyncStorage.removeItem(ADDRESS_ALERT_DISMISSED_KEY).catch(() => {});
+
         const [storedBookings, storedFeedback] = await Promise.all([
           AsyncStorage.getItem(BOOKINGS_STORAGE_KEY),
           AsyncStorage.getItem(FEEDBACK_STORAGE_KEY),
@@ -152,6 +159,10 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
     loadStoredData();
   }, []);
+
+  const dismissAddressAlert = () => {
+    setIsAddressAlertDismissed(true);
+  };
 
   // Toggle Sub-service (allows deselecting all)
   const toggleSubService = (service: SubService) => {
@@ -492,6 +503,8 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setCurrentAddress,
         addNewAddress,
         setLiveGpsLocation,
+        isAddressAlertDismissed,
+        dismissAddressAlert,
         selectedCategory,
         setSelectedCategory,
         selectedSubServices,

@@ -66,6 +66,7 @@ import {
   ChevronLeft,
 } from 'lucide-react-native';
 import HospitalOpLogo from './HospitalOpLogo';
+import { CareSearchBar } from './CareSearchBar';
 import { OnlineConsultationFlow } from '../categories/online-consultation/OnlineConsultationFlow';
 import { HomeVisitsFlow } from '../categories/home-visits/HomeVisitsFlow';
 import { OPBookingFlow, OPBookingData } from '../categories/op-booking';
@@ -4142,40 +4143,16 @@ export default function HomeScreen({
           >
             {/* Global Search Bar (for Hospitals OP & Medicine Delivery) */}
             <View style={styles.searchSectionWrap}>
-              <View
-                style={[
-                  styles.searchContainer,
-                  isSearchFocused && styles.searchContainerFocused,
-                ]}
-              >
-                <Search
-                  size={18}
-                  color={isSearchFocused ? '#65A30D' : '#64748B'}
-                  style={styles.searchIcon}
-                />
-                <TextInput
-                  ref={searchInputRef}
-                  style={styles.searchInput}
-                  placeholder="Search Apollo, Yashoda, Dolo 650, Paracetamol, Cardiology..."
-                  placeholderTextColor="#94A3B8"
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                  onFocus={() => setIsSearchFocused(true)}
-                  returnKeyType="search"
-                />
-                {searchQuery.length > 0 && (
-                  <TouchableOpacity
-                    onPress={() => {
-                      setSearchQuery('');
-                      searchInputRef.current?.focus();
-                    }}
-                    style={styles.clearSearchBtn}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  >
-                    <X size={16} color="#64748B" />
-                  </TouchableOpacity>
-                )}
-              </View>
+              <CareSearchBar
+                ref={searchInputRef}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                onFocus={() => setIsSearchFocused(true)}
+                onClear={() => {
+                  setSearchQuery('');
+                  searchInputRef.current?.focus();
+                }}
+              />
 
               {/* DYNAMIC SEARCH RESULTS OVERLAY (HOSPITALS & MEDICINE DELIVERY) */}
               {isSearchActive && (

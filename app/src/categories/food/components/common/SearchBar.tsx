@@ -133,15 +133,15 @@ export const SearchBar: React.FC<SearchBarProps> = ({
       style={[
         styles.container,
         {
-          backgroundColor: isDark ? '#1D1E22' : '#FFFFFF',
-          borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E5E7EB',
+          backgroundColor: isDark ? '#000000' : '#FFFFFF',
+          borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : '#E5E7EB',
         },
         style,
       ]}
     >
       <Search
         size={18}
-        color={isDark ? '#9BA08F' : '#6B7280'}
+        color={isDark ? '#FFFFFF' : '#6B7280'}
         style={styles.searchIcon}
       />
 
@@ -151,14 +151,14 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
-          placeholderTextColor={isDark ? '#9BA08F' : 'rgba(184, 175, 203, 0.5)'}
+          placeholderTextColor={isDark ? 'rgba(255, 255, 255, 0.4)' : 'rgba(184, 175, 203, 0.5)'}
           autoFocus={autoFocus}
           editable={editable}
           onSubmitEditing={onSubmitEditing}
           style={[
             styles.input,
             {
-              color: isDark ? '#F1F1EC' : '#111827',
+              color: isDark ? '#FFFFFF' : '#111827',
               pointerEvents: (editable ? 'auto' : 'none') as any,
             },
           ]}
@@ -169,7 +169,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
             <Text
               style={[
                 styles.placeholderPrefix,
-                { color: isDark ? '#9BA08F' : '#6B7280' },
+                { color: isDark ? '#E5E7EB' : '#6B7280' },
               ]}
             >
               {placeholderPrefix}
@@ -179,7 +179,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                 style={[
                   styles.placeholderRollingText,
                   {
-                    color: isDark ? '#F1F1EC' : '#111827',
+                    color: isDark ? '#FFFFFF' : '#111827',
                     transform: [{ translateY }],
                     opacity,
                   },
@@ -196,7 +196,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
       {/* Clear Text Icon */}
       {value && value.length > 0 && (
         <TouchableOpacity onPress={handleClear} style={styles.iconBtn} activeOpacity={0.7}>
-          <X size={16} color={isDark ? '#9BA08F' : '#6B7280'} />
+          <X size={16} color={isDark ? '#FFFFFF' : '#6B7280'} />
         </TouchableOpacity>
       )}
 

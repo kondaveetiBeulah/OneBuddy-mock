@@ -25,6 +25,7 @@ interface HomeScreenProps {
 }
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({ onSelectRestaurant }) => {
+  const isDark = isCategoryDark();
   const { filters, updateFilter, filteredRestaurants } = useFilter();
   const { restaurants } = useFoodData();
   const scrollViewRef = useRef<ScrollView>(null);
@@ -66,7 +67,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSelectRestaurant }) =>
   ];
 
   return (
-    <ScrollView ref={scrollViewRef} style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView ref={scrollViewRef} style={[styles.container, isDark && { backgroundColor: '#000000' }]} showsVerticalScrollIndicator={false}>
       {/* 1. Top Discount Carousel (Auto-slides every 3s, click navigates to menu) */}
       <DiscountCarousel onSelectRestaurant={onSelectRestaurant} />
 
@@ -99,12 +100,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSelectRestaurant }) =>
                     updateFilter('searchQuery', isSelected ? '' : item.name);
                   }
                 }}
-                style={[styles.cuisineChip, isSelected && styles.cuisineChipActive]}
+                style={[
+                  styles.cuisineChip,
+                  isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.15)' },
+                  isSelected && (isDark ? { backgroundColor: '#FFFFFF', borderColor: '#FFFFFF' } : styles.cuisineChipActive),
+                ]}
               >
                 <Text
                   style={[
                     styles.cuisineChipText,
-                    isSelected && { color: '#111827', fontWeight: 'bold' },
+                    isDark && { color: '#FFFFFF' },
+                    isSelected && { color: isDark ? '#000000' : '#111827', fontWeight: 'bold' },
                   ]}
                 >
                   {item.name}
@@ -121,10 +127,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSelectRestaurant }) =>
           <View style={styles.sparkleIcon}>
             <Sparkles size={12} color="#65A30D" />
           </View>
-          <Text style={styles.sectionTitle}>Curated Partner Restaurants</Text>
+          <Text style={[styles.sectionTitle, isDark && { color: '#FFFFFF' }]}>Curated Partner Restaurants</Text>
         </View>
 
-        <Text style={styles.restaurantCountText}>
+        <Text style={[styles.restaurantCountText, isDark && { color: '#A3E635' }]}>
           {filteredRestaurants.length} spots
         </Text>
       </View>
@@ -141,18 +147,18 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSelectRestaurant }) =>
       {/* 5. Quality & Trust Banner */}
       <View style={styles.trustBannerWrap}>
         <LinearGradient
-          colors={isCategoryDark() ? ['#1D1E22', '#24262B', '#121214'] : ['#FFFFFF', '#F9FAFB', '#F3F4F6']}
+          colors={isDark ? ['#000000', '#000000'] : ['#FFFFFF', '#F9FAFB', '#F3F4F6']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={styles.trustBanner}
+          style={[styles.trustBanner, isDark && { borderColor: 'rgba(255, 255, 255, 0.15)' }]}
         >
           <View style={styles.trustLeft}>
             <View style={styles.awardCircle}>
               <Award size={22} color="#65A30D" />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.trustTitle}>OneBuddy Freshness Guarantee</Text>
-              <Text style={styles.trustSub}>
+              <Text style={[styles.trustTitle, isDark && { color: '#FFFFFF' }]}>OneBuddy Freshness Guarantee</Text>
+              <Text style={[styles.trustSub, isDark && { color: '#E5E7EB' }]}>
                 Prepared fresh in hygienic kitchens and delivered under 25 mins.
               </Text>
             </View>

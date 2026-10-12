@@ -10,6 +10,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, typography, spacing } from '../theme';
+import { useGroceryColors } from '../theme/colors';
+import { isCategoryDark } from '@/theme/categoryThemeBridge';
 import { Header } from '../components/Header';
 import { LoadingState } from '../components/LoadingState';
 import { productService } from '../services/productService';
@@ -25,6 +27,9 @@ export const CategoriesScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [categoriesList, setCategoriesList] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const groceryColors = useGroceryColors();
+  const isDark = isCategoryDark() || groceryColors.cardBackground === '#000000';
+  const dynStyles = getStyles(isDark);
 
   useEffect(() => {
     setLoading(true);
@@ -38,7 +43,7 @@ export const CategoriesScreen: React.FC = () => {
   }, []);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={dynStyles.container}>
       <Header title="All Categories" showBack onBack={() => navigation.goBack()} />
 
       {loading && categoriesList.length === 0 ? (
@@ -51,11 +56,11 @@ export const CategoriesScreen: React.FC = () => {
           data={categoriesList}
         numColumns={2}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listPadding}
-        columnWrapperStyle={styles.columnWrapper}
+        contentContainerStyle={dynStyles.listPadding}
+        columnWrapperStyle={dynStyles.columnWrapper}
         renderItem={({ item }) => (
           <TouchableOpacity
-            style={styles.card}
+            style={dynStyles.card}
             onPress={() =>
               navigation.navigate('ProductList', {
                 categoryId: item.id,
@@ -64,14 +69,14 @@ export const CategoriesScreen: React.FC = () => {
             }
             activeOpacity={0.85}
           >
-            <View style={[styles.imageContainer, { backgroundColor: item.backgroundColor || colors.primaryLight }]}>
-              <Image source={{ uri: item.image }} style={styles.image} resizeMode="cover" />
+            <View style={[dynStyles.imageContainer, { backgroundColor: isDark ? 'rgba(95,163,0,0.2)' : (item.backgroundColor || colors.primaryLight) }]}>
+              <Image source={{ uri: item.image }} style={dynStyles.image} resizeMode="cover" />
             </View>
-            <View style={styles.cardContent}>
-              <Text style={styles.categoryName} numberOfLines={1}>
+            <View style={dynStyles.cardContent}>
+              <Text style={dynStyles.categoryName} numberOfLines={1}>
                 {item.name}
               </Text>
-              <Text style={styles.productCount}>
+              <Text style={dynStyles.productCount}>
                 {item.productCount} Products
               </Text>
             </View>
@@ -83,10 +88,10 @@ export const CategoriesScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: isDark ? '#000000' : colors.background,
   },
   listPadding: {
     padding: spacing.md,
@@ -99,10 +104,10 @@ const styles = StyleSheet.create({
     width: ITEM_WIDTH,
     borderRadius: 16,
     overflow: 'hidden',
-    backgroundColor: colors.white,
+    backgroundColor: isDark ? '#000000' : colors.white,
     borderWidth: 1,
-    borderColor: colors.borderLight,
-    shadowColor: colors.black,
+    borderColor: isDark ? 'rgba(255,255,255,0.15)' : colors.borderLight,
+    shadowColor: isDark ? '#FFFFFF' : colors.black,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.03,
     shadowRadius: 3,
@@ -120,16 +125,16 @@ const styles = StyleSheet.create({
   },
   cardContent: {
     padding: spacing.sm + 2,
-    backgroundColor: colors.white,
+    backgroundColor: isDark ? '#000000' : colors.white,
   },
   categoryName: {
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.bold,
-    color: colors.textPrimary,
+    color: isDark ? '#FFFFFF' : colors.textPrimary,
   },
   productCount: {
     fontSize: typography.sizes.xs,
-    color: colors.textMuted,
+    color: isDark ? '#E5E7EB' : colors.textMuted,
     marginTop: 2,
   },
 });

@@ -25,31 +25,32 @@ import { storageHelper, STORAGE_KEYS } from '../utils/helpers';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../types/navigation.types';
-import { colors, typography, spacing } from '../theme';
+import { colors, typography, spacing, useGroceryColors } from '../theme';
+import { isCategoryDark } from '@/theme/categoryThemeBridge';
 
 // ─── Theme & Colors ────────────────────────────────────────────────────────
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const COLORS = {
-  background: colors.background,
-  surface: colors.cardBackground,
-  surfaceLight: colors.background,
-  surfaceHighlight: colors.primaryLight,
-  accent: colors.primary,
-  accentDark: colors.primaryDark,
-  accentLight: colors.primaryLight,
+  get background() { return colors.background; },
+  get surface() { return colors.cardBackground; },
+  get surfaceLight() { return colors.background; },
+  get surfaceHighlight() { return colors.primaryLight; },
+  get accent() { return colors.primary; },
+  get accentDark() { return colors.primaryDark; },
+  get accentLight() { return colors.primaryLight; },
   razorpayBlue: '#0C2340',
   razorpayAccent: '#3395FF',
   razorpayDark: '#07162C',
-  textPrimary: colors.textPrimary,
-  textSecondary: colors.textSecondary,
-  textMuted: colors.textMuted,
-  border: colors.border,
-  borderLight: colors.borderLight,
-  success: colors.success,
-  successLight: colors.successLight,
-  warning: colors.warning,
-  error: colors.danger,
+  get textPrimary() { return colors.textPrimary; },
+  get textSecondary() { return colors.textSecondary; },
+  get textMuted() { return colors.textMuted; },
+  get border() { return colors.border; },
+  get borderLight() { return colors.borderLight; },
+  get success() { return colors.success; },
+  get successLight() { return colors.successLight; },
+  get warning() { return colors.warning; },
+  get error() { return colors.danger; },
   cardRadius: 18,
   pillRadius: 24,
 };
@@ -201,6 +202,9 @@ function PaymentCheckoutScreen({
   onOrderSuccess,
   onRedirectToConfirmation,
 }: PaymentCheckoutScreenProps) {
+  const groceryColors = useGroceryColors();
+  const isDark = isCategoryDark() || groceryColors.cardBackground === '#000000';
+  const styles = useMemo(() => getStyles(isDark), [isDark]);
 
   // Helper getters for items
   const getItemId = (item: any, idx: number) => item.product?.id || item.id || `item_${idx}`;
@@ -443,7 +447,7 @@ function PaymentCheckoutScreen({
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={isDark ? "#000000" : COLORS.background} />
 
       {/* ── Top Payment Header ── */}
       <View style={styles.screenHeader}>
@@ -575,7 +579,7 @@ function PaymentCheckoutScreen({
             activeOpacity={0.8}
           >
             <View style={styles.rpListIconCircle}>
-              <Ionicons name="phone-portrait-outline" size={20} color="#0F172A" />
+              <Ionicons name="phone-portrait-outline" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
             </View>
             <View style={styles.rpListTextContainer}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -705,7 +709,7 @@ function PaymentCheckoutScreen({
             activeOpacity={0.8}
           >
             <View style={styles.rpListIconCircle}>
-              <Ionicons name="wallet-outline" size={20} color="#0F172A" />
+              <Ionicons name="wallet-outline" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
             </View>
             <View style={styles.rpListTextContainer}>
               <Text style={styles.rpListTitle}>One Buddy Wallet</Text>
@@ -760,7 +764,7 @@ function PaymentCheckoutScreen({
             activeOpacity={0.8}
           >
             <View style={styles.rpListIconCircle}>
-              <Ionicons name="card-outline" size={20} color="#0F172A" />
+              <Ionicons name="card-outline" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
             </View>
             <View style={styles.rpListTextContainer}>
               <Text style={styles.rpListTitle}>Credit / Debit Cards</Text>
@@ -902,7 +906,7 @@ function PaymentCheckoutScreen({
             activeOpacity={0.8}
           >
             <View style={styles.rpListIconCircle}>
-              <Ionicons name="business-outline" size={20} color="#0F172A" />
+              <Ionicons name="business-outline" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
             </View>
             <View style={styles.rpListTextContainer}>
               <Text style={styles.rpListTitle}>Net Banking</Text>
@@ -1009,7 +1013,7 @@ function PaymentCheckoutScreen({
             activeOpacity={0.8}
           >
             <View style={styles.rpListIconCircle}>
-              <Ionicons name="wallet-outline" size={20} color="#0F172A" />
+              <Ionicons name="wallet-outline" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
             </View>
             <View style={styles.rpListTextContainer}>
               <Text style={styles.rpListTitle}>Wallets</Text>
@@ -1093,7 +1097,7 @@ function PaymentCheckoutScreen({
             activeOpacity={0.8}
           >
             <View style={styles.rpListIconCircle}>
-              <Ionicons name="cash-outline" size={22} color="#0F172A" />
+              <Ionicons name="cash-outline" size={22} color={isDark ? '#FFFFFF' : '#0F172A'} />
             </View>
             <View style={styles.rpListTextContainer}>
               <Text style={styles.rpListTitle}>Cash on Delivery</Text>
@@ -1211,7 +1215,7 @@ function PaymentCheckoutScreen({
                 ]}
               >
                 <Animated.View style={{ transform: [{ scale: checkmarkScaleAnim }] }}>
-                  <Ionicons name="checkmark-sharp" size={48} color="#FFFFFF" />
+                  <Ionicons name="checkmark-sharp" size={48} color={isDark ? "#000000" : "#FFFFFF"} />
                 </Animated.View>
               </Animated.View>
             </Animated.View>
@@ -1273,10 +1277,10 @@ function PaymentCheckoutScreen({
 }
 
 // ─── STYLES ────────────────────────────────────────────────────────────────
-const styles = StyleSheet.create({
+const getStyles = (isDark: boolean) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: isDark ? '#000000' : COLORS.background,
   },
   screenHeader: {
     flexDirection: 'row',
@@ -1285,19 +1289,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-    backgroundColor: COLORS.surface,
+    borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.15)' : COLORS.border,
+    backgroundColor: isDark ? '#000000' : COLORS.surface,
   },
   backButton: {
     width: 38,
     height: 38,
     borderRadius: 12,
-    backgroundColor: COLORS.surfaceLight,
+    backgroundColor: isDark ? '#000000' : COLORS.surfaceLight,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: isDark ? 1 : 0,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   backButtonText: {
-    color: COLORS.textPrimary,
+    color: isDark ? '#FFFFFF' : COLORS.textPrimary,
     fontSize: 20,
     fontWeight: '700',
   },
@@ -1305,7 +1311,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerTitle: {
-    color: COLORS.textPrimary,
+    color: isDark ? '#FFFFFF' : COLORS.textPrimary,
     fontSize: 17,
     fontWeight: '700',
     letterSpacing: 0.3,
@@ -1483,11 +1489,11 @@ const styles = StyleSheet.create({
 
   // ── List Item Card Styles (Accordion) ──
   rpListItemCard: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: isDark ? '#000000' : COLORS.surface,
     borderRadius: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : COLORS.border,
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -1497,7 +1503,7 @@ const styles = StyleSheet.create({
   },
   rpListItemCardActive: {
     borderColor: COLORS.razorpayAccent,
-    backgroundColor: COLORS.surface,
+    backgroundColor: isDark ? '#000000' : COLORS.surface,
   },
   rpListItemHeader: {
     flexDirection: 'row',
@@ -1508,16 +1514,18 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: COLORS.surfaceHighlight,
+    backgroundColor: isDark ? '#000000' : COLORS.surfaceHighlight,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
+    borderWidth: isDark ? 1 : 0,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
   },
   rpListTextContainer: {
     flex: 1,
   },
   rpListTitle: {
-    color: COLORS.textPrimary,
+    color: isDark ? '#FFFFFF' : COLORS.textPrimary,
     fontSize: 15,
     fontWeight: '700',
   },
@@ -1534,7 +1542,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   rpListSub: {
-    color: COLORS.textMuted,
+    color: isDark ? '#9CA3AF' : COLORS.textMuted,
     fontSize: 11,
     marginTop: 2,
   },
@@ -1543,7 +1551,8 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: COLORS.border + '88',
+    borderTopColor: isDark ? 'rgba(255, 255, 255, 0.15)' : COLORS.border + '88',
+    backgroundColor: isDark ? '#000000' : undefined,
   },
 
   // ── UPI Apps Grid
@@ -1973,19 +1982,19 @@ const styles = StyleSheet.create({
 
   // ── Primary Razorpay Action Button
   rpPrimaryActionBtn: {
-    backgroundColor: COLORS.accent,
+    backgroundColor: isDark ? '#FFFFFF' : COLORS.accent,
     borderRadius: 12,
     paddingVertical: 13,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: COLORS.accent,
+    shadowColor: isDark ? '#FFFFFF' : COLORS.accent,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 6,
   },
   rpPrimaryActionBtnText: {
-    color: COLORS.background,
+    color: isDark ? '#000000' : COLORS.background,
     fontSize: 14,
     fontWeight: '800',
     letterSpacing: 0.3,
@@ -2166,12 +2175,12 @@ const styles = StyleSheet.create({
   successModalCard: {
     width: '100%',
     maxWidth: 420,
-    backgroundColor: colors.white,
+    backgroundColor: isDark ? '#000000' : colors.white,
     borderRadius: 24,
     padding: 24,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: colors.borderLight,
+    borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : colors.borderLight,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.25,
@@ -2184,22 +2193,22 @@ const styles = StyleSheet.create({
     width: 96,
     height: 96,
     borderRadius: 48,
-    backgroundColor: colors.primaryLight,
+    backgroundColor: isDark ? '#000000' : colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 6,
     marginBottom: 16,
     borderWidth: 2,
-    borderColor: colors.primaryMedium,
+    borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : colors.primaryMedium,
   },
   successIconCircle: {
     width: 74,
     height: 74,
     borderRadius: 37,
-    backgroundColor: colors.primary,
+    backgroundColor: isDark ? '#FFFFFF' : colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: colors.primary,
+    shadowColor: isDark ? '#FFFFFF' : colors.primary,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.45,
     shadowRadius: 16,
@@ -2208,20 +2217,20 @@ const styles = StyleSheet.create({
   successModalTitle: {
     fontSize: 22,
     fontWeight: '800',
-    color: colors.textPrimary,
+    color: isDark ? '#FFFFFF' : colors.textPrimary,
     textAlign: 'center',
     marginBottom: 6,
   },
   successModalSubtitle: {
     fontSize: 13.5,
-    color: colors.textSecondary,
+    color: isDark ? '#E5E7EB' : colors.textSecondary,
     textAlign: 'center',
     marginBottom: 16,
     lineHeight: 19,
     paddingHorizontal: 8,
   },
   successAmountBadge: {
-    backgroundColor: colors.primaryLight,
+    backgroundColor: isDark ? '#000000' : colors.primaryLight,
     borderRadius: 14,
     paddingVertical: 10,
     paddingHorizontal: 20,
@@ -2229,27 +2238,27 @@ const styles = StyleSheet.create({
     width: '100%',
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: colors.primaryMedium,
+    borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : colors.primaryMedium,
   },
   successAmountLabel: {
     fontSize: 12,
-    color: colors.textSecondary,
+    color: isDark ? '#9CA3AF' : colors.textSecondary,
     fontWeight: '600',
     marginBottom: 2,
   },
   successAmountValue: {
     fontSize: 22,
     fontWeight: '800',
-    color: colors.primaryDark,
+    color: isDark ? '#FFFFFF' : colors.primaryDark,
   },
   successDetailsBox: {
-    backgroundColor: colors.background,
+    backgroundColor: isDark ? '#000000' : colors.background,
     borderRadius: 14,
     padding: 14,
     width: '100%',
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: colors.borderLight,
+    borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : colors.borderLight,
   },
   successDetailRow: {
     flexDirection: 'row',
@@ -2258,12 +2267,12 @@ const styles = StyleSheet.create({
   },
   successDetailLabel: {
     fontSize: 12.5,
-    color: colors.textMuted,
+    color: isDark ? '#9CA3AF' : colors.textMuted,
     fontWeight: '500',
   },
   successDetailValue: {
     fontSize: 13,
-    color: colors.textPrimary,
+    color: isDark ? '#FFFFFF' : colors.textPrimary,
     fontWeight: '700',
     maxWidth: '60%',
     textAlign: 'right',
@@ -2276,7 +2285,7 @@ const styles = StyleSheet.create({
   },
   successDetailDivider: {
     height: 1,
-    backgroundColor: colors.borderLight,
+    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.15)' : colors.borderLight,
     marginVertical: 8,
   },
   successStatusRow: {
@@ -2296,7 +2305,7 @@ const styles = StyleSheet.create({
   },
   autoRedirectText: {
     fontSize: 12,
-    color: colors.textMuted,
+    color: isDark ? '#9CA3AF' : colors.textMuted,
     fontStyle: 'italic',
   },
 });

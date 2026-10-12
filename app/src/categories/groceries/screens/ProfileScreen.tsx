@@ -10,6 +10,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing } from '../theme';
+import { useGroceryColors } from '../theme/colors';
+import { isCategoryDark } from '@/theme/categoryThemeBridge';
 import { Header } from '../components/Header';
 import { useUser } from '../context/UserContext';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -39,6 +41,9 @@ const MENU_ITEMS: MenuItem[] = [
 
 export const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   const { user, logout } = useUser();
+  const groceryColors = useGroceryColors();
+  const isDark = isCategoryDark() || groceryColors.cardBackground === '#000000';
+  const dynStyles = getStyles(isDark);
 
   const handleLogout = async () => {
     await logout();
@@ -49,69 +54,69 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={dynStyles.container}>
       <Header title="My Account" />
 
-      <ScrollView contentContainerStyle={styles.scrollPadding}>
+      <ScrollView contentContainerStyle={dynStyles.scrollPadding}>
         {/* User Info Header Card */}
-        <View style={styles.userCard}>
-          <View style={styles.avatarWrapper}>
+        <View style={dynStyles.userCard}>
+          <View style={dynStyles.avatarWrapper}>
             {user?.avatar ? (
-              <Image source={{ uri: user.avatar }} style={styles.avatarImg} />
+              <Image source={{ uri: user.avatar }} style={dynStyles.avatarImg} />
             ) : (
               <Ionicons name="person" size={32} color={colors.white} />
             )}
           </View>
 
-          <View style={styles.userInfoCol}>
-            <Text style={styles.userName}>{user?.name || 'Anjali'}</Text>
-            <Text style={styles.userSub}>{user?.email || 'anjali@example.com'}</Text>
-            <Text style={styles.userSub}>+91 {user?.phone || '9876543210'}</Text>
+          <View style={dynStyles.userInfoCol}>
+            <Text style={dynStyles.userName}>{user?.name || 'Anjali'}</Text>
+            <Text style={dynStyles.userSub}>{user?.email || 'anjali@example.com'}</Text>
+            <Text style={dynStyles.userSub}>+91 {user?.phone || '9876543210'}</Text>
           </View>
 
           <TouchableOpacity
-            style={styles.editBtn}
+            style={dynStyles.editBtn}
             onPress={() => navigation.navigate('EditProfile')}
           >
-            <Ionicons name="pencil" size={16} color={colors.primary} />
+            <Ionicons name="pencil" size={16} color={isDark ? '#FFFFFF' : colors.primary} />
           </TouchableOpacity>
         </View>
 
         {/* Menu Items List */}
-        <View style={styles.menuCard}>
+        <View style={dynStyles.menuCard}>
           {MENU_ITEMS.map((item) => (
             <TouchableOpacity
               key={item.id}
-              style={styles.menuRow}
+              style={dynStyles.menuRow}
               onPress={() => navigation.navigate(item.route as any)}
             >
-              <View style={styles.menuIconBg}>
-                <Ionicons name={item.icon} size={20} color={colors.primary} />
+              <View style={dynStyles.menuIconBg}>
+                <Ionicons name={item.icon} size={20} color={isDark ? '#FFFFFF' : colors.primary} />
               </View>
-              <Text style={styles.menuTitle}>{item.title}</Text>
-              <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+              <Text style={dynStyles.menuTitle}>{item.title}</Text>
+              <Ionicons name="chevron-forward" size={18} color={isDark ? '#FFFFFF' : colors.textMuted} />
             </TouchableOpacity>
           ))}
 
           {/* Logout Button */}
-          <TouchableOpacity style={styles.logoutRow} onPress={handleLogout}>
-            <View style={[styles.menuIconBg, { backgroundColor: colors.dangerLight }]}>
-              <Ionicons name="log-out-outline" size={20} color={colors.danger} />
+          <TouchableOpacity style={dynStyles.logoutRow} onPress={handleLogout}>
+            <View style={[dynStyles.menuIconBg, { backgroundColor: isDark ? 'rgba(239,68,68,0.2)' : colors.dangerLight }]}>
+              <Ionicons name="log-out-outline" size={20} color={isDark ? '#EF4444' : colors.danger} />
             </View>
-            <Text style={styles.logoutTitle}>Logout</Text>
+            <Text style={dynStyles.logoutTitle}>Logout</Text>
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.versionText}>1Buddy Grocery v1.0.0 (Phase 1)</Text>
+        <Text style={dynStyles.versionText}>1Buddy Grocery v1.0.0 (Phase 1)</Text>
       </ScrollView>
     </SafeAreaView>
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: isDark ? '#000000' : colors.background,
   },
   scrollPadding: {
     padding: spacing.md,
@@ -119,13 +124,13 @@ const styles = StyleSheet.create({
   userCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.white,
+    backgroundColor: isDark ? '#000000' : colors.white,
     borderRadius: spacing.borderRadius.lg,
     padding: spacing.md,
     marginBottom: spacing.lg,
     borderWidth: 1,
-    borderColor: colors.borderLight,
-    shadowColor: colors.black,
+    borderColor: isDark ? 'rgba(255,255,255,0.15)' : colors.borderLight,
+    shadowColor: isDark ? '#FFFFFF' : colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 4,
@@ -135,7 +140,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: colors.primary,
+    backgroundColor: isDark ? '#FFFFFF' : colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
@@ -152,27 +157,27 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: typography.sizes.lg,
     fontWeight: typography.weights.bold,
-    color: colors.textPrimary,
+    color: isDark ? '#FFFFFF' : colors.textPrimary,
   },
   userSub: {
     fontSize: typography.sizes.xs,
-    color: colors.textMuted,
+    color: isDark ? '#E5E7EB' : colors.textMuted,
     marginTop: 1,
   },
   editBtn: {
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: colors.primaryLight,
+    backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
   menuCard: {
-    backgroundColor: colors.white,
+    backgroundColor: isDark ? '#000000' : colors.white,
     borderRadius: spacing.borderRadius.lg,
     paddingVertical: spacing.xs,
     borderWidth: 1,
-    borderColor: colors.borderLight,
+    borderColor: isDark ? 'rgba(255,255,255,0.15)' : colors.borderLight,
   },
   menuRow: {
     flexDirection: 'row',
@@ -180,13 +185,13 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm + 2,
     paddingHorizontal: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: colors.borderLight,
+    borderBottomColor: isDark ? 'rgba(255,255,255,0.12)' : colors.borderLight,
   },
   menuIconBg: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: colors.primaryLight,
+    backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.md,
@@ -195,7 +200,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: typography.sizes.sm,
     fontWeight: typography.weights.semibold,
-    color: colors.textPrimary,
+    color: isDark ? '#FFFFFF' : colors.textPrimary,
   },
   logoutRow: {
     flexDirection: 'row',
@@ -206,12 +211,12 @@ const styles = StyleSheet.create({
   logoutTitle: {
     fontSize: typography.sizes.sm,
     fontWeight: typography.weights.bold,
-    color: colors.danger,
+    color: isDark ? '#EF4444' : colors.danger,
   },
   versionText: {
     textAlign: 'center',
     fontSize: typography.sizes.xs,
-    color: colors.textMuted,
+    color: isDark ? '#E5E7EB' : colors.textMuted,
     marginTop: spacing.xl,
     marginBottom: spacing.md,
   },

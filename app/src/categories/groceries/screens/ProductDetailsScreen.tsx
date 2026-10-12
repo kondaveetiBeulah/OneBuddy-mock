@@ -11,7 +11,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, typography, spacing } from '../theme';
+import { colors, typography, spacing, useGroceryColors } from '../theme';
+import { isCategoryDark } from '@/theme/categoryThemeBridge';
 import { Header } from '../components/Header';
 import { RatingStars } from '../components/RatingStars';
 import { QuantitySelector } from '../components/QuantitySelector';
@@ -35,6 +36,8 @@ export const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({
   route,
 }) => {
   const { productId } = route.params;
+  const groceryColors = useGroceryColors();
+  const isDark = isCategoryDark() || groceryColors.cardBackground === '#000000';
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
@@ -194,7 +197,7 @@ export const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, isDark && { backgroundColor: '#000000' }]}>
       <Header
         title={product.brand}
         showBack
@@ -244,7 +247,7 @@ export const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         {/* Product Image */}
-        <View style={styles.imageContainer}>
+        <View style={[styles.imageContainer, isDark && { backgroundColor: '#000000' }]}>
           <Image
             source={{ uri: product.image }}
             style={styles.productImage}
@@ -308,7 +311,7 @@ export const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({
           <View style={styles.divider} />
 
           {/* Delivery Information Box */}
-          <View style={styles.deliveryBox}>
+          <View style={[styles.deliveryBox, isDark && { backgroundColor: '#000000', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.15)' }]}>
             <View style={styles.deliveryRow}>
               <Ionicons name="flash-outline" size={20} color={colors.primary} />
               <View style={styles.deliveryTextCol}>
@@ -338,12 +341,16 @@ export const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({
       </ScrollView>
 
       {/* Bottom Action Footer with Animated Smooth Hovering Button */}
-      <View style={styles.bottomFooter}>
+      <View style={[styles.bottomFooter, isDark && { backgroundColor: '#000000', borderTopColor: 'rgba(255, 255, 255, 0.15)' }]}>
         <Animated.View style={[styles.actionBtnWrapper, { transform: [{ scale: buttonScale }] }]}>
           <TouchableOpacity
             style={[
               styles.addCartBtn,
               isAdded && styles.addCartBtnSuccess,
+              isDark && (isAdded
+                ? { backgroundColor: '#FFFFFF', borderColor: '#FFFFFF' }
+                : { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.2)' }
+              ),
             ]}
             onPress={handleAddToCart}
             activeOpacity={0.85}
@@ -351,9 +358,13 @@ export const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({
             <Ionicons
               name={cartQty > 0 ? 'cart' : 'cart-outline'}
               size={20}
-              color={isAdded ? colors.white : colors.primary}
+              color={isDark ? (isAdded ? '#000000' : '#FFFFFF') : (isAdded ? colors.white : colors.primary)}
             />
-            <Text style={[styles.addCartBtnText, isAdded && styles.addCartBtnTextSuccess]}>
+            <Text style={[
+              styles.addCartBtnText,
+              isAdded && styles.addCartBtnTextSuccess,
+              isDark && { color: isAdded ? '#000000' : '#FFFFFF' },
+            ]}>
               {cartQty > 0 ? `Cart (${cartQty})` : 'Add to Cart'}
             </Text>
           </TouchableOpacity>
@@ -361,12 +372,12 @@ export const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({
 
         <View style={styles.actionBtnWrapper}>
           <TouchableOpacity
-            style={styles.buyNowBtn}
+            style={[styles.buyNowBtn, isDark && { backgroundColor: '#FFFFFF', shadowColor: '#FFFFFF' }]}
             onPress={handleBuyNow}
             activeOpacity={0.88}
           >
-            <Ionicons name="flash" size={18} color={colors.white} />
-            <Text style={styles.buyNowBtnText}>Buy Now</Text>
+            <Ionicons name="flash" size={18} color={isDark ? '#000000' : colors.white} />
+            <Text style={[styles.buyNowBtnText, isDark && { color: '#000000' }]}>Buy Now</Text>
           </TouchableOpacity>
         </View>
       </View>

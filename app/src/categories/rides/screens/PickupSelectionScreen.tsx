@@ -39,7 +39,10 @@ export const PickupSelectionScreen = ({
   ) + 10;
   const vehicle = route?.params?.vehicle || VEHICLES[3] || VEHICLES[0];
   const passedPickup = route?.params?.pickup;
-  const destination = route?.params?.destination || 'Road Number 6';
+  const rawDest = route?.params?.destination as any;
+  const destinationTitle = typeof rawDest === 'string'
+    ? rawDest
+    : (rawDest?.title || 'Destination');
 
   const pickupLocation = {
     id: passedPickup?.id || '1',
@@ -53,9 +56,9 @@ export const PickupSelectionScreen = ({
 
   const handleConfirmPickup = () => {
     if (onConfirmPickup) {
-      onConfirmPickup({ vehicle, pickup: pickupLocation, destination });
+      onConfirmPickup({ vehicle, pickup: pickupLocation, destination: destinationTitle });
     } else if (navigation?.navigate) {
-      navigation.navigate('SetPrice', { vehicle, pickup: pickupLocation, destination });
+      navigation.navigate('SetPrice', { vehicle, pickup: pickupLocation, destination: destinationTitle });
     }
   };
 
@@ -76,12 +79,12 @@ export const PickupSelectionScreen = ({
   }, [handleBack]);
 
   const pickupCoord = {
-    latitude: 17.368,
-    longitude: 78.485,
+    latitude: passedPickup?.latitude || 17.355,
+    longitude: passedPickup?.longitude || 78.405,
   };
   const dropCoord = {
-    latitude: 17.382,
-    longitude: 78.498,
+    latitude: 17.425,
+    longitude: 78.475,
   };
 
   return (
@@ -98,12 +101,14 @@ export const PickupSelectionScreen = ({
         >
           <Marker
             coordinate={pickupCoord}
-            title={pickupLocation.title || 'Kshatriya Foods'}
+            title={pickupLocation.title || 'Pickup Location'}
+            type="pickup"
           />
           <Marker
             coordinate={dropCoord}
-            title={destination || 'Bachpan Play School, Chintal'}
+            title={destinationTitle}
             isDestination={true}
+            type="drop"
           />
         </MapView>
 
@@ -149,7 +154,7 @@ export const PickupSelectionScreen = ({
             <View style={styles.orangeDot} />
             <View style={styles.addressTexts}>
               <Text style={[styles.addressLabel, isDark && { color: '#9BA08F' }]}>DROP</Text>
-              <Text style={[styles.addressTitle, isDark && { color: '#F1F1EC' }]} numberOfLines={1}>{destination}</Text>
+              <Text style={[styles.addressTitle, isDark && { color: '#F1F1EC' }]} numberOfLines={1}>{destinationTitle}</Text>
             </View>
           </View>
         </View>
@@ -212,8 +217,8 @@ const styles = StyleSheet.create({
   pickupPinDot: {
     width: 10,
     height: 10,
-    borderRadius: 5,
-    backgroundColor: '#54B713',
+    borderRadius: 2,
+    backgroundColor: '#EF4444',
   },
   pickupPinText: {
     flex: 1,
@@ -291,15 +296,15 @@ const styles = StyleSheet.create({
   greenDot: {
     width: 10,
     height: 10,
-    borderRadius: 5,
-    backgroundColor: '#54B713',
+    borderRadius: 2,
+    backgroundColor: '#EF4444',
     marginTop: 4,
   },
   orangeDot: {
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: '#ef4444',
+    backgroundColor: '#54B713',
     marginTop: 4,
   },
   addressTexts: { flex: 1 },

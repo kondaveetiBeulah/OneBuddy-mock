@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Plus, Minus } from 'lucide-react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { isCategoryDark } from '@/theme/categoryThemeBridge';
 
 interface QuantityButtonProps {
   quantity: number;
@@ -22,6 +22,7 @@ export const QuantityButton: React.FC<QuantityButtonProps> = ({
 }) => {
   const isSm = size === 'sm';
   const isLg = size === 'lg';
+  const isDark = isCategoryDark();
 
   if (quantity === 0) {
     return (
@@ -35,12 +36,13 @@ export const QuantityButton: React.FC<QuantityButtonProps> = ({
             styles.addBtn,
             isSm && styles.addBtnSm,
             isLg && styles.addBtnLg,
+            isDark && { backgroundColor: '#FFFFFF', borderColor: '#FFFFFF' },
           ]}
         >
-          <Text style={[styles.addText, isSm && { fontSize: 11 }, isLg && { fontSize: 15 }]}>
+          <Text style={[styles.addText, isSm && { fontSize: 11 }, isLg && { fontSize: 15 }, isDark && { color: '#000000' }]}>
             Add
           </Text>
-          <Plus size={isSm ? 12 : isLg ? 16 : 14} color="#65A30D" />
+          <Plus size={isSm ? 12 : isLg ? 16 : 14} color={isDark ? '#000000' : '#65A30D'} />
         </View>
       </TouchableOpacity>
     );
@@ -53,6 +55,7 @@ export const QuantityButton: React.FC<QuantityButtonProps> = ({
         isSm && styles.stepperSm,
         isLg && styles.stepperLg,
         fullWidth && { width: '100%' },
+        isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.2)' },
       ]}
     >
       <TouchableOpacity
@@ -60,10 +63,10 @@ export const QuantityButton: React.FC<QuantityButtonProps> = ({
         activeOpacity={0.7}
         style={styles.stepBtn}
       >
-        <Minus size={isSm ? 12 : isLg ? 16 : 14} color="#65A30D" />
+        <Minus size={isSm ? 12 : isLg ? 16 : 14} color={isDark ? '#FFFFFF' : '#65A30D'} />
       </TouchableOpacity>
 
-      <Text style={[styles.qtyText, isSm && { fontSize: 12 }, isLg && { fontSize: 16 }]}>
+      <Text style={[styles.qtyText, isSm && { fontSize: 12 }, isLg && { fontSize: 16 }, isDark && { color: '#FFFFFF' }]}>
         {quantity}
       </Text>
 
@@ -72,7 +75,7 @@ export const QuantityButton: React.FC<QuantityButtonProps> = ({
         activeOpacity={0.7}
         style={styles.stepBtn}
       >
-        <Plus size={isSm ? 12 : isLg ? 16 : 14} color="#65A30D" />
+        <Plus size={isSm ? 12 : isLg ? 16 : 14} color={isDark ? '#FFFFFF' : '#65A30D'} />
       </TouchableOpacity>
     </View>
   );

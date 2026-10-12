@@ -23,6 +23,7 @@ export const MenuHeader: React.FC<MenuHeaderProps> = ({ restaurant, onBack }) =>
   const { toggleFavorite, isFavorite } = useCart();
   const [isCopied, setIsCopied] = React.useState(false);
   const fav = isFavorite(restaurant.id);
+  const isDark = isCategoryDark();
 
   const handleCopy = async () => {
     if (restaurant.couponCode) {
@@ -41,7 +42,7 @@ export const MenuHeader: React.FC<MenuHeaderProps> = ({ restaurant, onBack }) =>
           style={styles.bannerImage}
         />
         <LinearGradient
-          colors={['rgba(0,0,0,0.5)', 'transparent', isCategoryDark() ? '#121214' : '#F3F4F6']}
+          colors={['rgba(0,0,0,0.5)', 'transparent', isDark ? '#000000' : '#F3F4F6']}
           style={styles.bannerOverlay}
         />
 
@@ -68,13 +69,20 @@ export const MenuHeader: React.FC<MenuHeaderProps> = ({ restaurant, onBack }) =>
       {/* Meta Card (Dual-Shade Gradient) */}
       <View style={styles.cardOffsetWrap}>
         <View
-          style={[styles.metaCard, { borderColor: isCategoryDark() ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)', backgroundColor: isCategoryDark() ? '#1D1E22' : '#FFFFFF', overflow: 'hidden' }]}
+          style={[
+            styles.metaCard,
+            {
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
+              backgroundColor: isDark ? '#000000' : '#FFFFFF',
+              overflow: 'hidden',
+            },
+          ]}
         >
           <LinearGradient
             colors={restaurant.gradientColors}
             start={{ x: 0, y: 0 }}
             end={{ x: 0, y: 1 }}
-            style={[StyleSheet.absoluteFill, { opacity: 0.15 }]}
+            style={[StyleSheet.absoluteFill, { opacity: isDark ? 0.08 : 0.15 }]}
           />
           <View style={styles.titleRow}>
             <View style={{ flex: 1, marginRight: 8 }}>
@@ -83,11 +91,11 @@ export const MenuHeader: React.FC<MenuHeaderProps> = ({ restaurant, onBack }) =>
                   type={restaurant.dietaryType === 'pure-veg' ? 'veg' : 'non-veg'}
                   size="sm"
                 />
-                <Text style={styles.restaurantTitle} numberOfLines={1}>
+                <Text style={[styles.restaurantTitle, isDark && { color: '#FFFFFF' }]} numberOfLines={1}>
                   {restaurant.name}
                 </Text>
               </View>
-              <Text style={styles.tagline}>{restaurant.tagline}</Text>
+              <Text style={[styles.tagline, isDark && { color: '#E5E7EB' }]}>{restaurant.tagline}</Text>
             </View>
 
             <RatingBadge rating={restaurant.rating} countText={restaurant.totalRatings} size="md" />
@@ -96,14 +104,14 @@ export const MenuHeader: React.FC<MenuHeaderProps> = ({ restaurant, onBack }) =>
           {/* Cuisines */}
           <View style={styles.cuisineRow}>
             {restaurant.cuisine.map((c, i) => (
-              <View key={i} style={styles.cuisinePill}>
-                <Text style={styles.cuisineText}>{c}</Text>
+              <View key={i} style={[styles.cuisinePill, isDark && { backgroundColor: 'rgba(255, 255, 255, 0.08)', borderColor: 'rgba(255, 255, 255, 0.15)' }]}>
+                <Text style={[styles.cuisineText, isDark && { color: '#E5E7EB' }]}>{c}</Text>
               </View>
             ))}
           </View>
 
           {/* Quick Info Bar */}
-          <View style={styles.metricsBar}>
+          <View style={[styles.metricsBar, isDark && { borderTopColor: 'rgba(255, 255, 255, 0.1)' }]}>
             <View style={styles.metricsGroup}>
               <View style={styles.metricItem}>
                 <Clock size={13} color="#34D399" />
@@ -112,24 +120,24 @@ export const MenuHeader: React.FC<MenuHeaderProps> = ({ restaurant, onBack }) =>
               <View style={styles.dot} />
               <View style={styles.metricItem}>
                 <MapPin size={13} color="#65A30D" />
-                <Text style={styles.metricDistance}>{restaurant.distance}</Text>
+                <Text style={[styles.metricDistance, isDark && { color: '#E5E7EB' }]}>{restaurant.distance}</Text>
               </View>
             </View>
 
-            <Text style={styles.costText}>₹{restaurant.costForTwo} for two</Text>
+            <Text style={[styles.costText, isDark && { color: '#FFFFFF' }]}>₹{restaurant.costForTwo} for two</Text>
           </View>
         </View>
 
         {/* Promo Coupon Bar with 1-Tap Apply */}
-        <View style={styles.couponBar}>
+        <View style={[styles.couponBar, isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.2)' }]}>
           <View style={styles.couponLeft}>
             <Tag size={14} color="#65A30D" />
             <View style={{ flex: 1 }}>
-              <Text style={styles.couponOffer} numberOfLines={1}>
+              <Text style={[styles.couponOffer, isDark && { color: '#FFFFFF' }]} numberOfLines={1}>
                 {restaurant.offerText}
               </Text>
-              <Text style={styles.couponCodeText}>
-                Use code: <Text style={{ color: '#4D7C0F', fontWeight: 'bold' }}>{restaurant.couponCode}</Text>
+              <Text style={[styles.couponCodeText, isDark && { color: '#E5E7EB' }]}>
+                Use code: <Text style={{ color: isDark ? '#A3E635' : '#4D7C0F', fontWeight: 'bold' }}>{restaurant.couponCode}</Text>
               </Text>
             </View>
           </View>
@@ -137,7 +145,11 @@ export const MenuHeader: React.FC<MenuHeaderProps> = ({ restaurant, onBack }) =>
           {restaurant.couponCode ? (
             <TouchableOpacity
               onPress={handleCopy}
-              style={[styles.applyBtn, isCopied && styles.appliedBtn]}
+              style={[
+                styles.applyBtn,
+                isCopied && styles.appliedBtn,
+                isDark && !isCopied && { backgroundColor: '#FFFFFF', borderColor: '#FFFFFF' },
+              ]}
             >
               {isCopied ? (
                 <View style={styles.appliedRow}>
@@ -145,7 +157,7 @@ export const MenuHeader: React.FC<MenuHeaderProps> = ({ restaurant, onBack }) =>
                   <Text style={styles.appliedText}>COPIED</Text>
                 </View>
               ) : (
-                <Text style={styles.applyText}>COPY</Text>
+                <Text style={[styles.applyText, isDark && { color: '#000000' }]}>COPY</Text>
               )}
             </TouchableOpacity>
           ) : null}

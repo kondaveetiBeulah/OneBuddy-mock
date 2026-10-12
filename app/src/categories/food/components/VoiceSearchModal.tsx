@@ -489,15 +489,15 @@ export const VoiceSearchModal: React.FC<VoiceSearchModalProps> = ({
           style={[
             styles.modalCard,
             {
-              backgroundColor: isDark ? '#1D1E22' : '#FFFFFF',
-              borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#E5E7EB',
+              backgroundColor: isDark ? '#000000' : '#FFFFFF',
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : '#E5E7EB',
             },
           ]}
         >
           <TouchableOpacity
             style={[
               styles.closeBtn,
-              { backgroundColor: isDark ? '#2A2B30' : '#F3F4F6' },
+              { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#F3F4F6' },
             ]}
             onPress={onClose}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -505,14 +505,14 @@ export const VoiceSearchModal: React.FC<VoiceSearchModalProps> = ({
             <Ionicons
               name="close"
               size={22}
-              color={isDark ? '#F1F1EC' : '#6B7280'}
+              color={isDark ? '#FFFFFF' : '#6B7280'}
             />
           </TouchableOpacity>
 
-          <Text style={[styles.title, { color: isDark ? '#F1F1EC' : '#111827' }]}>
+          <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#111827' }]}>
             Food Voice Search
           </Text>
-          <Text style={[styles.subtitle, { color: isDark ? '#9BA08F' : '#6B7280' }]}>
+          <Text style={[styles.subtitle, { color: isDark ? '#E5E7EB' : '#6B7280' }]}>
             {isListening
               ? 'Listening... Speak a dish, restaurant, or item from a restaurant'
               : errorMessage || 'Tap microphone to speak'}
@@ -568,14 +568,15 @@ export const VoiceSearchModal: React.FC<VoiceSearchModalProps> = ({
           <View
             style={[
               styles.transcriptBox,
-              { backgroundColor: isDark ? '#2A2B30' : '#F9FAFB' },
+              { backgroundColor: isDark ? '#000000' : '#F9FAFB' },
+              isDark && { borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.2)' },
             ]}
           >
             {liveTranscript ? (
               <Text
                 style={[
                   styles.liveTranscriptText,
-                  { color: isDark ? '#F1F1EC' : '#111827' },
+                  { color: isDark ? '#FFFFFF' : '#111827' },
                 ]}
               >
                 "{liveTranscript}"
@@ -586,7 +587,7 @@ export const VoiceSearchModal: React.FC<VoiceSearchModalProps> = ({
               <Text
                 style={[
                   styles.waitingText,
-                  { color: isDark ? '#9BA08F' : '#9CA3AF' },
+                  { color: isDark ? '#9CA3AF' : '#9CA3AF' },
                 ]}
               >
                 Say "Biryani", "Paradise", or "Biryani from Paradise"...
@@ -596,12 +597,12 @@ export const VoiceSearchModal: React.FC<VoiceSearchModalProps> = ({
 
           {liveTranscript.length > 0 && (
             <TouchableOpacity
-              style={styles.searchNowBtn}
+              style={[styles.searchNowBtn, isDark && { backgroundColor: '#FFFFFF' }]}
               onPress={() => handleCompleteRecognition(liveTranscript)}
               activeOpacity={0.85}
             >
-              <Ionicons name="search" size={16} color="#FFFFFF" />
-              <Text style={styles.searchNowBtnText}>
+              <Ionicons name="search" size={16} color={isDark ? '#000000' : '#FFFFFF'} />
+              <Text style={[styles.searchNowBtnText, isDark && { color: '#000000' }]}>
                 Search "{cleanFoodVoiceQuery(liveTranscript)}"
               </Text>
             </TouchableOpacity>
@@ -610,7 +611,7 @@ export const VoiceSearchModal: React.FC<VoiceSearchModalProps> = ({
           <View
             style={[
               styles.divider,
-              { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E5E7EB' },
+              { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#E5E7EB' },
             ]}
           />
 
@@ -633,19 +634,20 @@ export const VoiceSearchModal: React.FC<VoiceSearchModalProps> = ({
                     active && styles.filterTabActive,
                     {
                       backgroundColor: active
-                        ? '#65A30D'
+                        ? (isDark ? '#FFFFFF' : '#65A30D')
                         : isDark
-                        ? '#2A2B30'
+                        ? '#000000'
                         : '#F3F4F6',
                     },
+                    isDark && !active && { borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.2)' },
                   ]}
                 >
                   <Text
                     style={[
                       styles.filterTabText,
                       active
-                        ? styles.filterTabTextActive
-                        : { color: isDark ? '#9BA08F' : '#6B7280' },
+                        ? (isDark ? { color: '#000000', fontWeight: 'bold' } : styles.filterTabTextActive)
+                        : { color: isDark ? '#FFFFFF' : '#6B7280' },
                     ]}
                   >
                     {label}
@@ -667,8 +669,8 @@ export const VoiceSearchModal: React.FC<VoiceSearchModalProps> = ({
                 style={[
                   styles.suggestionChip,
                   {
-                    backgroundColor: isDark ? '#2A2B30' : '#F9FAFB',
-                    borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#E5E7EB',
+                    backgroundColor: isDark ? '#000000' : '#F9FAFB',
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : '#E5E7EB',
                   },
                 ]}
                 onPress={() => handleSelectSuggestion(item.label)}
@@ -677,13 +679,13 @@ export const VoiceSearchModal: React.FC<VoiceSearchModalProps> = ({
                 <Ionicons
                   name={item.icon as any}
                   size={14}
-                  color="#65A30D"
+                  color={isDark ? '#A3E635' : '#65A30D'}
                   style={{ marginRight: 5 }}
                 />
                 <Text
                   style={[
                     styles.suggestionChipText,
-                    { color: isDark ? '#F1F1EC' : '#1F2937' },
+                    { color: isDark ? '#FFFFFF' : '#1F2937' },
                   ]}
                 >
                   {item.label}

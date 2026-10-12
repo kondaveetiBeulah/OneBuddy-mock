@@ -12,6 +12,7 @@ import { ArrowLeft, Utensils } from 'lucide-react-native';
 import { MenuItem } from '../types';
 import { useNetwork } from '@/context/NetworkContext';
 import { NetworkErrorState } from '@/components/NetworkErrorState';
+import { isCategoryDark } from '@/theme/categoryThemeBridge';
 
 interface RestaurantMenuScreenProps {
   restaurantId: string;
@@ -27,6 +28,7 @@ export const RestaurantMenuScreen: React.FC<RestaurantMenuScreenProps> = ({
   const insets = useSafeAreaInsets();
   const { restaurants, isLoading, error, refresh } = useFoodData();
   const { isConnected } = useNetwork();
+  const isDark = isCategoryDark();
   const restaurant = useMemo(() => {
     return restaurants.find((r) => r.id === restaurantId) || restaurants[0];
   }, [restaurants, restaurantId]);
@@ -113,14 +115,14 @@ export const RestaurantMenuScreen: React.FC<RestaurantMenuScreenProps> = ({
   if (!restaurant) {
     if (isLoading) {
       return (
-        <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <View style={[styles.container, isDark && { backgroundColor: '#000000' }, { justifyContent: 'center', alignItems: 'center' }]}>
           <ActivityIndicator size="large" color="#65A30D" />
         </View>
       );
     }
     if (!isConnected || error) {
       return (
-        <View style={[styles.container, { paddingTop: insets.top + 8 }]}>
+        <View style={[styles.container, isDark && { backgroundColor: '#000000' }, { paddingTop: insets.top + 8 }]}>
           <View style={{ paddingHorizontal: 16, paddingBottom: 12 }}>
             <TouchableOpacity
               onPress={onBack}
@@ -128,12 +130,12 @@ export const RestaurantMenuScreen: React.FC<RestaurantMenuScreenProps> = ({
                 width: 38,
                 height: 38,
                 borderRadius: 19,
-                backgroundColor: 'rgba(0,0,0,0.06)',
+                backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)',
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
             >
-              <ArrowLeft size={20} color="#1F2937" />
+              <ArrowLeft size={20} color={isDark ? '#FFFFFF' : '#1F2937'} />
             </TouchableOpacity>
           </View>
           <NetworkErrorState
@@ -145,14 +147,14 @@ export const RestaurantMenuScreen: React.FC<RestaurantMenuScreenProps> = ({
       );
     }
     return (
-      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center', padding: 20 }]}>
-        <Text style={{ fontSize: 16, color: '#6B7280', marginBottom: 12 }}>Restaurant not found</Text>
+      <View style={[styles.container, isDark && { backgroundColor: '#000000' }, { justifyContent: 'center', alignItems: 'center', padding: 20 }]}>
+        <Text style={[{ fontSize: 16, color: '#6B7280', marginBottom: 12 }, isDark && { color: '#FFFFFF' }]}>Restaurant not found</Text>
       </View>
     );
   }
 
   return (
-    <ScrollView ref={scrollViewRef} style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView ref={scrollViewRef} style={[styles.container, isDark && { backgroundColor: '#000000' }]} showsVerticalScrollIndicator={false}>
       {/* 1. Header with Sticky Back Button & Hero Details */}
       <MenuHeader restaurant={restaurant} onBack={onBack} />
 
@@ -181,13 +183,13 @@ export const RestaurantMenuScreen: React.FC<RestaurantMenuScreenProps> = ({
           <View style={styles.utensilIcon}>
             <Utensils size={13} color="#C084FC" />
           </View>
-          <Text style={styles.sectionTitle}>
+          <Text style={[styles.sectionTitle, isDark && { color: '#FFFFFF' }]}>
             {selectedCategory === 'All' ? 'Full Gourmet Menu' : selectedCategory} ({filteredMenuItems.length})
           </Text>
         </View>
 
         {menuSearchQuery ? (
-          <Text style={styles.filteredLabel}>Filtered by "{menuSearchQuery}"</Text>
+          <Text style={[styles.filteredLabel, isDark && { color: '#A3E635' }]}>Filtered by "{menuSearchQuery}"</Text>
         ) : null}
       </View>
 

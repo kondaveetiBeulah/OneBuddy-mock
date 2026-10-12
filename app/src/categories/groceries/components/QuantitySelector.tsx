@@ -22,6 +22,7 @@ export const QuantitySelector: React.FC<QuantitySelectorProps> = ({
   size = 'medium',
 }) => {
   const colors = useGroceryColors();
+  const isDark = colors.cardBackground === '#000000' || colors.background === '#000000';
   const isSmall = size === 'small';
   const isLarge = size === 'large';
 
@@ -33,7 +34,15 @@ export const QuantitySelector: React.FC<QuantitySelectorProps> = ({
     : styles.btnMedium;
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.primaryLight, borderColor: colors.primaryMedium }]}>
+    <View
+      style={[
+        styles.container,
+        {
+          backgroundColor: isDark ? '#000000' : colors.primaryLight,
+          borderColor: isDark ? 'rgba(255, 255, 255, 0.25)' : colors.primaryMedium,
+        },
+      ]}
+    >
       <TouchableOpacity
         style={[buttonStyle, quantity <= minQuantity && styles.disabledBtn]}
         onPress={onDecrease}
@@ -42,13 +51,14 @@ export const QuantitySelector: React.FC<QuantitySelectorProps> = ({
         <Ionicons
           name="remove"
           size={iconSize}
-          color={(quantity <= minQuantity ? colors.textMuted : colors.primary) as string}
+          color={(quantity <= minQuantity ? (isDark ? '#6B7280' : colors.textMuted) : (isDark ? '#FFFFFF' : colors.primary)) as string}
         />
       </TouchableOpacity>
 
       <Text
         style={[
-          styles.quantityText, { color: colors.primaryDark },
+          styles.quantityText,
+          { color: isDark ? '#FFFFFF' : colors.primaryDark },
           isSmall ? styles.textSmall : isLarge ? styles.textLarge : styles.textMedium,
         ]}
       >
@@ -63,7 +73,7 @@ export const QuantitySelector: React.FC<QuantitySelectorProps> = ({
         <Ionicons
           name="add"
           size={iconSize}
-          color={(quantity >= maxQuantity ? colors.textMuted : colors.primary) as string}
+          color={(quantity >= maxQuantity ? (isDark ? '#6B7280' : colors.textMuted) : (isDark ? '#FFFFFF' : colors.primary)) as string}
         />
       </TouchableOpacity>
     </View>

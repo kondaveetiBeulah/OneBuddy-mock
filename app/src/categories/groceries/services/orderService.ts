@@ -118,8 +118,12 @@ export const orderService = {
     // Save to live backend
     try {
       await saveOrder(newOrder);
-    } catch (err) {
-      console.warn('[orderService] Failed to persist order to backend Firestore:', err);
+    } catch (err: any) {
+      if (err?.code === 'unauthenticated' || err?.code === 'not-found' || err?.message?.includes('unauthenticated')) {
+        console.warn('[orderService] Cloud backend offline or unauthenticated. Order saved successfully to local storage.');
+      } else {
+        console.warn('[orderService] Failed to persist order to backend Firestore:', err);
+      }
     }
 
     // Persist locally

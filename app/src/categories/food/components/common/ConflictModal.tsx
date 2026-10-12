@@ -1,9 +1,11 @@
 import React from 'react';
 import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useCart } from '../../context/CartContext';
+import { isCategoryDark } from '@/theme/categoryThemeBridge';
 
 export const ConflictModal: React.FC = () => {
     const { conflictModalState, resolveConflict, currentRestaurant } = useCart();
+    const isDark = isCategoryDark();
 
     if (!conflictModalState.isOpen || !conflictModalState.pendingRestaurant || !currentRestaurant) return null;
 
@@ -15,17 +17,17 @@ export const ConflictModal: React.FC = () => {
             onRequestClose={() => resolveConflict(false)}
         >
             <View style={styles.modalOverlay}>
-                <View style={styles.modalContent}>
-                    <Text style={styles.title}>Replace cart item?</Text>
-                    <Text style={styles.description}>
+                <View style={[styles.modalContent, isDark && { backgroundColor: '#000000', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.2)' }]}>
+                    <Text style={[styles.title, isDark && { color: '#FFFFFF' }]}>Replace cart item?</Text>
+                    <Text style={[styles.description, isDark && { color: '#E5E7EB' }]}>
                         Your cart contains dishes from {currentRestaurant.name}. Do you want to discard the selection and add dishes from {conflictModalState.pendingRestaurant.name}?
                     </Text>
                     <View style={styles.actions}>
-                        <TouchableOpacity style={[styles.btn, styles.btnNo]} onPress={() => resolveConflict(false)}>
-                            <Text style={styles.btnTextNo}>No</Text>
+                        <TouchableOpacity style={[styles.btn, styles.btnNo, isDark && { backgroundColor: '#000000', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.2)' }]} onPress={() => resolveConflict(false)}>
+                            <Text style={[styles.btnTextNo, isDark && { color: '#FFFFFF' }]}>No</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={[styles.btn, styles.btnReplace]} onPress={() => resolveConflict(true)}>
-                            <Text style={styles.btnTextReplace}>Replace</Text>
+                        <TouchableOpacity style={[styles.btn, styles.btnReplace, isDark && { backgroundColor: '#FFFFFF' }]} onPress={() => resolveConflict(true)}>
+                            <Text style={[styles.btnTextReplace, isDark && { color: '#000000' }]}>Replace</Text>
                         </TouchableOpacity>
                     </View>
                 </View>

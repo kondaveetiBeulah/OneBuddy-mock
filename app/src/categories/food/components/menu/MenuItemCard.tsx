@@ -31,6 +31,8 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({
   const isFav = isFavoriteItem(item.id);
   const [imageError, setImageError] = React.useState(false);
 
+  const isDark = isCategoryDark();
+
   if (
     !item?.image ||
     !item.image.trim() ||
@@ -45,10 +47,10 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({
     <TouchableOpacity
       activeOpacity={0.88}
       onPress={() => onItemClick && onItemClick(item)}
-      style={styles.cardWrapper}
+      style={[styles.cardWrapper, isDark && { borderColor: 'rgba(255, 255, 255, 0.15)' }]}
     >
       <LinearGradient
-        colors={isCategoryDark() ? ['#1D1E22', '#24262B'] : ['#FFFFFF', '#F9FAFB']}
+        colors={isDark ? ['#000000', '#000000'] : ['#FFFFFF', '#F9FAFB']}
         start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 1 }}
         style={styles.cardGradient}
@@ -65,13 +67,13 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({
           </View>
 
           {/* Title */}
-          <Text style={styles.name} numberOfLines={2}>
+          <Text style={[styles.name, isDark && { color: '#FFFFFF' }]} numberOfLines={2}>
             {item.name}
           </Text>
 
           {/* Pricing */}
           <View style={styles.priceRow}>
-            <Text style={styles.price}>₹{item.price}</Text>
+            <Text style={[styles.price, isDark && { color: '#A3E635' }]}>₹{item.price}</Text>
             {item.originalPrice ? (
               <Text style={styles.originalPrice}>₹{item.originalPrice}</Text>
             ) : null}
@@ -96,19 +98,19 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({
           </View>
 
           {/* Description */}
-          <Text style={styles.desc} numberOfLines={2}>
+          <Text style={[styles.desc, isDark && { color: '#E5E7EB' }]} numberOfLines={2}>
             {item.description}
           </Text>
 
           {/* Included combo items */}
           {item.isCombo && item.comboIncludes ? (
-            <View style={styles.comboIncludesBox}>
-              <Text style={styles.comboIncludesTitle}>Includes in this Combo:</Text>
+            <View style={[styles.comboIncludesBox, isDark && { backgroundColor: 'rgba(255, 255, 255, 0.05)', borderColor: 'rgba(255, 255, 255, 0.15)' }]}>
+              <Text style={[styles.comboIncludesTitle, isDark && { color: '#A3E635' }]}>Includes in this Combo:</Text>
               <View style={styles.comboItemsGrid}>
                 {item.comboIncludes.map((inc, i) => (
                   <View key={i} style={styles.comboItemRow}>
                     <CheckCircle2 size={10} color="#65A30D" />
-                    <Text style={styles.comboItemText} numberOfLines={1}>{inc}</Text>
+                    <Text style={[styles.comboItemText, isDark && { color: '#E5E7EB' }]} numberOfLines={1}>{inc}</Text>
                   </View>
                 ))}
               </View>
@@ -118,7 +120,7 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({
 
         {/* Right Image + Quantity Stepper */}
         <View style={styles.rightCol}>
-          <View style={styles.imageBox}>
+          <View style={[styles.imageBox, isDark && { borderColor: 'rgba(255, 255, 255, 0.15)', backgroundColor: '#000000' }]}>
             <Image
               source={{ uri: item.image }}
               style={styles.image}
@@ -145,7 +147,7 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({
               size="md"
             />
           </View>
-          <Text style={styles.customText}>Customisable</Text>
+          <Text style={[styles.customText, isDark && { color: '#9CA3AF' }]}>Customisable</Text>
         </View>
       </LinearGradient>
     </TouchableOpacity>

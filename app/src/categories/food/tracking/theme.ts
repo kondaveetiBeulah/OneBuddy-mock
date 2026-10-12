@@ -1,5 +1,5 @@
 /** OneBuddy's signature fresh green & clean light palette */
-export const COLORS = {
+export const lightColors = {
   primary: '#54B713',
   primaryDark: '#3F8A0E',
   primaryLight: '#EAF7E4',
@@ -21,7 +21,33 @@ export const COLORS = {
   line: '#E3ECE1',
   card: '#FFFFFF',
   cardSubtle: '#F8FCF7',
-} as const;
+};
+
+export const darkColors = {
+  primary: '#54B713',
+  primaryDark: '#3F8A0E',
+  primaryLight: 'rgba(84, 183, 19, 0.2)',
+  primaryMuted: '#000000',
+  green: '#54B713',
+  greenLight: 'rgba(84, 183, 19, 0.2)',
+  lavenderDeep: '#3F8A0E',
+  lavender: '#000000',
+  lavenderLight: '#54B713',
+  gold: '#54B713',
+  goldLight: '#54B713',
+  bgDeep: '#000000',
+  ink: '#FFFFFF',
+  sheet: '#000000',
+  mist: '#FFFFFF',
+  mistDim: '#E5E7EB',
+  food: '#FF602E',
+  foodLight: '#FF7B4D',
+  line: 'rgba(255, 255, 255, 0.15)',
+  card: '#000000',
+  cardSubtle: '#000000',
+};
+
+export const COLORS = { ...lightColors };
 
 export const RADIUS = { sm: 12, md: 16, lg: 20, xl: 24, sheet: 28 } as const;
 export const GUTTER = 16;

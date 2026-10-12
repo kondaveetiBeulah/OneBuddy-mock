@@ -17,6 +17,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, useGroceryColors } from '../theme/colors';
+import { isCategoryDark } from '@/theme/categoryThemeBridge';
 import { typography, spacing } from '../theme';
 import { SearchBar } from '../components/SearchBar';
 import { OfferCarousel } from '../components/OfferCarousel';
@@ -80,6 +81,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export const HomeScreen: React.FC = () => {
   const colors = useGroceryColors();
+  const isDark = isCategoryDark() || colors.cardBackground === '#000000';
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { onClose } = useGroceriesExit();
   const { selectedAddress, setSelectedAddress } = useUser();
@@ -665,10 +667,18 @@ export const HomeScreen: React.FC = () => {
                         <TouchableOpacity
                           key={l}
                           onPress={() => setLabel(l)}
-                          style={[styles.labelBtn, label === l && styles.labelBtnActive]}
+                          style={[
+                            styles.labelBtn,
+                            isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.2)' },
+                            label === l && (isDark ? { backgroundColor: '#FFFFFF', borderColor: '#FFFFFF' } : styles.labelBtnActive)
+                          ]}
                           activeOpacity={0.7}
                         >
-                          <Text style={[styles.labelText, label === l && styles.labelTextActive]}>
+                          <Text style={[
+                            styles.labelText,
+                            isDark && { color: '#FFFFFF' },
+                            label === l && (isDark ? { color: '#000000', fontWeight: '800' } : styles.labelTextActive)
+                          ]}>
                             {l}
                           </Text>
                         </TouchableOpacity>
@@ -706,18 +716,18 @@ export const HomeScreen: React.FC = () => {
                       {editingAddressId && (
                         <TouchableOpacity
                           onPress={handleCancelEdit}
-                          style={styles.addressCancelEditBtn}
+                          style={[styles.addressCancelEditBtn, isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.2)' }]}
                           activeOpacity={0.7}
                         >
-                          <Text style={styles.addressCancelEditBtnText}>Cancel</Text>
+                          <Text style={[styles.addressCancelEditBtnText, isDark && { color: '#FFFFFF' }]}>Cancel</Text>
                         </TouchableOpacity>
                       )}
                       <TouchableOpacity
                         onPress={handleSaveAddress}
-                        style={[styles.addressSaveBtn, { flex: 1 }]}
+                        style={[styles.addressSaveBtn, { flex: 1 }, isDark && { backgroundColor: '#FFFFFF' }]}
                         activeOpacity={0.8}
                       >
-                        <Text style={styles.addressSaveBtnText}>
+                        <Text style={[styles.addressSaveBtnText, isDark && { color: '#000000' }]}>
                           {editingAddressId ? 'Update & Deliver Here' : 'Save & Deliver Here'}
                         </Text>
                       </TouchableOpacity>
@@ -976,18 +986,18 @@ export const HomeScreen: React.FC = () => {
         onRequestClose={() => setIsAddOptionModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.addressChoiceModalCard}>
+          <View style={[styles.addressChoiceModalCard, isDark && { backgroundColor: '#000000', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.15)' }]}>
             <View style={styles.addressChoiceHeader}>
-              <Text style={styles.addressChoiceTitle}>Add Delivery Address</Text>
+              <Text style={[styles.addressChoiceTitle, isDark && { color: '#FFFFFF' }]}>Add Delivery Address</Text>
               <TouchableOpacity
                 onPress={() => setIsAddOptionModalVisible(false)}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                style={styles.addressChoiceCloseBtn}
+                style={[styles.addressChoiceCloseBtn, isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.2)' }]}
               >
-                <Ionicons name="close" size={18} color={colors.textMuted} />
+                <Ionicons name="close" size={18} color={isDark ? '#FFFFFF' : colors.textMuted} />
               </TouchableOpacity>
             </View>
-            <Text style={styles.addressChoiceSubtitle}>
+            <Text style={[styles.addressChoiceSubtitle, isDark && { color: '#9CA3AF' }]}>
               Choose how you would like to set your delivery location:
             </Text>
 
@@ -995,41 +1005,41 @@ export const HomeScreen: React.FC = () => {
             <TouchableOpacity
               onPress={handleRequestLiveLocation}
               activeOpacity={0.85}
-              style={styles.addressChoiceOptionLive}
+              style={[styles.addressChoiceOptionLive, isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.15)' }]}
             >
-              <View style={styles.addressChoiceIconBadgeLive}>
-                <Ionicons name="navigate" size={22} color={colors.primary} />
+              <View style={[styles.addressChoiceIconBadgeLive, isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.2)' }]}>
+                <Ionicons name="navigate" size={22} color={isDark ? '#FFFFFF' : colors.primary} />
               </View>
               <View style={{ flex: 1 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <Text style={styles.addressChoiceOptionTitleLive}>Add Live Location</Text>
+                  <Text style={[styles.addressChoiceOptionTitleLive, isDark && { color: '#FFFFFF' }]}>Add Live Location</Text>
                   <View style={styles.livePill}>
                     <Text style={styles.livePillText}>AUTO GPS</Text>
                   </View>
                 </View>
-                <Text style={styles.addressChoiceOptionSub}>
+                <Text style={[styles.addressChoiceOptionSub, isDark && { color: '#9CA3AF' }]}>
                   Use current location to automatically fill address details
                 </Text>
               </View>
-              <Ionicons name="arrow-forward" size={18} color={colors.primary} />
+              <Ionicons name="arrow-forward" size={18} color={isDark ? '#FFFFFF' : colors.primary} />
             </TouchableOpacity>
 
             {/* Option 2: Enter New Address Manually */}
             <TouchableOpacity
               onPress={handleManualAddressEntry}
               activeOpacity={0.85}
-              style={styles.addressChoiceOptionManual}
+              style={[styles.addressChoiceOptionManual, isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.15)' }]}
             >
-              <View style={styles.addressChoiceIconBadgeManual}>
-                <Ionicons name="create-outline" size={22} color={colors.textPrimary} />
+              <View style={[styles.addressChoiceIconBadgeManual, isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.2)' }]}>
+                <Ionicons name="create-outline" size={22} color={isDark ? '#FFFFFF' : colors.textPrimary} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.addressChoiceOptionTitleManual}>Enter New Address</Text>
-                <Text style={styles.addressChoiceOptionSub}>
+                <Text style={[styles.addressChoiceOptionTitleManual, isDark && { color: '#FFFFFF' }]}>Enter New Address</Text>
+                <Text style={[styles.addressChoiceOptionSub, isDark && { color: '#9CA3AF' }]}>
                   Type house number, street, area, and receiver details manually
                 </Text>
               </View>
-              <Ionicons name="arrow-forward" size={18} color={colors.primary} />
+              <Ionicons name="arrow-forward" size={18} color={isDark ? '#FFFFFF' : colors.primary} />
             </TouchableOpacity>
           </View>
         </View>
@@ -1043,30 +1053,30 @@ export const HomeScreen: React.FC = () => {
         onRequestClose={() => setIsLocationPermissionModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.addressChoiceModalCard}>
-            <View style={styles.locationPermissionIconCircle}>
-              <Ionicons name="location" size={26} color={colors.primary} />
+          <View style={[styles.addressChoiceModalCard, isDark && { backgroundColor: '#000000', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.15)' }]}>
+            <View style={[styles.locationPermissionIconCircle, isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.2)' }]}>
+              <Ionicons name="location" size={26} color={isDark ? '#FFFFFF' : colors.primary} />
             </View>
-            <Text style={styles.locationPermissionTitle}>Allow Location Access?</Text>
-            <Text style={styles.locationPermissionMessage}>
+            <Text style={[styles.locationPermissionTitle, isDark && { color: '#FFFFFF' }]}>Allow Location Access?</Text>
+            <Text style={[styles.locationPermissionMessage, isDark && { color: '#9CA3AF' }]}>
               OneBuddy needs your permission to access device GPS to automatically detect and fill your delivery address.
             </Text>
 
             <View style={styles.permissionBtnRow}>
               <TouchableOpacity
                 onPress={() => setIsLocationPermissionModalVisible(false)}
-                style={styles.permissionCancelBtn}
+                style={[styles.permissionCancelBtn, isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.2)' }]}
                 activeOpacity={0.8}
               >
-                <Text style={styles.permissionCancelText}>Don't Allow</Text>
+                <Text style={[styles.permissionCancelText, isDark && { color: '#FFFFFF' }]}>Don't Allow</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 onPress={handleConfirmLocationAccess}
-                style={styles.permissionAllowBtn}
+                style={[styles.permissionAllowBtn, isDark && { backgroundColor: '#FFFFFF' }]}
                 activeOpacity={0.8}
               >
-                <Text style={styles.permissionAllowText}>
+                <Text style={[styles.permissionAllowText, isDark && { color: '#000000' }]}>
                   Allow & Auto-Fill
                 </Text>
               </TouchableOpacity>

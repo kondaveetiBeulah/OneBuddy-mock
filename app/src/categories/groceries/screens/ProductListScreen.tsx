@@ -11,6 +11,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing } from '../theme';
+import { useGroceryColors } from '../theme/colors';
+import { isCategoryDark } from '@/theme/categoryThemeBridge';
 import { Header } from '../components/Header';
 import { SearchBar } from '../components/SearchBar';
 import { ProductCard } from '../components/ProductCard';
@@ -36,6 +38,9 @@ export const ProductListScreen: React.FC<ProductListScreenProps> = ({
   const { categoryId, categoryName } = route.params;
   const { addToCart, getCartCount } = useCart();
   const cartCount = getCartCount();
+  const groceryColors = useGroceryColors();
+  const isDark = isCategoryDark() || groceryColors.cardBackground === '#000000';
+  const dynStyles = getStyles(isDark);
 
   const [productsList, setProductsList] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -87,21 +92,21 @@ export const ProductListScreen: React.FC<ProductListScreenProps> = ({
   ];
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={dynStyles.container}>
       <Header
         title={categoryName}
         showBack
         onBack={() => navigation.goBack()}
         rightIcon={
           <TouchableOpacity
-            style={styles.cartIconWrapper}
+            style={dynStyles.cartIconWrapper}
             onPress={() => navigation.navigate('Cart')}
             activeOpacity={0.7}
           >
-            <Ionicons name="cart-outline" size={28} color={colors.textPrimary} />
+            <Ionicons name="cart-outline" size={28} color={isDark ? '#FFFFFF' : colors.textPrimary} />
             {cartCount > 0 && (
-              <View style={styles.cartBadge}>
-                <Text style={styles.cartBadgeText}>
+              <View style={dynStyles.cartBadge}>
+                <Text style={dynStyles.cartBadgeText}>
                   {cartCount > 99 ? '99+' : cartCount}
                 </Text>
               </View>
@@ -110,33 +115,33 @@ export const ProductListScreen: React.FC<ProductListScreenProps> = ({
         }
       />
 
-      <View style={styles.topFilterSection}>
+      <View style={dynStyles.topFilterSection}>
         <SearchBar
           value={searchQuery}
           onChangeText={setSearchQuery}
           onClear={() => setSearchQuery('')}
           placeholder={`Search in ${categoryName}...`}
-          style={styles.searchBar}
+          style={dynStyles.searchBar}
         />
 
-        <View style={styles.filterActionsRow}>
+        <View style={dynStyles.filterActionsRow}>
           <TouchableOpacity
-            style={styles.filterChip}
+            style={dynStyles.filterChip}
             onPress={() => setShowSortModal(true)}
           >
-            <Ionicons name="swap-vertical" size={16} color={colors.primary} />
-            <Text style={styles.filterChipText}>
+            <Ionicons name="swap-vertical" size={16} color={isDark ? '#FFFFFF' : colors.primary} />
+            <Text style={dynStyles.filterChipText}>
               Sort: {SORT_OPTIONS_LIST.find((s) => s.value === sortOption)?.label}
             </Text>
-            <Ionicons name="chevron-down" size={14} color={colors.textSecondary} />
+            <Ionicons name="chevron-down" size={14} color={isDark ? '#FFFFFF' : colors.textSecondary} />
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.filterChip, (filterInStockOnly || minRating !== undefined) ? styles.activeFilterChip : null]}
+            style={[dynStyles.filterChip, (filterInStockOnly || minRating !== undefined) ? dynStyles.activeFilterChip : null]}
             onPress={() => setShowFilterModal(true)}
           >
-            <Ionicons name="options-outline" size={16} color={colors.primary} />
-            <Text style={styles.filterChipText}>Filters</Text>
+            <Ionicons name="options-outline" size={16} color={isDark ? '#FFFFFF' : colors.primary} />
+            <Text style={dynStyles.filterChipText}>Filters</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -167,8 +172,8 @@ export const ProductListScreen: React.FC<ProductListScreenProps> = ({
           data={filteredProducts}
           numColumns={2}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.gridPadding}
-          columnWrapperStyle={styles.columnWrapper}
+          contentContainerStyle={dynStyles.gridPadding}
+          columnWrapperStyle={dynStyles.columnWrapper}
           renderItem={({ item }) => (
             <ProductCard
               product={item}
@@ -190,22 +195,22 @@ export const ProductListScreen: React.FC<ProductListScreenProps> = ({
         onRequestClose={() => setShowSortModal(false)}
       >
         <TouchableOpacity
-          style={styles.modalOverlay}
+          style={dynStyles.modalOverlay}
           activeOpacity={1}
           onPress={() => setShowSortModal(false)}
         >
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Sort By</Text>
+          <View style={dynStyles.modalContent}>
+            <View style={dynStyles.modalHeader}>
+              <Text style={dynStyles.modalTitle}>Sort By</Text>
               <TouchableOpacity onPress={() => setShowSortModal(false)}>
-                <Ionicons name="close" size={24} color={colors.textPrimary} />
+                <Ionicons name="close" size={24} color={isDark ? '#FFFFFF' : colors.textPrimary} />
               </TouchableOpacity>
             </View>
 
             {SORT_OPTIONS_LIST.map((opt) => (
               <TouchableOpacity
                 key={opt.value}
-                style={styles.modalOptionRow}
+                style={dynStyles.modalOptionRow}
                 onPress={() => {
                   setSortOption(opt.value);
                   setShowSortModal(false);
@@ -213,14 +218,14 @@ export const ProductListScreen: React.FC<ProductListScreenProps> = ({
               >
                 <Text
                   style={[
-                    styles.modalOptionText,
-                    sortOption === opt.value && styles.selectedOptionText,
+                    dynStyles.modalOptionText,
+                    sortOption === opt.value && dynStyles.selectedOptionText,
                   ]}
                 >
                   {opt.label}
                 </Text>
                 {sortOption === opt.value && (
-                  <Ionicons name="checkmark" size={20} color={colors.primary} />
+                  <Ionicons name="checkmark" size={20} color={isDark ? '#FFFFFF' : colors.primary} />
                 )}
               </TouchableOpacity>
             ))}
@@ -236,55 +241,55 @@ export const ProductListScreen: React.FC<ProductListScreenProps> = ({
         onRequestClose={() => setShowFilterModal(false)}
       >
         <TouchableOpacity
-          style={styles.modalOverlay}
+          style={dynStyles.modalOverlay}
           activeOpacity={1}
           onPress={() => setShowFilterModal(false)}
         >
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Filter Products</Text>
+          <View style={dynStyles.modalContent}>
+            <View style={dynStyles.modalHeader}>
+              <Text style={dynStyles.modalTitle}>Filter Products</Text>
               <TouchableOpacity onPress={() => setShowFilterModal(false)}>
-                <Ionicons name="close" size={24} color={colors.textPrimary} />
+                <Ionicons name="close" size={24} color={isDark ? '#FFFFFF' : colors.textPrimary} />
               </TouchableOpacity>
             </View>
 
             <ScrollView>
-              <Text style={styles.filterSectionTitle}>Availability</Text>
+              <Text style={dynStyles.filterSectionTitle}>Availability</Text>
               <TouchableOpacity
-                style={styles.checkboxRow}
+                style={dynStyles.checkboxRow}
                 onPress={() => setFilterInStockOnly(!filterInStockOnly)}
               >
                 <Ionicons
                   name={filterInStockOnly ? 'checkbox' : 'square-outline'}
                   size={22}
-                  color={colors.primary}
+                  color={isDark ? '#FFFFFF' : colors.primary}
                 />
-                <Text style={styles.checkboxLabel}>In Stock Only</Text>
+                <Text style={dynStyles.checkboxLabel}>In Stock Only</Text>
               </TouchableOpacity>
 
-              <Text style={styles.filterSectionTitle}>Minimum Rating</Text>
-              <View style={styles.ratingFilterRow}>
+              <Text style={dynStyles.filterSectionTitle}>Minimum Rating</Text>
+              <View style={dynStyles.ratingFilterRow}>
                 {[4, 3, 2].map((r) => (
                   <TouchableOpacity
                     key={r}
                     style={[
-                      styles.ratingChip,
-                      minRating === r && styles.activeRatingChip,
+                      dynStyles.ratingChip,
+                      minRating === r && dynStyles.activeRatingChip,
                     ]}
                     onPress={() => setMinRating(minRating === r ? undefined : r)}
                   >
                     <Ionicons name="star" size={14} color={colors.rating} />
-                    <Text style={styles.ratingChipText}>{r}★ & above</Text>
+                    <Text style={dynStyles.ratingChipText}>{r}★ & above</Text>
                   </TouchableOpacity>
                 ))}
               </View>
             </ScrollView>
 
             <TouchableOpacity
-              style={styles.applyFilterBtn}
+              style={dynStyles.applyFilterBtn}
               onPress={() => setShowFilterModal(false)}
             >
-              <Text style={styles.applyFilterText}>Apply Filters</Text>
+              <Text style={dynStyles.applyFilterText}>Apply Filters</Text>
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
@@ -293,17 +298,17 @@ export const ProductListScreen: React.FC<ProductListScreenProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: isDark ? '#000000' : colors.background,
   },
   topFilterSection: {
-    backgroundColor: colors.white,
+    backgroundColor: isDark ? '#000000' : colors.white,
     paddingHorizontal: spacing.md,
     paddingBottom: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: colors.borderLight,
+    borderBottomColor: isDark ? 'rgba(255,255,255,0.12)' : colors.borderLight,
   },
   searchBar: {
     marginBottom: spacing.xs,
@@ -317,22 +322,22 @@ const styles = StyleSheet.create({
   filterChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.background,
+    backgroundColor: isDark ? '#000000' : colors.background,
     paddingVertical: 6,
     paddingHorizontal: spacing.sm + 4,
     borderRadius: spacing.borderRadius.round,
     borderWidth: 1,
-    borderColor: colors.borderLight,
+    borderColor: isDark ? 'rgba(255,255,255,0.2)' : colors.borderLight,
     gap: 4,
   },
   activeFilterChip: {
-    backgroundColor: colors.primaryLight,
-    borderColor: colors.primary,
+    backgroundColor: isDark ? 'rgba(95,163,0,0.2)' : colors.primaryLight,
+    borderColor: isDark ? '#5FA300' : colors.primary,
   },
   filterChipText: {
     fontSize: typography.sizes.xs,
     fontWeight: typography.weights.semibold,
-    color: colors.textPrimary,
+    color: isDark ? '#FFFFFF' : colors.textPrimary,
   },
   gridPadding: {
     padding: spacing.md,
@@ -342,15 +347,16 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: colors.overlay,
+    backgroundColor: isDark ? 'rgba(0,0,0,0.7)' : colors.overlay,
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: colors.white,
+    backgroundColor: isDark ? '#000000' : colors.white,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: spacing.lg,
     maxHeight: '60%',
+    ...(isDark ? { borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.15)' } : {}),
   },
   modalHeader: {
     flexDirection: 'row',
@@ -359,12 +365,12 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
     paddingBottom: spacing.xs,
     borderBottomWidth: 1,
-    borderBottomColor: colors.borderLight,
+    borderBottomColor: isDark ? 'rgba(255,255,255,0.12)' : colors.borderLight,
   },
   modalTitle: {
     fontSize: typography.sizes.lg,
     fontWeight: typography.weights.bold,
-    color: colors.textPrimary,
+    color: isDark ? '#FFFFFF' : colors.textPrimary,
   },
   modalOptionRow: {
     flexDirection: 'row',
@@ -372,20 +378,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: colors.borderLight,
+    borderBottomColor: isDark ? 'rgba(255,255,255,0.12)' : colors.borderLight,
   },
   modalOptionText: {
     fontSize: typography.sizes.md,
-    color: colors.textSecondary,
+    color: isDark ? '#FFFFFF' : colors.textSecondary,
   },
   selectedOptionText: {
     fontWeight: typography.weights.bold,
-    color: colors.primary,
+    color: isDark ? '#FFFFFF' : colors.primary,
   },
   filterSectionTitle: {
     fontSize: typography.sizes.sm,
     fontWeight: typography.weights.bold,
-    color: colors.textPrimary,
+    color: isDark ? '#FFFFFF' : colors.textPrimary,
     marginTop: spacing.md,
     marginBottom: spacing.xs,
   },
@@ -397,7 +403,7 @@ const styles = StyleSheet.create({
   },
   checkboxLabel: {
     fontSize: typography.sizes.sm,
-    color: colors.textPrimary,
+    color: isDark ? '#FFFFFF' : colors.textPrimary,
   },
   ratingFilterRow: {
     flexDirection: 'row',
@@ -411,26 +417,27 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm + 4,
     borderRadius: spacing.borderRadius.round,
     borderWidth: 1,
-    borderColor: colors.borderLight,
+    borderColor: isDark ? 'rgba(255,255,255,0.2)' : colors.borderLight,
     gap: 4,
   },
   activeRatingChip: {
-    backgroundColor: colors.primaryLight,
-    borderColor: colors.primary,
+    backgroundColor: isDark ? 'rgba(95,163,0,0.2)' : colors.primaryLight,
+    borderColor: isDark ? '#5FA300' : colors.primary,
   },
   ratingChipText: {
     fontSize: typography.sizes.xs,
     fontWeight: typography.weights.medium,
+    color: isDark ? '#FFFFFF' : undefined,
   },
   applyFilterBtn: {
-    backgroundColor: colors.primary,
+    backgroundColor: isDark ? '#FFFFFF' : colors.primary,
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
     marginTop: spacing.lg,
   },
   applyFilterText: {
-    color: colors.white,
+    color: isDark ? '#000000' : colors.white,
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.bold,
   },
@@ -450,7 +457,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 4,
     borderWidth: 1.5,
-    borderColor: colors.white,
+    borderColor: isDark ? '#000000' : colors.white,
   },
   cartBadgeText: {
     color: colors.white,

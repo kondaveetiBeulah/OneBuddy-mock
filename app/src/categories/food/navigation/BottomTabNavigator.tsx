@@ -10,10 +10,12 @@ import { FavoritesScreen } from '../screens/FavoritesScreen';
 import { Header } from '../components/common/Header';
 import { BottomNavBar } from '../components/navigation/BottomNavBar';
 import { useFoodExit } from '../context/FoodExitContext';
+import { isCategoryDark } from '@/theme/categoryThemeBridge';
 
 const Tab = createBottomTabNavigator<FoodMainTabParamList>();
 
 export const BottomTabNavigator: React.FC = () => {
+  const isDark = isCategoryDark();
   const rootNavigation = useNavigation<NativeStackNavigationProp<FoodStackParamList>>();
   const { onClose } = useFoodExit();
 
@@ -58,7 +60,7 @@ export const BottomTabNavigator: React.FC = () => {
         {({ navigation: tabNav }) => {
           const currentTab = 'home';
           return (
-            <View style={styles.container}>
+            <View style={[styles.container, isDark && { backgroundColor: '#000000' }]}>
               <Header
                 activeScreen={currentTab}
                 onNavigate={(screen) => {
@@ -99,7 +101,7 @@ export const BottomTabNavigator: React.FC = () => {
         {({ navigation: tabNav }) => {
           const currentTab = 'orders';
           return (
-            <View style={styles.container}>
+            <View style={[styles.container, isDark && { backgroundColor: '#000000' }]}>
               <Header
                 activeScreen={currentTab}
                 onNavigate={(screen) => {
@@ -132,7 +134,7 @@ export const BottomTabNavigator: React.FC = () => {
         {({ navigation: tabNav }) => {
           const currentTab = 'favorites';
           return (
-            <View style={styles.container}>
+            <View style={[styles.container, isDark && { backgroundColor: '#000000' }]}>
               <Header
                 activeScreen={currentTab}
                 onNavigate={(screen) => {

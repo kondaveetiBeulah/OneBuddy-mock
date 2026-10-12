@@ -185,7 +185,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     maxHeight: '84%',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.sheet,
     borderTopLeftRadius: RADIUS.sheet,
     borderTopRightRadius: RADIUS.sheet,
     borderWidth: 1,
@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F0F6EE',
+    backgroundColor: COLORS.cardSubtle,
   },
 
   toast: {

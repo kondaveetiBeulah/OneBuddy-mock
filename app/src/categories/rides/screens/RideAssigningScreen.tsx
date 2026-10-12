@@ -63,6 +63,12 @@ export const RideAssigningScreen: React.FC<RideAssigningProps> = ({
     fare: 89,
   };
   const destination = route?.params?.destination || 'Ammerpet, Hyderabad';
+  const rawDest = route?.params?.destination as any;
+  const destinationTitle = typeof rawDest === 'string'
+    ? rawDest
+    : (rawDest?.title || 'Destination');
+  const pickupTitle = pickup?.title || pickup?.subtitle || '1373, Madhapur, Hyderabad';
+  const pickupSubtitle = pickup?.subtitle || pickup?.description || 'VIP Hills, Jaihind Enclave';
   const baseFare = Number(route?.params?.price || vehicle?.baseFare || 89);
 
   const [boostAmount, setBoostAmount] = useState<number>(0);
@@ -92,12 +98,12 @@ export const RideAssigningScreen: React.FC<RideAssigningProps> = ({
   const isTransitioningRef = useRef(false);
 
   const pickupCoord = {
-    latitude: pickup.latitude || 17.368,
-    longitude: pickup.longitude || 78.485,
+    latitude: pickup.latitude || 17.355,
+    longitude: pickup.longitude || 78.405,
   };
   const dropCoord = {
-    latitude: 17.382,
-    longitude: 78.498,
+    latitude: 17.425,
+    longitude: 78.475,
   };
 
   const handleBack = useCallback(() => {
@@ -260,13 +266,26 @@ export const RideAssigningScreen: React.FC<RideAssigningProps> = ({
         >
           <Marker
             coordinate={pickupCoord}
-            title={pickup.title || '1373, Madhapur, Hyderabad'}
+            title={pickupTitle}
+            type="pickup"
           />
           <Marker
             coordinate={dropCoord}
-            title={destination}
+            title={destinationTitle}
             isDestination={true}
+            type="drop"
           />
+          {isAssigned && (
+            <Marker
+              coordinate={{
+                latitude: pickupCoord.latitude + 0.007,
+                longitude: pickupCoord.longitude + 0.008,
+              }}
+              title={`${vehicle.driverName || (vehicle.type === 'bike' ? 'Ramesh Kumar' : vehicle.type === 'cab' ? 'Aarav Sharma' : 'Sai Krishna')} (${vehicle.plate || (vehicle.type === 'bike' ? 'TS 09 BK 2041' : vehicle.type === 'cab' ? 'TS 09 EA 4821' : 'AP 16 TG 6843')})`}
+              type="vehicle"
+              rideType={vehicle?.type || vehicle?.id || 'auto'}
+            />
+          )}
         </MapView>
 
         {/* Floating Top Header Row with Back Button & Status Pill */}
@@ -358,6 +377,48 @@ export const RideAssigningScreen: React.FC<RideAssigningProps> = ({
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.sheetScrollContent}
         >
+          {/* Card 0: Pickup & Drop Location Names */}
+          <View style={[styles.locationsCard, isDark && { backgroundColor: '#24262B', borderColor: 'rgba(255, 255, 255, 0.08)' }]}>
+            <View style={styles.locationsRow}>
+              {/* Route Indicator: Green Square -> Line -> Green Circle */}
+              <View style={styles.locationsIndicatorCol}>
+                <View style={styles.pickupSquareDot} />
+                <View style={[styles.locationLineConnector, isDark && { backgroundColor: '#3E424B' }]} />
+                <View style={styles.dropCircleDot} />
+              </View>
+
+              {/* Location details */}
+              <View style={styles.locationsContentCol}>
+                {/* Pickup Location */}
+                <View style={styles.locationItemBlock}>
+                  <Text style={[styles.locationMiniTag, { color: '#EF4444' }]}>PICKUP LOCATION</Text>
+                  <Text style={[styles.locationMainTitle, isDark && { color: '#F1F1EC' }]} numberOfLines={1}>
+                    {pickupTitle}
+                  </Text>
+                  {pickupSubtitle && pickupSubtitle !== pickupTitle ? (
+                    <Text style={[styles.locationSubText, isDark && { color: '#9BA08F' }]} numberOfLines={1}>
+                      {pickupSubtitle}
+                    </Text>
+                  ) : null}
+                </View>
+
+                {/* Divider between pickup and drop */}
+                <View style={[styles.locationItemDivider, isDark && { backgroundColor: 'rgba(255, 255, 255, 0.08)' }]} />
+
+                {/* Drop Location */}
+                <View style={styles.locationItemBlock}>
+                  <Text style={[styles.locationMiniTag, { color: '#54B713' }]}>DROP LOCATION</Text>
+                  <Text style={[styles.locationMainTitle, isDark && { color: '#F1F1EC' }]} numberOfLines={1}>
+                    {destinationTitle}
+                  </Text>
+                  <Text style={[styles.locationSubText, isDark && { color: '#9BA08F' }]} numberOfLines={1}>
+                    Destination point
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </View>
+
           {/* Card 1: Vehicle & Pickup Details */}
           <View style={[styles.detailsCard, isDark && { backgroundColor: '#24262B', borderColor: 'rgba(255, 255, 255, 0.08)' }]}>
             <View style={styles.detailsLeft}>
@@ -945,6 +1006,92 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     color: '#0F172A',
+  },
+  locationsCard: {
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    backgroundColor: '#FFFFFF',
+    padding: 14,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  locationsRow: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+  },
+  locationsIndicatorCol: {
+    width: 20,
+    alignItems: 'center',
+    paddingVertical: 4,
+    marginRight: 10,
+  },
+  pickupSquareDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 2,
+    backgroundColor: '#EF4444',
+    borderWidth: 0,
+  },
+  pickupCircleDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 2,
+    backgroundColor: '#EF4444',
+    borderWidth: 0,
+  },
+  locationLineConnector: {
+    flex: 1,
+    width: 2,
+    backgroundColor: '#CBD5E1',
+    marginVertical: 4,
+    minHeight: 28,
+  },
+  dropCircleDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#54B713',
+    borderWidth: 0,
+  },
+  dropSquareDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#54B713',
+    borderWidth: 0,
+  },
+  locationsContentCol: {
+    flex: 1,
+    justifyContent: 'space-between',
+  },
+  locationItemBlock: {
+    justifyContent: 'center',
+  },
+  locationMiniTag: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+    marginBottom: 2,
+  },
+  locationMainTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  locationSubText: {
+    fontSize: 12,
+    color: '#64748B',
+    marginTop: 1,
+  },
+  locationItemDivider: {
+    height: 1,
+    backgroundColor: '#F1F5F9',
+    marginVertical: 8,
   },
 });
 

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   StatusBar,
+  InteractionManager,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -20,6 +21,7 @@ import {
   Sparkles,
   SlidersHorizontal,
 } from 'lucide-react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { useHomeExit } from '../context/HomeExitContext';
 import { useBooking } from '../context/BookingContext';
 import { SERVICE_CATEGORIES, OFFER_BANNERS, SUB_SERVICES, isBookingSlotPast } from '../data/mockData';
@@ -28,8 +30,7 @@ import { SearchBar } from '../components/common/SearchBar';
 import { BannerCarousel } from '../components/home/BannerCarousel';
 import { CategoryGrid } from '../components/home/CategoryGrid';
 import { LocationModal } from '../components/home/LocationModal';
-import { ModalContainer } from '../components/common/ModalContainer';
-import { Button } from '../components/common/Button';
+import { AddAddressAlert } from '../components/home/AddAddressAlert';
 import { AppLogo } from '../components/common/AppLogo';
 import { Badge } from '../components/common/Badge';
 import { useHomeTheme, COLORS, RADII, SPACING, SHADOWS } from '../theme';
@@ -51,10 +52,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     activeBooking,
     toggleSubService,
     feedbackList,
+    isAddressAlertDismissed,
+    dismissAddressAlert,
   } = useBooking();
 
-  const [locationModalVisible, setLocationModalVisible] = useState(false);
-  const [hasDismissedAddressPrompt, setHasDismissedAddressPrompt] = useState(false);
+  const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   // Dynamic Home Services Catalog state (with fallback to default)
@@ -62,7 +64,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const [banners, setBanners] = useState<OfferBanner[]>(OFFER_BANNERS);
   const [subServices, setSubServices] = useState<SubService[]>(SUB_SERVICES);
 
-  // Fetch live home services data from Firestore on mount
+  // Fetch live home services data from Firestore after initial screen interactions
   React.useEffect(() => {
     let isMounted = true;
     async function loadFirestoreHomeData() {
@@ -92,14 +94,27 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         // Fallback silently to defaults
       }
     }
-    loadFirestoreHomeData();
+
+    const task = InteractionManager.runAfterInteractions(() => {
+      loadFirestoreHomeData();
+    });
+
     return () => {
       isMounted = false;
+      task.cancel();
     };
   }, []);
 
-  // Only show address prompt if there is NO ongoing service, NO address set, and NOT dismissed
-  const isAddressPromptVisible = !hasDismissedAddressPrompt && !activeBooking && !currentAddress;
+  // Initial open alert: appears every time the Home Services category is focused.
+  // useFocusEffect ensures it re-shows even when React Navigation keeps the screen mounted.
+  const [isAddressAlertOpen, setIsAddressAlertOpen] = useState(true);
+
+  useFocusEffect(
+    useCallback(() => {
+      setIsAddressAlertOpen(true);
+    }, [])
+  );
+
 
   // Filter services and subservices based on search query
   const searchResults = useMemo(() => {
@@ -177,7 +192,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         <TouchableOpacity
           style={styles.locationButton}
           activeOpacity={0.75}
-          onPress={() => setLocationModalVisible(true)}
+          onPress={() => setIsLocationModalOpen(true)}
         >
           <View style={styles.pinCircle}>
             <MapPin size={16} color={COLORS.primary} />
@@ -305,48 +320,24 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         />
       </ScrollView>
 
-      {/* Initial App Open Address Prompt Modal */}
-      <ModalContainer
-        visible={isAddressPromptVisible}
-        onClose={() => setHasDismissedAddressPrompt(true)}
-        title="Set Service Location"
-        subtitle="Where should our service professionals reach?"
-      >
-        <View style={styles.addressPromptContent}>
-          <View style={styles.addressPromptIconCircle}>
-            <MapPin size={32} color={COLORS.primary} />
-          </View>
-          <Text style={styles.addressPromptTitle}>
-            Add Delivery Address
-          </Text>
-          <Text style={styles.addressPromptSubtitle}>
-            Please add your home address to see live technician availability, accurate arrival slots & instant pricing.
-          </Text>
+      {/* Initial Add Address Alert Dialog (Alert format with Add Address and Skip options) */}
+      <AddAddressAlert
+        visible={isAddressAlertOpen}
+        onAddAddress={() => {
+          setIsAddressAlertOpen(false);
+          dismissAddressAlert();
+          navigation.navigate('Address');
+        }}
+        onSkip={() => {
+          setIsAddressAlertOpen(false);
+          dismissAddressAlert();
+        }}
+      />
 
-          <Button
-            title="Add Address Now"
-            onPress={() => {
-              setHasDismissedAddressPrompt(true);
-              navigation.navigate('Address');
-            }}
-            size="lg"
-            style={{ width: '100%', marginTop: SPACING.md }}
-          />
-
-          <TouchableOpacity
-            style={styles.skipPromptBtn}
-            activeOpacity={0.7}
-            onPress={() => setHasDismissedAddressPrompt(true)}
-          >
-            <Text style={styles.skipPromptBtnText}>Skip for now</Text>
-          </TouchableOpacity>
-        </View>
-      </ModalContainer>
-
-      {/* Location Selector Modal */}
+      {/* Manual Location Selector Modal (Only opened when user taps the header location bar) */}
       <LocationModal
-        visible={locationModalVisible}
-        onClose={() => setLocationModalVisible(false)}
+        visible={isLocationModalOpen}
+        onClose={() => setIsLocationModalOpen(false)}
       />
     </SafeAreaView>
   );
@@ -633,41 +624,5 @@ const styles = StyleSheet.create({
     marginTop: 6,
     lineHeight: 17,
     paddingHorizontal: SPACING.sm,
-  },
-  addressPromptContent: {
-    alignItems: 'center',
-    paddingVertical: SPACING.md,
-  },
-  addressPromptIconCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: RADII.pill,
-    backgroundColor: COLORS.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: SPACING.md,
-  },
-  addressPromptTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: COLORS.textPrimary,
-    textAlign: 'center',
-  },
-  addressPromptSubtitle: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    textAlign: 'center',
-    marginTop: 6,
-    lineHeight: 18,
-    paddingHorizontal: SPACING.md,
-  },
-  skipPromptBtn: {
-    paddingVertical: SPACING.md,
-    marginTop: SPACING.xs,
-  },
-  skipPromptBtnText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: COLORS.textMuted,
   },
 });

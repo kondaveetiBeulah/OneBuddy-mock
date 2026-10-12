@@ -90,14 +90,14 @@ export const LIGHT_COLORS = {
 };
 
 export const DARK_COLORS = {
-    background: '#121214',
-    surface: '#1D1E22',
+    background: '#000000',
+    surface: '#000000',
     accent: '#65A30D',
-    softHighlight: '#24262B',
-    inputBg: '#24262B',
-    textPrimary: '#F1F1EC',
-    textMuted: '#9BA08F',
-    border: 'rgba(255, 255, 255, 0.08)',
+    softHighlight: '#000000',
+    inputBg: '#000000',
+    textPrimary: '#FFFFFF',
+    textMuted: '#E5E7EB',
+    border: 'rgba(255, 255, 255, 0.15)',
     error: '#FF5252',
     success: '#4CAF50',
     cardRadius: 16,
@@ -110,7 +110,7 @@ function useCartTheme() {
     let isDark = false;
     try {
         const { scheme } = useAppTheme();
-        isDark = scheme === 'dark';
+        isDark = scheme === 'dark' || isCategoryDark();
     } catch {
         isDark = isCategoryDark();
     }
@@ -313,7 +313,7 @@ interface TipChipProps {
 }
 
 const TipChip: React.FC<TipChipProps> = ({ amount, selected, onSelect }) => {
-    const { COLORS, styles } = useCartTheme();
+    const { isDark, COLORS, styles } = useCartTheme();
     const bgAnim = useRef(new Animated.Value(selected ? 1 : 0)).current;
 
     const handlePress = () => {
@@ -328,16 +328,18 @@ const TipChip: React.FC<TipChipProps> = ({ amount, selected, onSelect }) => {
         }).start();
     }, [selected]);
 
+    const unselectedBg = isDark ? '#000000' : COLORS.softHighlight;
+    const selectedBg = isDark ? '#FFFFFF' : COLORS.accent;
     const backgroundColor = bgAnim.interpolate({
         inputRange: [0, 1],
-        outputRange: [COLORS.softHighlight, COLORS.accent],
+        outputRange: [unselectedBg, selectedBg],
     });
 
     return (
         <TouchableOpacity onPress={handlePress} activeOpacity={0.8} style={{ flex: 1 }}>
             <Animated.View style={[styles.tipChip, { backgroundColor }]}>
                 <Text
-                    style={[styles.tipChipText, { color: selected ? COLORS.background : COLORS.textPrimary }]}
+                    style={[styles.tipChipText, { color: isDark ? (selected ? '#000000' : '#FFFFFF') : (selected ? COLORS.background : COLORS.textPrimary) }]}
                 >
                     {amount === 0 ? 'No Tip' : `₹${amount}`}
                 </Text>
@@ -1599,10 +1601,10 @@ const CartScreen: React.FC<CartScreenProps> = ({ onProceed, onBack }) => {
 
                             <TouchableOpacity
                                 onPress={confirmModal.onConfirm}
-                                style={[styles.deleteModalConfirmBtn, !confirmModal.isDanger && { backgroundColor: COLORS.accent, shadowColor: COLORS.accent }]}
+                                style={[styles.deleteModalConfirmBtn, !confirmModal.isDanger && { backgroundColor: isDark ? '#FFFFFF' : COLORS.accent, shadowColor: isDark ? '#FFFFFF' : COLORS.accent }]}
                                 activeOpacity={0.8}
                             >
-                                <Text style={[styles.deleteModalConfirmText, !confirmModal.isDanger && { color: COLORS.background }]}>
+                                <Text style={[styles.deleteModalConfirmText, !confirmModal.isDanger && { color: isDark ? '#000000' : COLORS.background }]}>
                                     {confirmModal.confirmText || 'Yes, Delete'}
                                 </Text>
                             </TouchableOpacity>
@@ -1743,13 +1745,13 @@ const createStyles = (COLORS: typeof LIGHT_COLORS, isDark: boolean) => StyleShee
         fontWeight: '600',
     },
     addressSaveBtn: {
-        backgroundColor: COLORS.accent,
+        backgroundColor: isDark ? '#FFFFFF' : COLORS.accent,
         paddingVertical: 6,
         paddingHorizontal: 16,
         borderRadius: 6,
     },
     addressSaveBtnText: {
-        color: '#FFFFFF',
+        color: isDark ? '#000000' : '#FFFFFF',
         fontSize: 13,
         fontWeight: '700',
     },
@@ -1837,13 +1839,13 @@ const createStyles = (COLORS: typeof LIGHT_COLORS, isDark: boolean) => StyleShee
 
     stepperContainer: {
         flexDirection: 'row', alignItems: 'center',
-        backgroundColor: isDark ? COLORS.softHighlight : COLORS.background, borderRadius: 10,
-        borderWidth: 1, borderColor: COLORS.border, overflow: 'hidden',
+        backgroundColor: isDark ? '#000000' : COLORS.background, borderRadius: 10,
+        borderWidth: 1, borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : COLORS.border, overflow: 'hidden',
     },
-    stepperBtn: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center', backgroundColor: isDark ? COLORS.surface : COLORS.softHighlight },
+    stepperBtn: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center', backgroundColor: isDark ? '#000000' : COLORS.softHighlight },
     stepperBtnDisabled: { opacity: 0.4 },
-    stepperBtnText: { color: COLORS.accent, fontSize: 18, fontWeight: '700', lineHeight: 22 },
-    stepperCount: { width: 28, textAlign: 'center', color: COLORS.textPrimary, fontSize: 15, fontWeight: '700' },
+    stepperBtnText: { color: isDark ? '#FFFFFF' : COLORS.accent, fontSize: 18, fontWeight: '700', lineHeight: 22 },
+    stepperCount: { width: 28, textAlign: 'center', color: isDark ? '#FFFFFF' : COLORS.textPrimary, fontSize: 15, fontWeight: '700' },
 
     crossSellList: { paddingVertical: 4 },
     crossSellCard: {
@@ -1861,12 +1863,12 @@ const createStyles = (COLORS: typeof LIGHT_COLORS, isDark: boolean) => StyleShee
     crossSellName: { fontSize: 13, fontWeight: '600', color: COLORS.textPrimary, marginBottom: 4, minHeight: 34 },
     crossSellPrice: { fontSize: 14, fontWeight: '800', color: COLORS.accent, marginBottom: 8 },
     crossSellAddBtn: {
-        backgroundColor: isDark ? COLORS.surface : COLORS.background, borderWidth: 1.5,
-        borderColor: COLORS.accent, borderRadius: 8, paddingVertical: 6, alignItems: 'center',
+        backgroundColor: isDark ? '#000000' : COLORS.background, borderWidth: 1.5,
+        borderColor: isDark ? '#FFFFFF' : COLORS.accent, borderRadius: 8, paddingVertical: 6, alignItems: 'center',
     },
-    crossSellAddBtnActive: { backgroundColor: COLORS.accent, borderColor: COLORS.accent },
-    crossSellAddText: { fontSize: 13, fontWeight: '700', color: COLORS.accent },
-    crossSellAddTextActive: { color: '#FFFFFF' },
+    crossSellAddBtnActive: { backgroundColor: isDark ? '#FFFFFF' : COLORS.accent, borderColor: isDark ? '#FFFFFF' : COLORS.accent },
+    crossSellAddText: { fontSize: 13, fontWeight: '700', color: isDark ? '#FFFFFF' : COLORS.accent },
+    crossSellAddTextActive: { color: isDark ? '#000000' : '#FFFFFF' },
 
     couponRow: { flexDirection: 'row', gap: 10 },
     couponInputWrapper: {
@@ -1880,11 +1882,11 @@ const createStyles = (COLORS: typeof LIGHT_COLORS, isDark: boolean) => StyleShee
     },
     couponCheckmark: { color: COLORS.success, fontSize: 16, fontWeight: '800' },
     couponApplyBtn: {
-        backgroundColor: COLORS.accent, borderRadius: 10,
+        backgroundColor: isDark ? '#FFFFFF' : COLORS.accent, borderRadius: 10,
         paddingHorizontal: 18, justifyContent: 'center', alignItems: 'center',
     },
-    couponAppliedBtn: { backgroundColor: COLORS.success },
-    couponApplyText: { color: '#FFFFFF', fontWeight: '800', fontSize: 13 },
+    couponAppliedBtn: { backgroundColor: isDark ? '#34D399' : COLORS.success },
+    couponApplyText: { color: isDark ? '#000000' : '#FFFFFF', fontWeight: '800', fontSize: 13 },
     couponSaveText: { marginTop: 10, color: COLORS.success, fontSize: 13, fontWeight: '600' },
     couponHint: { marginTop: 6, color: COLORS.textMuted, fontSize: 12 },
 
@@ -1945,13 +1947,13 @@ const createStyles = (COLORS: typeof LIGHT_COLORS, isDark: boolean) => StyleShee
     stickyBarTotal: { fontSize: 22, fontWeight: '900', color: COLORS.accent, lineHeight: 26 },
     stickyBarItems: { fontSize: 11, color: COLORS.textMuted },
     proceedBtn: {
-        backgroundColor: COLORS.accent, borderRadius: 14,
+        backgroundColor: isDark ? '#FFFFFF' : COLORS.accent, borderRadius: 14,
         paddingVertical: 14, paddingHorizontal: 22,
         alignItems: 'center', justifyContent: 'center',
-        shadowColor: COLORS.accent, shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.4, shadowRadius: 12, elevation: 8,
+        shadowColor: isDark ? '#FFFFFF' : COLORS.accent, shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: isDark ? 0.2 : 0.4, shadowRadius: 12, elevation: 8,
     },
-    proceedBtnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '800', letterSpacing: 0.2 },
+    proceedBtnText: { color: isDark ? '#000000' : '#FFFFFF', fontSize: 15, fontWeight: '800', letterSpacing: 0.2 },
 
     addressFormTitle: { fontSize: 16, fontWeight: '700', color: COLORS.textPrimary },
     addressEditTopHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: COLORS.border },
@@ -1997,10 +1999,10 @@ const createStyles = (COLORS: typeof LIGHT_COLORS, isDark: boolean) => StyleShee
     formInput: { backgroundColor: isDark ? COLORS.softHighlight : COLORS.background, color: COLORS.textPrimary, borderRadius: 8, padding: 10, fontSize: 13, borderColor: COLORS.border, borderWidth: 1, marginBottom: 8 },
     formSectionTitle: { fontSize: 13, fontWeight: '700', color: COLORS.textPrimary, marginTop: 8, marginBottom: 6 },
     labelRow: { flexDirection: 'row', gap: 8, marginBottom: 8 },
-    labelBtn: { flex: 1, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: COLORS.border, backgroundColor: isDark ? COLORS.softHighlight : COLORS.background, alignItems: 'center' },
-    labelBtnActive: { borderColor: COLORS.accent, backgroundColor: COLORS.accent + '20' },
-    labelText: { color: COLORS.textMuted, fontSize: 12, fontWeight: '600' },
-    labelTextActive: { color: COLORS.accent, fontWeight: '700' },
+    labelBtn: { flex: 1, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : COLORS.border, backgroundColor: isDark ? '#000000' : COLORS.background, alignItems: 'center' },
+    labelBtnActive: { borderColor: isDark ? '#FFFFFF' : COLORS.accent, backgroundColor: isDark ? '#FFFFFF' : COLORS.accent + '20' },
+    labelText: { color: isDark ? '#FFFFFF' : COLORS.textMuted, fontSize: 12, fontWeight: '600' },
+    labelTextActive: { color: isDark ? '#000000' : COLORS.accent, fontWeight: '700' },
     inputWrapper: { marginBottom: 10, position: 'relative', marginTop: 8 },
     inputLabel: { position: 'absolute', top: -7, left: 10, backgroundColor: COLORS.surface, paddingHorizontal: 4, fontSize: 11, color: COLORS.textMuted, zIndex: 1 },
     formInputLite: { backgroundColor: isDark ? COLORS.softHighlight : COLORS.background, color: COLORS.textPrimary, borderRadius: 8, padding: 10, fontSize: 13, borderColor: COLORS.border, borderWidth: 1 },
@@ -2085,14 +2087,14 @@ const createStyles = (COLORS: typeof LIGHT_COLORS, isDark: boolean) => StyleShee
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        backgroundColor: '#1E293B',
+        backgroundColor: isDark ? '#000000' : '#1E293B',
         paddingVertical: 10,
         paddingHorizontal: 16,
         marginHorizontal: 16,
         marginTop: 8,
         borderRadius: 10,
         borderWidth: 1,
-        borderColor: COLORS.accent,
+        borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : COLORS.accent,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
@@ -2107,13 +2109,13 @@ const createStyles = (COLORS: typeof LIGHT_COLORS, isDark: boolean) => StyleShee
         marginRight: 10,
     },
     undoToastBtn: {
-        backgroundColor: COLORS.accent,
+        backgroundColor: isDark ? '#FFFFFF' : COLORS.accent,
         paddingHorizontal: 12,
         paddingVertical: 5,
         borderRadius: 6,
     },
     undoToastBtnText: {
-        color: '#FFFFFF',
+        color: isDark ? '#000000' : '#FFFFFF',
         fontWeight: '800',
         fontSize: 12,
         letterSpacing: 0.5,
@@ -2303,11 +2305,11 @@ const createStyles = (COLORS: typeof LIGHT_COLORS, isDark: boolean) => StyleShee
     addressChoiceOptionLive: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: isDark ? COLORS.softHighlight : COLORS.background,
+        backgroundColor: isDark ? '#000000' : COLORS.background,
         borderRadius: 14,
         padding: 16,
         borderWidth: 1.5,
-        borderColor: COLORS.accent,
+        borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : COLORS.accent,
         marginBottom: 12,
         shadowColor: COLORS.accent,
         shadowOffset: { width: 0, height: 2 },
@@ -2319,26 +2321,26 @@ const createStyles = (COLORS: typeof LIGHT_COLORS, isDark: boolean) => StyleShee
         width: 44,
         height: 44,
         borderRadius: 22,
-        backgroundColor: COLORS.accent + '25',
+        backgroundColor: isDark ? '#000000' : COLORS.accent + '25',
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: 14,
         borderWidth: 1,
-        borderColor: COLORS.accent + '60',
+        borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : COLORS.accent + '60',
     },
     addressChoiceOptionTitleLive: {
         fontSize: 15,
         fontWeight: '800',
-        color: COLORS.accent,
+        color: isDark ? '#FFFFFF' : COLORS.accent,
     },
     livePill: {
-        backgroundColor: COLORS.accent,
+        backgroundColor: isDark ? '#FFFFFF' : COLORS.accent,
         paddingHorizontal: 6,
         paddingVertical: 2,
         borderRadius: 4,
     },
     livePillText: {
-        color: '#FFFFFF',
+        color: isDark ? '#000000' : '#FFFFFF',
         fontSize: 9,
         fontWeight: '900',
         letterSpacing: 0.5,
@@ -2346,7 +2348,7 @@ const createStyles = (COLORS: typeof LIGHT_COLORS, isDark: boolean) => StyleShee
     addressChoiceOptionManual: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: isDark ? COLORS.softHighlight : COLORS.background,
+        backgroundColor: isDark ? '#000000' : COLORS.background,
         borderRadius: 14,
         padding: 16,
         borderWidth: 1,

@@ -42,7 +42,7 @@ function GroceriesLoadingScreen({ isDark }: { isDark: boolean }) {
         {
           paddingTop: insets.top,
           paddingBottom: insets.bottom,
-          backgroundColor: isDark ? '#121214' : colors.white,
+          backgroundColor: isDark ? '#000000' : colors.white,
         },
       ]}
     >
@@ -54,10 +54,10 @@ function GroceriesLoadingScreen({ isDark }: { isDark: boolean }) {
       >
         <GroceryDeliveryLogo size={72} />
       </View>
-      <Text style={[styles.loadingTitle, isDark && { color: '#F1F1EC' }]}>
+      <Text style={[styles.loadingTitle, isDark && { color: '#FFFFFF' }]}>
         One<Text style={{ color: '#4FA81A' }}>Buddy</Text> Groceries Express
       </Text>
-      <Text style={[styles.loadingSub, isDark && { color: '#9BA08F' }]}>
+      <Text style={[styles.loadingSub, isDark && { color: '#E5E7EB' }]}>
         Loading fresh groceries and essentials...
       </Text>
       <ActivityIndicator size="small" color="#4FA81A" style={styles.loadingIndicator} />
@@ -88,10 +88,10 @@ export default function GroceriesHost({
       ...(isDark ? DarkTheme : DefaultTheme),
       colors: {
         ...(isDark ? DarkTheme : DefaultTheme).colors,
-        background: isDark ? '#121214' : colors.background,
-        card: isDark ? '#1D1E22' : colors.white,
-        text: isDark ? '#F1F1EC' : colors.textPrimary,
-        border: isDark ? 'rgba(255, 255, 255, 0.08)' : colors.borderLight,
+        background: isDark ? '#000000' : colors.background,
+        card: isDark ? '#000000' : colors.white,
+        text: isDark ? '#FFFFFF' : colors.textPrimary,
+        border: isDark ? 'rgba(255, 255, 255, 0.15)' : colors.borderLight,
         primary: colors.primary,
       },
     }),
@@ -149,12 +149,12 @@ export default function GroceriesHost({
       key={scheme}
       style={[
         styles.container,
-        { backgroundColor: isDark ? '#121214' : colors.background },
+        { backgroundColor: isDark ? '#000000' : colors.background },
       ]}
     >
       <StatusBar
         barStyle={isDark ? 'light-content' : 'dark-content'}
-        backgroundColor={isDark ? '#121214' : colors.white}
+        backgroundColor={isDark ? '#000000' : colors.white}
       />
       <SafeAreaProvider>
         {!isReady ? (

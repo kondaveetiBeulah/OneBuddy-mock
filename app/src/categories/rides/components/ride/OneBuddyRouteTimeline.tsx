@@ -121,10 +121,9 @@ const styles = StyleSheet.create({
   pickupDot: {
     width: 10,
     height: 10,
-    borderRadius: 5,
-    backgroundColor: COLORS.primary, // OneBuddy Green dot
-    borderWidth: 2,
-    borderColor: COLORS.primaryLight,
+    borderRadius: 2,
+    backgroundColor: '#EF4444', // Red pickup square
+    borderWidth: 0,
   },
   routeLine: {
     width: 2,
@@ -133,10 +132,11 @@ const styles = StyleSheet.create({
     marginVertical: 2,
   },
   dropSquare: {
-    width: 9,
-    height: 9,
-    borderRadius: 2,
-    backgroundColor: '#DC2626', // Destination red square
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: COLORS.primary, // Destination green circle
+    borderWidth: 0,
   },
   stopInfo: {
     flex: 1,

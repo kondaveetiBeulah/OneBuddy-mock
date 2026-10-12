@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { DietaryType } from '../../types';
 import { Star, Sparkles, Flame, Clock, Utensils } from 'lucide-react-native';
+import { isCategoryDark } from '@/theme/categoryThemeBridge';
 
 export const DietaryBadge: React.FC<{ type: DietaryType; size?: 'sm' | 'md' }> = ({ type, size = 'sm' }) => {
   const isVeg = type === 'veg';
@@ -26,12 +27,31 @@ export const RatingBadge: React.FC<{ rating: number; countText?: string; size?: 
   countText,
   size = 'sm',
 }) => {
+  const isDark = isCategoryDark();
   const isTop = rating >= 4.5;
   const isGood = rating >= 4.0;
 
-  const bg = isTop ? 'rgba(6, 78, 59, 0.85)' : isGood ? 'rgba(120, 53, 15, 0.85)' : '#292524';
-  const border = isTop ? '#059669' : isGood ? '#D97706' : '#57534E';
-  const textClr = isTop ? '#6EE7B7' : isGood ? '#ECFCCB' : '#E7E5E4';
+  const bg = isDark
+    ? '#000000'
+    : isTop
+    ? 'rgba(6, 78, 59, 0.85)'
+    : isGood
+    ? 'rgba(120, 53, 15, 0.85)'
+    : '#292524';
+  const border = isDark
+    ? 'rgba(255, 255, 255, 0.2)'
+    : isTop
+    ? '#059669'
+    : isGood
+    ? '#D97706'
+    : '#57534E';
+  const textClr = isDark
+    ? '#FFFFFF'
+    : isTop
+    ? '#6EE7B7'
+    : isGood
+    ? '#ECFCCB'
+    : '#E7E5E4';
 
   return (
     <View style={[styles.ratingBadge, { backgroundColor: bg, borderColor: border, paddingVertical: size === 'sm' ? 2 : 4, paddingHorizontal: size === 'sm' ? 6 : 8 }]}>
@@ -40,7 +60,7 @@ export const RatingBadge: React.FC<{ rating: number; countText?: string; size?: 
         {rating.toFixed(1)}
       </Text>
       {countText ? (
-        <Text style={[styles.ratingCount, { fontSize: size === 'sm' ? 9 : 11 }]}>
+        <Text style={[styles.ratingCount, { fontSize: size === 'sm' ? 9 : 11 }, isDark && { color: '#E5E7EB' }]}>
           ({countText})
         </Text>
       ) : null}
@@ -49,26 +69,29 @@ export const RatingBadge: React.FC<{ rating: number; countText?: string; size?: 
 };
 
 export const ComboTag: React.FC<{ text?: string }> = ({ text = 'COMBO DEAL' }) => {
+  const isDark = isCategoryDark();
   return (
-    <View style={styles.comboTag}>
-      <Sparkles size={11} color="#65A30D" />
-      <Text style={styles.comboText}>{text}</Text>
+    <View style={[styles.comboTag, isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.2)' }]}>
+      <Sparkles size={11} color={isDark ? '#A3E635' : '#65A30D'} />
+      <Text style={[styles.comboText, isDark && { color: '#FFFFFF' }]}>{text}</Text>
     </View>
   );
 };
 
 export const CuisineTag: React.FC<{ cuisine: string }> = ({ cuisine }) => {
+  const isDark = isCategoryDark();
   return (
-    <View style={styles.cuisineTag}>
-      <Utensils size={11} color="#C084FC" />
-      <Text style={styles.cuisineText}>{cuisine}</Text>
+    <View style={[styles.cuisineTag, isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.2)' }]}>
+      <Utensils size={11} color={isDark ? '#C084FC' : '#C084FC'} />
+      <Text style={[styles.cuisineText, isDark && { color: '#FFFFFF' }]}>{cuisine}</Text>
     </View>
   );
 };
 
 export const BestsellerTag: React.FC = () => {
+  const isDark = isCategoryDark();
   return (
-    <View style={styles.bestsellerTag}>
+    <View style={[styles.bestsellerTag, isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.2)' }]}>
       <Flame size={11} color="#FB923C" fill="#FB923C" />
       <Text style={styles.bestsellerText}>BESTSELLER</Text>
     </View>
@@ -76,10 +99,11 @@ export const BestsellerTag: React.FC = () => {
 };
 
 export const PrepTimeTag: React.FC<{ time: string }> = ({ time }) => {
+  const isDark = isCategoryDark();
   return (
     <View style={styles.prepTag}>
-      <Clock size={11} color="#6B7280" />
-      <Text style={styles.prepText}>{time}</Text>
+      <Clock size={11} color={isDark ? '#9CA3AF' : '#6B7280'} />
+      <Text style={[styles.prepText, isDark && { color: '#E5E7EB' }]}>{time}</Text>
     </View>
   );
 };

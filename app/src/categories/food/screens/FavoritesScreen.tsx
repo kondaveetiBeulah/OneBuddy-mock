@@ -19,6 +19,7 @@ import {
   ArrowRight,
   Store,
 } from 'lucide-react-native';
+import { isCategoryDark } from '@/theme/categoryThemeBridge';
 
 interface FavoritesScreenProps {
   onSelectRestaurant: (restaurantId: string) => void;
@@ -36,11 +37,13 @@ const FavoriteRestaurantCard: React.FC<FavoriteRestaurantCardProps> = ({
   onSelect,
   onToggleFavorite,
 }) => {
+  const isDark = isCategoryDark();
+
   return (
     <TouchableOpacity
       activeOpacity={0.88}
       onPress={() => onSelect(restaurant.id)}
-      style={styles.card}
+      style={[styles.card, isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.15)' }]}
     >
       {/* Top Header Row with Icon and Heart */}
       <View style={styles.cardTopRow}>
@@ -50,7 +53,7 @@ const FavoriteRestaurantCard: React.FC<FavoriteRestaurantCardProps> = ({
 
         <View style={styles.restaurantInfo}>
           <View style={styles.nameRow}>
-            <Text style={styles.restaurantName} numberOfLines={1}>
+            <Text style={[styles.restaurantName, isDark && { color: '#FFFFFF' }]} numberOfLines={1}>
               {restaurant.name}
             </Text>
             <DietaryBadge
@@ -58,7 +61,7 @@ const FavoriteRestaurantCard: React.FC<FavoriteRestaurantCardProps> = ({
               size="sm"
             />
           </View>
-          <Text style={styles.tagline} numberOfLines={1}>
+          <Text style={[styles.tagline, isDark && { color: '#E5E7EB' }]} numberOfLines={1}>
             {restaurant.tagline}
           </Text>
         </View>
@@ -72,15 +75,15 @@ const FavoriteRestaurantCard: React.FC<FavoriteRestaurantCardProps> = ({
           style={styles.favIconBtn}
           accessibilityLabel="Remove from favorites"
         >
-          <Heart size={18} color="#65A30D" />
+          <Heart size={18} color="#65A30D" fill="#65A30D" />
         </TouchableOpacity>
       </View>
 
       {/* Offer Banner if available */}
       {restaurant.offerText ? (
-        <View style={styles.offerBadge}>
-          <Tag size={11} color="#65A30D" />
-          <Text style={styles.offerText} numberOfLines={1}>
+        <View style={[styles.offerBadge, isDark && { backgroundColor: 'rgba(255, 255, 255, 0.08)' }]}>
+          <Tag size={11} color={isDark ? '#A3E635' : '#65A30D'} />
+          <Text style={[styles.offerText, isDark && { color: '#A3E635' }]} numberOfLines={1}>
             {restaurant.offerText}
           </Text>
         </View>
@@ -90,8 +93,8 @@ const FavoriteRestaurantCard: React.FC<FavoriteRestaurantCardProps> = ({
       <View style={styles.cuisineAndRatingRow}>
         <View style={styles.cuisineList}>
           {restaurant.cuisine.slice(0, 3).map((c, i) => (
-            <View key={i} style={styles.cuisinePill}>
-              <Text style={styles.cuisineText}>{c}</Text>
+            <View key={i} style={[styles.cuisinePill, isDark && { backgroundColor: 'rgba(255, 255, 255, 0.08)' }]}>
+              <Text style={[styles.cuisineText, isDark && { color: '#E5E7EB' }]}>{c}</Text>
             </View>
           ))}
         </View>
@@ -99,27 +102,27 @@ const FavoriteRestaurantCard: React.FC<FavoriteRestaurantCardProps> = ({
       </View>
 
       {/* Divider */}
-      <View style={styles.cardDivider} />
+      <View style={[styles.cardDivider, isDark && { backgroundColor: 'rgba(255, 255, 255, 0.1)' }]} />
 
       {/* Footer Metrics with Icons */}
       <View style={styles.cardFooter}>
         <View style={styles.metricsLeft}>
           <View style={styles.metricItem}>
             <Clock size={12} color="#10B981" />
-            <Text style={styles.metricText}>{restaurant.deliveryTime}</Text>
+            <Text style={[styles.metricText, isDark && { color: '#E5E7EB' }]}>{restaurant.deliveryTime}</Text>
           </View>
           <View style={styles.dotSeparator} />
           <View style={styles.metricItem}>
             <MapPin size={12} color="#65A30D" />
-            <Text style={styles.metricText}>{restaurant.distance}</Text>
+            <Text style={[styles.metricText, isDark && { color: '#E5E7EB' }]}>{restaurant.distance}</Text>
           </View>
           <View style={styles.dotSeparator} />
-          <Text style={styles.costText}>₹{restaurant.costForTwo} for two</Text>
+          <Text style={[styles.costText, isDark && { color: '#FFFFFF' }]}>₹{restaurant.costForTwo} for two</Text>
         </View>
 
-        <View style={styles.menuAction}>
-          <Text style={styles.menuActionText}>Menu</Text>
-          <ArrowRight size={13} color="#65A30D" />
+        <View style={[styles.menuAction, isDark && { backgroundColor: 'rgba(255, 255, 255, 0.1)' }]}>
+          <Text style={[styles.menuActionText, isDark && { color: '#A3E635' }]}>Menu</Text>
+          <ArrowRight size={13} color={isDark ? '#A3E635' : '#65A30D'} />
         </View>
       </View>
     </TouchableOpacity>
@@ -132,10 +135,11 @@ export const FavoritesScreen: React.FC<FavoritesScreenProps> = ({
 }) => {
   const { favorites, toggleFavorite } = useCart();
   const { restaurants } = useFoodData();
+  const isDark = isCategoryDark();
   const favoriteRestaurants = restaurants.filter((r) => favorites.includes(r.id));
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView style={[styles.container, isDark && { backgroundColor: '#000000' }]} showsVerticalScrollIndicator={false}>
       {/* Top Header */}
       <View style={styles.header}>
         <View style={styles.headLeft}>
@@ -143,26 +147,26 @@ export const FavoritesScreen: React.FC<FavoritesScreenProps> = ({
             <Heart size={18} color="#65A30D" />
           </View>
           <View>
-            <Text style={styles.title}>Favorite Spots</Text>
-            <Text style={styles.subtitle}>Your bookmarked food places</Text>
+            <Text style={[styles.title, isDark && { color: '#FFFFFF' }]}>Favorite Spots</Text>
+            <Text style={[styles.subtitle, isDark && { color: '#E5E7EB' }]}>Your bookmarked food places</Text>
           </View>
         </View>
 
-        <Text style={styles.countText}>{favoriteRestaurants.length} saved</Text>
+        <Text style={[styles.countText, isDark && { color: '#A3E635' }]}>{favoriteRestaurants.length} saved</Text>
       </View>
 
       {favoriteRestaurants.length === 0 ? (
-        <View style={styles.emptyCard}>
+        <View style={[styles.emptyCard, isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.15)' }]}>
           <View style={styles.emptyIconCircle}>
             <Heart size={36} color="#65A30D" />
           </View>
-          <Text style={styles.emptyTitle}>No Favorites Saved</Text>
-          <Text style={styles.emptyDesc}>
+          <Text style={[styles.emptyTitle, isDark && { color: '#FFFFFF' }]}>No Favorites Saved</Text>
+          <Text style={[styles.emptyDesc, isDark && { color: '#E5E7EB' }]}>
             Tap the heart icon on any restaurant to save your favorite spots.
           </Text>
-          <TouchableOpacity onPress={onNavigateHome} style={styles.exploreBtn}>
-            <Store size={14} color="#FFFFFF" />
-            <Text style={styles.exploreText}>Browse Restaurants</Text>
+          <TouchableOpacity onPress={onNavigateHome} style={[styles.exploreBtn, isDark && { backgroundColor: '#FFFFFF' }]}>
+            <Store size={14} color={isDark ? '#000000' : '#FFFFFF'} />
+            <Text style={[styles.exploreText, isDark && { color: '#000000' }]}>Browse Restaurants</Text>
           </TouchableOpacity>
         </View>
       ) : (

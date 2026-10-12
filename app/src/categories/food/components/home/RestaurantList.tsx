@@ -8,6 +8,7 @@ import { useFilter } from '../../context/FilterContext';
 import { useFoodData } from '../../context/FoodDataContext';
 import { useNetwork } from '@/context/NetworkContext';
 import { NetworkErrorState } from '@/components/NetworkErrorState';
+import { isCategoryDark } from '@/theme/categoryThemeBridge';
 
 interface RestaurantListProps {
   restaurants: Restaurant[];
@@ -18,6 +19,7 @@ export const RestaurantList: React.FC<RestaurantListProps> = ({
   restaurants,
   onSelectRestaurant,
 }) => {
+  const isDark = isCategoryDark();
   const { resetFilters } = useFilter();
   const { error, refresh } = useFoodData();
   const { isConnected } = useNetwork();
@@ -35,17 +37,17 @@ export const RestaurantList: React.FC<RestaurantListProps> = ({
     }
 
     return (
-      <View style={styles.emptyContainer}>
+      <View style={[styles.emptyContainer, isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.15)' }]}>
         <View style={styles.emptyIconCircle}>
           <UtensilsCrossed size={28} color="#65A30D" />
         </View>
-        <Text style={styles.emptyTitle}>No Restaurants Found</Text>
-        <Text style={styles.emptySub}>
+        <Text style={[styles.emptyTitle, isDark && { color: '#FFFFFF' }]}>No Restaurants Found</Text>
+        <Text style={[styles.emptySub, isDark && { color: '#E5E7EB' }]}>
           We couldn't find any restaurant matching your selected filters or search keyword.
         </Text>
-        <TouchableOpacity onPress={resetFilters} style={styles.resetBtn}>
-          <RotateCcw size={13} color="#111827" />
-          <Text style={styles.resetBtnText}>Reset All Filters</Text>
+        <TouchableOpacity onPress={resetFilters} style={[styles.resetBtn, isDark && { backgroundColor: '#FFFFFF' }]}>
+          <RotateCcw size={13} color={isDark ? '#000000' : '#111827'} />
+          <Text style={[styles.resetBtnText, isDark && { color: '#000000' }]}>Reset All Filters</Text>
         </TouchableOpacity>
       </View>
     );

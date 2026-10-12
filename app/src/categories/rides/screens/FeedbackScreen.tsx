@@ -1,9 +1,12 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
-  Modal,
+  BackHandler,
+  Platform,
   Pressable,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TextInput,
@@ -12,6 +15,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { ChevronLeft, CircleCheck, Star } from 'lucide-react-native';
 import { COLORS, FONTS, RADIUS, useRideTheme } from '../theme';
 
 export interface FeedbackRideDetails {
@@ -42,6 +46,14 @@ const DEFAULT_RIDE: FeedbackRideDetails = {
   distance: '6.8 km',
   duration: '1 min',
   amount: 140,
+};
+
+export const STAR_LABELS: Record<number, string> = {
+  1: 'Terrible 😞',
+  2: 'Bad 🙁',
+  3: 'Okay 😐',
+  4: 'Good 😊',
+  5: 'Loved it! 🤩',
 };
 
 const COMPLIMENTS = [
@@ -83,6 +95,31 @@ export default function FeedbackScreen({
     }
   };
 
+  // Hardware back press listener
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (ratingVisible) {
+        setRatingVisible(false);
+        return true;
+      }
+      handleFinish();
+      return true;
+    });
+    return () => sub.remove();
+  }, [ratingVisible]);
+
+  // If user tapped "Rate Your Rider", show the full-screen rating page opening from the top/header
+  if (ratingVisible) {
+    return (
+      <RateYourRiderScreen
+        ride={mergedRide}
+        onBack={() => setRatingVisible(false)}
+        onDone={handleFinish}
+        isDark={isDark}
+      />
+    );
+  }
+
   return (
     <View style={[styles.screen, { paddingTop: insets.top, paddingBottom: insets.bottom }, isDark && { backgroundColor: '#121214' }]}>
       {/* Top Bar with Brand & Close Button */}
@@ -111,20 +148,13 @@ export default function FeedbackScreen({
         onRate={() => setRatingVisible(true)}
         isDark={isDark}
       />
-
-      {ratingVisible && (
-        <RatingSheet
-          ride={mergedRide}
-          onClose={() => setRatingVisible(false)}
-          onDone={handleFinish}
-          bottomInset={insets.bottom}
-          isDark={isDark}
-        />
-      )}
     </View>
   );
 }
 
+/**
+ * Ride Complete Step (Receipt & Summary with Rate Rider CTA)
+ */
 function CompleteStep({
   ride,
   onRate,
@@ -164,7 +194,7 @@ function CompleteStep({
         <DetailRow label="Travel Duration" value={ride.duration || '10 sec'} isDark={isDark} />
       </View>
 
-      {/* 1. Pay to ride Non-Button Text Display */}
+      {/* Pay to ride display */}
       <View style={[styles.payToRideCard, isDark && { backgroundColor: '#24262B', borderColor: 'rgba(84, 183, 19, 0.3)' }]}>
         <View>
           <Text style={[styles.payToRideLabel, isDark && { color: '#F1F1EC' }]}>Pay to ride</Text>
@@ -173,7 +203,7 @@ function CompleteStep({
         <Text style={[styles.payToRideAmount, isDark && { color: '#66D21E' }]}>₹{fareDisplay}</Text>
       </View>
 
-      {/* 2. Rate Your Rider Button */}
+      {/* Rate Your Rider Button */}
       <TouchableOpacity
         style={styles.primaryButton}
         onPress={onRate}
@@ -187,30 +217,32 @@ function CompleteStep({
   );
 }
 
-function RatingSheet({
+/**
+ * Rate Your Rider Full-Page Screen:
+ * Opens from top/header of screen (not a bottom sheet / not starting from the middle).
+ * Stars and overall UI are 100% consistent with Food and Grocery feedback screens.
+ */
+function RateYourRiderScreen({
   ride,
-  onClose,
+  onBack,
   onDone,
-  bottomInset,
   isDark,
 }: {
   ride: FeedbackRideDetails;
-  onClose: () => void;
+  onBack: () => void;
   onDone: () => void;
-  bottomInset: number;
   isDark?: boolean;
 }) {
-  const [rating, setRating] = useState<number>(0);
-  const [selectedCompliments, setSelectedCompliments] = useState<string[]>([]);
-  const [comment, setComment] = useState<string>('');
+  const insets = useSafeAreaInsets();
+  const bottomInset = Math.max(insets.bottom, Platform.OS === 'android' ? 14 : 10);
+  const [rating, setRating] = useState<number>(5);
+  const [selectedCompliments, setSelectedCompliments] = useState<string[]>([
+    'Smooth Driving',
+    'On-Time Pickup',
+  ]);
+  const [comments, setComments] = useState<string>('');
+  const [submitting, setSubmitting] = useState<boolean>(false);
   const [submitted, setSubmitted] = useState<boolean>(false);
-
-  const vehicleType = (ride.vehicleType || 'cab').toLowerCase();
-  const vehicleIconName: any = vehicleType.includes('bike')
-    ? 'bicycle'
-    : vehicleType.includes('auto')
-    ? 'car-outline'
-    : 'car';
 
   const toggleCompliment = (item: string) => {
     setSelectedCompliments((prev) =>
@@ -218,179 +250,363 @@ function RatingSheet({
     );
   };
 
-  const submitRating = () => {
-    if (!rating) {
+  const handleSubmit = () => {
+    if (rating === 0) {
       Alert.alert('Choose a rating', 'Please select at least 1 star before submitting.');
       return;
     }
-    setSubmitted(true);
+    setSubmitting(true);
+    setTimeout(() => {
+      setSubmitting(false);
+      setSubmitted(true);
+    }, 850);
   };
 
+  if (submitted) {
+    return (
+      <View style={[styles.screen, isDark && { backgroundColor: '#121214' }]}>
+        <ThankYouView onReset={onDone} isDark={isDark} />
+      </View>
+    );
+  }
+
   return (
-    <View style={styles.sheetLayer}>
-      <Pressable style={styles.sheetBackdrop} onPress={onClose} />
+    <View style={[styles.screen, isDark && { backgroundColor: '#121214' }]}>
+      {/* 1. Top Header opening from the top of the screen */}
+      <FeedbackHeader onBack={onBack} title="Rate Your Rider" isDark={isDark} />
+
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* 2. Hero banner matching Food & Grocery */}
+        <Hero
+          riderName={ride.riderName}
+          vehicleType={ride.vehicleType}
+          isDark={isDark}
+        />
+
+        {/* 3. Rider & Trip Card matching Food/Grocery OrderCard */}
+        <RiderCard ride={ride} isDark={isDark} />
+
+        {/* 4. Section Label & Star Rating matching Food & Grocery StarRating */}
+        <Text style={[styles.sectionLabel, isDark && { color: '#F1F1EC' }]}>
+          Rate your overall experience
+        </Text>
+        <StarRating rating={rating} onChange={setRating} isDark={isDark} />
+
+        {/* 5. What went well compliments chips */}
+        <Text style={[styles.sectionLabel, isDark && { color: '#F1F1EC' }]}>
+          What went well?
+        </Text>
+        <View style={styles.chipsWrap}>
+          {COMPLIMENTS.map((item) => {
+            const active = selectedCompliments.includes(item);
+            return (
+              <TouchableOpacity
+                key={item}
+                style={[
+                  styles.complimentChip,
+                  isDark && { backgroundColor: '#1D1E22', borderColor: 'rgba(255, 255, 255, 0.08)' },
+                  active && styles.complimentChipActive,
+                  active && isDark && { backgroundColor: 'rgba(84, 183, 19, 0.18)', borderColor: '#54B713' },
+                ]}
+                onPress={() => toggleCompliment(item)}
+                activeOpacity={0.75}
+              >
+                {active && (
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={14}
+                    color={isDark ? '#66D21E' : '#54B713'}
+                    style={{ marginRight: 5 }}
+                  />
+                )}
+                <Text
+                  style={[
+                    styles.complimentChipText,
+                    isDark && { color: '#F1F1EC' },
+                    active && styles.complimentChipTextActive,
+                    active && isDark && { color: '#66D21E' },
+                  ]}
+                >
+                  {item}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {/* 6. Comments Input matching Food CommentsInput */}
+        <Text style={[styles.sectionLabel, isDark && { color: '#F1F1EC' }]}>
+          Additional Comments (Optional)
+        </Text>
+        <CommentsInput value={comments} onChange={setComments} isDark={isDark} />
+      </ScrollView>
+
+      {/* 7. Bottom Action Footer matching Food FeedbackFormScreen */}
       <View
         style={[
-          styles.ratingSheet,
-          { paddingBottom: Math.max(bottomInset, 20) },
-          isDark && { backgroundColor: '#1D1E22' },
+          styles.footer,
+          { paddingBottom: bottomInset + 14 },
+          isDark && { backgroundColor: '#1D1E22', borderTopColor: 'rgba(255, 255, 255, 0.08)' },
         ]}
       >
         <TouchableOpacity
-          accessibilityRole="button"
-          accessibilityLabel="Close rating"
-          style={[styles.closeButton, isDark && { backgroundColor: '#24262B' }]}
-          onPress={onClose}
-          hitSlop={10}
+          onPress={handleSubmit}
+          disabled={submitting}
+          style={[styles.submitBtn, { opacity: submitting ? 0.7 : 1 }]}
+          activeOpacity={0.88}
         >
-          <Ionicons name="close" size={20} color={isDark ? '#F1F1EC' : '#64748B'} />
+          {submitting ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            <Text style={styles.submitText}>Submit Feedback</Text>
+          )}
         </TouchableOpacity>
-
-        <View style={[styles.sheetHandle, isDark && { backgroundColor: '#3E424B' }]} />
-
-        {submitted ? (
-          <View style={styles.submittedContainer}>
-            <View style={styles.submittedCheckCircle}>
-              <Ionicons name="checkmark-sharp" size={38} color="#FFFFFF" />
-            </View>
-            <Text style={[styles.submittedTitle, isDark && { color: '#F1F1EC' }]}>Thank You!</Text>
-            <Text style={[styles.submittedSub, isDark && { color: '#9BA08F' }]}>
-              Your feedback helps us make OneBuddy rides better for everyone.
-            </Text>
-            <TouchableOpacity
-              style={styles.primaryButton}
-              onPress={onDone}
-              activeOpacity={0.88}
-            >
-              <Text style={styles.primaryButtonText}>Back to Home</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <ScrollView showsVerticalScrollIndicator={false} style={{ width: '100%' }}>
-            <Text style={[styles.sheetTitle, isDark && { color: '#F1F1EC' }]}>Rate Your Driver</Text>
-            <Text style={[styles.description, isDark && { color: '#9BA08F' }]}>
-              How was your trip experience with {ride.riderName}?
-            </Text>
-
-            {/* Rider Identity Card */}
-            <View style={[styles.riderCard, isDark && { backgroundColor: '#24262B', borderColor: 'rgba(84, 183, 19, 0.3)' }]}>
-              <View style={[styles.vehicleVisual, isDark && { backgroundColor: '#1D1E22' }]}>
-                <Ionicons name={vehicleIconName} size={28} color="#54B713" />
-              </View>
-              <View style={styles.riderInfo}>
-                <Text style={[styles.riderName, isDark && { color: '#F1F1EC' }]}>{ride.riderName}</Text>
-                <Text style={[styles.vehicleNumber, isDark && { color: '#9BA08F' }]}>{ride.vehicleNumber}</Text>
-                <Text style={[styles.vehicleTypeTag, isDark && { color: '#66D21E' }]}>
-                  {vehicleType.toUpperCase()} · Verified Partner
-                </Text>
-              </View>
-            </View>
-
-            {/* Star Rating */}
-            <Text style={[styles.ratingLabel, isDark && { color: '#9BA08F' }]}>YOUR RATING</Text>
-            <View style={styles.starsRow}>
-              {[1, 2, 3, 4, 5].map((star) => (
-                <TouchableOpacity
-                  key={star}
-                  onPress={() => setRating(star)}
-                  style={styles.starButton}
-                  hitSlop={8}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons
-                    name={star <= rating ? 'star' : 'star-outline'}
-                    size={38}
-                    color={star <= rating ? '#FBBF24' : (isDark ? '#3E424B' : '#CBD5E1')}
-                  />
-                </TouchableOpacity>
-              ))}
-            </View>
-            <Text style={[styles.ratingTextScore, isDark && { color: '#F1F1EC' }]}>
-              {rating === 0
-                ? 'Tap a star to rate your driver'
-                : rating === 5
-                ? 'Excellent! ⭐⭐⭐⭐⭐'
-                : rating === 4
-                ? 'Very Good! ⭐⭐⭐⭐'
-                : rating === 3
-                ? 'Good ⭐⭐⭐'
-                : rating === 2
-                ? 'Could be better ⭐⭐'
-                : 'Poor ⭐'}
-            </Text>
-
-            {/* Compliments Chips */}
-            <Text style={[styles.sectionSmallLabel, isDark && { color: '#9BA08F' }]}>WHAT WENT WELL?</Text>
-            <View style={styles.chipsWrap}>
-              {COMPLIMENTS.map((item) => {
-                const active = selectedCompliments.includes(item);
-                return (
-                  <TouchableOpacity
-                    key={item}
-                    style={[
-                      styles.complimentChip,
-                      isDark && { backgroundColor: '#24262B', borderColor: 'rgba(255, 255, 255, 0.08)' },
-                      active && styles.complimentChipActive,
-                      active && isDark && { backgroundColor: 'rgba(84, 183, 19, 0.18)', borderColor: '#54B713' },
-                    ]}
-                    onPress={() => toggleCompliment(item)}
-                    activeOpacity={0.75}
-                  >
-                    {active && (
-                      <Ionicons
-                        name="checkmark-circle"
-                        size={14}
-                        color={isDark ? '#66D21E' : '#54B713'}
-                        style={{ marginRight: 4 }}
-                      />
-                    )}
-                    <Text
-                      style={[
-                        styles.complimentChipText,
-                        isDark && { color: '#F1F1EC' },
-                        active && styles.complimentChipTextActive,
-                        active && isDark && { color: '#66D21E' },
-                      ]}
-                    >
-                      {item}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-
-            {/* Optional Comment Box */}
-            <TextInput
-              style={[
-                styles.commentInput,
-                isDark && { backgroundColor: '#24262B', borderColor: 'rgba(255, 255, 255, 0.1)', color: '#F1F1EC' },
-              ]}
-              placeholder="Leave additional feedback (optional)…"
-              placeholderTextColor={isDark ? '#64748B' : '#94A3B8'}
-              value={comment}
-              onChangeText={setComment}
-              multiline
-              numberOfLines={2}
-            />
-
-            <TouchableOpacity
-              style={styles.primaryButton}
-              onPress={submitRating}
-              activeOpacity={0.88}
-            >
-              <Text style={styles.primaryButtonText}>Submit Rating</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.skipButton}
-              onPress={onDone}
-              activeOpacity={0.75}
-            >
-              <Text style={[styles.skipButtonText, isDark && { color: '#9BA08F' }]}>Skip & Return to Home</Text>
-            </TouchableOpacity>
-          </ScrollView>
-        )}
       </View>
+    </View>
+  );
+}
+
+/**
+ * Top Header Component (starts from very top of screen with back chevron)
+ */
+function FeedbackHeader({
+  onBack,
+  title = 'Rate Your Rider',
+  isDark,
+}: {
+  onBack?: () => void;
+  title?: string;
+  isDark?: boolean;
+}) {
+  const insets = useSafeAreaInsets();
+  const topInset = Math.max(insets.top, Platform.OS === 'android' ? StatusBar.currentHeight || 24 : 0);
+
+  return (
+    <View
+      style={[
+        styles.header,
+        { paddingTop: topInset + 12 },
+        isDark && { backgroundColor: '#121214', borderBottomColor: 'rgba(255, 255, 255, 0.08)' },
+      ]}
+    >
+      <TouchableOpacity
+        onPress={onBack}
+        hitSlop={10}
+        style={styles.headerBackBtn}
+        accessibilityLabel="Go back"
+      >
+        <ChevronLeft size={24} color={isDark ? '#F1F1EC' : '#111827'} />
+      </TouchableOpacity>
+      <Text style={[styles.headerTitle, isDark && { color: '#F1F1EC' }]}>{title}</Text>
+      <View style={{ width: 28 }} />
+    </View>
+  );
+}
+
+/**
+ * Hero Banner Component (Matching Food & Grocery Hero.tsx)
+ */
+function Hero({
+  riderName,
+  vehicleType,
+  isDark,
+}: {
+  riderName?: string;
+  vehicleType?: string;
+  isDark?: boolean;
+}) {
+  const vType = (vehicleType || 'cab').toLowerCase();
+  const vehicleEmoji = vType.includes('bike') ? '🛵' : vType.includes('auto') ? '🛺' : '🚗';
+
+  return (
+    <View style={styles.heroWrap}>
+      <View style={styles.bowlWrap}>
+        <Text style={styles.bowlEmoji}>{vehicleEmoji}</Text>
+        <View style={styles.heartBadge}>
+          <Text style={styles.heartText}>♥</Text>
+        </View>
+      </View>
+      <Text style={[styles.heroThanksTitle, isDark && { color: '#F1F1EC' }]}>
+        Thank you for your ride!
+      </Text>
+      <Text style={[styles.heroThanksSub, isDark && { color: '#9BA08F' }]}>
+        {riderName
+          ? `We'd love to hear about your experience with ${riderName}.`
+          : "We'd love to hear about your experience."}
+      </Text>
+    </View>
+  );
+}
+
+/**
+ * Rider Card Component (Matching Food OrderCard.tsx)
+ */
+function RiderCard({
+  ride,
+  isDark,
+}: {
+  ride: FeedbackRideDetails;
+  isDark?: boolean;
+}) {
+  const vType = (ride.vehicleType || 'cab').toLowerCase();
+  const vehicleIconName: any = vType.includes('bike')
+    ? 'bicycle'
+    : vType.includes('auto')
+    ? 'car-outline'
+    : 'car';
+  const fareDisplay =
+    ride.amount !== undefined && ride.amount !== null
+      ? String(ride.amount).replace('₹', '').trim()
+      : (ride.fare ? String(ride.fare).replace('₹', '').trim() : '89');
+
+  return (
+    <View
+      style={[
+        styles.riderCardWrap,
+        isDark && { backgroundColor: '#1D1E22', borderColor: 'rgba(255, 255, 255, 0.08)' },
+      ]}
+    >
+      <View style={styles.riderCardHeaderRow}>
+        <View style={[styles.riderAvatarCircle, isDark && { backgroundColor: '#24262B' }]}>
+          <Ionicons name={vehicleIconName} size={24} color="#54B713" />
+        </View>
+        <View style={styles.riderCardInfo}>
+          <View style={styles.riderNameRow}>
+            <Text style={[styles.riderNameText, isDark && { color: '#F1F1EC' }]}>
+              {ride.riderName || 'Aarav Sharma'}
+            </Text>
+            <View style={styles.verifiedPartnerBadge}>
+              <Ionicons name="checkmark-circle" size={12} color="#16A34A" />
+              <Text style={styles.verifiedPartnerText}>Verified</Text>
+            </View>
+          </View>
+          <Text style={[styles.riderSubText, isDark && { color: '#9BA08F' }]}>
+            {ride.vehicleNumber || 'TS 09 EA 4821'} · {ride.vehicleType || 'Cab'}
+          </Text>
+        </View>
+        <View style={[styles.farePill, isDark && { backgroundColor: 'rgba(84, 183, 19, 0.18)' }]}>
+          <Text style={[styles.farePillText, isDark && { color: '#66D21E' }]}>₹{fareDisplay}</Text>
+        </View>
+      </View>
+
+      <View style={[styles.riderCardDivider, isDark && { backgroundColor: 'rgba(255, 255, 255, 0.06)' }]} />
+
+      <View style={styles.routeRow}>
+        <View style={styles.routeDotsCol}>
+          <View style={styles.greenRouteDot} />
+          <View style={styles.routeConnectorLine} />
+          <View style={styles.redRouteDot} />
+        </View>
+        <View style={styles.routeTextCol}>
+          <Text style={[styles.routeLocationText, isDark && { color: '#F1F1EC' }]} numberOfLines={1}>
+            {ride.pickup || '1373, Madhapur, Hyderabad'}
+          </Text>
+          <Text style={[styles.routeLocationText, isDark && { color: '#F1F1EC' }]} numberOfLines={1}>
+            {ride.dropOff || 'Ammerpet, Hyderabad'}
+          </Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+/**
+ * StarRating Component:
+ * EXACT match to Food and Grocery StarRating (lucide-react-native Star, size 40, colors #F0B429 / #E5E7EB, STAR_LABELS)
+ */
+function StarRating({
+  rating,
+  onChange,
+  isDark,
+}: {
+  rating: number;
+  onChange: (n: number) => void;
+  isDark?: boolean;
+}) {
+  return (
+    <View style={styles.starRatingContainer}>
+      <View style={styles.starRow}>
+        {[1, 2, 3, 4, 5].map((n) => (
+          <TouchableOpacity
+            key={n}
+            onPress={() => onChange(n)}
+            style={styles.starBtn}
+            activeOpacity={0.7}
+            accessibilityLabel={`${n} star`}
+          >
+            <Star
+              size={40}
+              fill={n <= rating ? '#F0B429' : 'none'}
+              color={n <= rating ? '#F0B429' : isDark ? 'rgba(255, 255, 255, 0.15)' : '#E5E7EB'}
+              strokeWidth={1.5}
+            />
+          </TouchableOpacity>
+        ))}
+      </View>
+      {rating > 0 && <Text style={styles.starWord}>{STAR_LABELS[rating]}</Text>}
+    </View>
+  );
+}
+
+/**
+ * CommentsInput Component (Matching Food CommentsInput.tsx)
+ */
+function CommentsInput({
+  value,
+  onChange,
+  isDark,
+}: {
+  value: string;
+  onChange: (text: string) => void;
+  isDark?: boolean;
+}) {
+  return (
+    <View
+      style={[
+        styles.commentWrap,
+        isDark && { backgroundColor: '#1D1E22', borderColor: 'rgba(255, 255, 255, 0.1)' },
+      ]}
+    >
+      <TextInput
+        value={value}
+        onChangeText={onChange}
+        maxLength={300}
+        placeholder="Share more about your experience with the driver..."
+        placeholderTextColor={isDark ? '#64748B' : '#94A3B8'}
+        multiline
+        style={[styles.commentField, isDark && { color: '#F1F1EC' }]}
+      />
+      <Text style={[styles.commentCount, isDark && { color: '#9BA08F' }]}>
+        {value.length}/300
+      </Text>
+    </View>
+  );
+}
+
+/**
+ * ThankYouView Component (Matching Food ThankYouView.tsx)
+ */
+function ThankYouView({
+  onReset,
+  isDark,
+}: {
+  onReset: () => void;
+  isDark?: boolean;
+}) {
+  return (
+    <View style={styles.thankYouWrap}>
+      <CircleCheck size={64} color="#54B713" strokeWidth={1.5} />
+      <Text style={[styles.thankYouTitle, isDark && { color: '#F1F1EC' }]}>Feedback submitted</Text>
+      <Text style={[styles.thankYouSub, isDark && { color: '#9BA08F' }]}>
+        Thanks for taking the time to share your experience with us.
+      </Text>
+      <TouchableOpacity onPress={onReset} style={styles.thankYouBtn} activeOpacity={0.88}>
+        <Text style={styles.thankYouBtnText}>Go To Home</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -399,7 +615,9 @@ function DetailRow({ label, value, isDark }: { label: string; value: string; isD
   return (
     <View style={[styles.detailRow, isDark && { backgroundColor: '#24262B' }]}>
       <Text style={[styles.detailLabel, isDark && { color: '#9BA08F' }]}>{label}</Text>
-      <Text style={[styles.detailValue, isDark && { color: '#F1F1EC' }]} numberOfLines={1}>{value}</Text>
+      <Text style={[styles.detailValue, isDark && { color: '#F1F1EC' }]} numberOfLines={1}>
+        {value}
+      </Text>
     </View>
   );
 }
@@ -407,7 +625,7 @@ function DetailRow({ label, value, isDark }: { label: string; value: string; isD
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#F8FCF7',
+    backgroundColor: '#F9FAFB',
   },
   topBar: {
     flexDirection: 'row',
@@ -598,238 +816,317 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '800',
   },
-  secondaryButton: {
-    width: '100%',
-    backgroundColor: '#FFFFFF',
-    borderRadius: RADIUS.pill,
-    paddingVertical: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 10,
-    borderWidth: 1.5,
-    borderColor: '#E2E8F0',
-  },
-  secondaryButtonText: {
-    color: '#475569',
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  sheetLayer: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
-    justifyContent: 'flex-end',
-    zIndex: 100,
-  },
-  sheetBackdrop: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
-    backgroundColor: 'rgba(15, 23, 42, 0.45)',
-  },
-  ratingSheet: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    alignItems: 'center',
-    maxHeight: '90%',
-    shadowColor: '#000000',
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: -6 },
-    elevation: 16,
-  },
-  closeButton: {
-    position: 'absolute',
-    top: 14,
-    right: 18,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#F1F5F9',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 2,
-  },
-  sheetHandle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#CBD5E1',
-    marginBottom: 12,
-  },
-  sheetTitle: {
-    color: '#0F172A',
-    fontSize: 22,
-    fontWeight: '800',
-    textAlign: 'center',
-  },
-  description: {
-    color: '#64748B',
-    fontSize: 13,
-    textAlign: 'center',
-    marginTop: 4,
-  },
-  riderCard: {
-    width: '100%',
+
+  // ── Rate Your Rider Full-Page Screen Styles (Matching Food & Grocery UI) ──
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: '#DCFCE7',
-    borderRadius: 18,
-    padding: 12,
-    marginTop: 14,
-    backgroundColor: '#F0FDF4',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+    backgroundColor: '#FFFFFF',
   },
-  vehicleVisual: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#DCFCE7',
+  headerBackBtn: {
+    padding: 4,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#111827',
+  },
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 24,
+  },
+  heroWrap: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  bowlWrap: {
+    marginBottom: 8,
+    position: 'relative',
+  },
+  bowlEmoji: {
+    fontSize: 64,
+    lineHeight: 72,
+  },
+  heartBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -16,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderBottomLeftRadius: 4,
+    backgroundColor: '#54B713',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heartText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+  },
+  heroThanksTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#111827',
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  heroThanksSub: {
+    fontSize: 14,
+    color: '#4B5563',
+    textAlign: 'center',
+  },
+  riderCardWrap: {
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  riderCardHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  riderAvatarCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#F0FDF4',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
   },
-  riderInfo: {
+  riderCardInfo: {
     flex: 1,
   },
-  riderName: {
-    color: '#0F172A',
-    fontSize: 16,
-    fontWeight: '800',
+  riderNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
-  vehicleNumber: {
-    color: '#475569',
-    fontSize: 13,
-    marginTop: 1,
-    fontWeight: '600',
-  },
-  vehicleTypeTag: {
-    color: '#16A34A',
-    fontSize: 11,
+  riderNameText: {
+    fontSize: 15,
     fontWeight: '700',
+    color: '#111827',
+  },
+  verifiedPartnerBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    backgroundColor: '#DCFCE7',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  verifiedPartnerText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#16A34A',
+  },
+  riderSubText: {
+    fontSize: 12,
+    color: '#64748B',
     marginTop: 2,
   },
-  ratingLabel: {
-    color: '#64748B',
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 0.8,
-    marginTop: 16,
-    textAlign: 'center',
+  farePill: {
+    backgroundColor: '#F0FDF4',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: RADIUS.pill,
+    borderWidth: 1,
+    borderColor: '#86EFAC',
   },
-  starsRow: {
+  farePillText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#15803D',
+  },
+  riderCardDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: '#E5E7EB',
+    marginVertical: 12,
+  },
+  routeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  routeDotsCol: {
+    alignItems: 'center',
+    width: 14,
+    marginRight: 10,
+  },
+  greenRouteDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#16A34A',
+  },
+  routeConnectorLine: {
+    width: 1.5,
+    height: 14,
+    backgroundColor: '#CBD5E1',
+    marginVertical: 2,
+  },
+  redRouteDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 2,
+    backgroundColor: '#DC2626',
+  },
+  routeTextCol: {
+    flex: 1,
+    gap: 6,
+  },
+  routeLocationText: {
+    fontSize: 12,
+    color: '#334155',
+    fontWeight: '600',
+  },
+  sectionLabel: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#111827',
+    marginBottom: 12,
+  },
+  starRatingContainer: {
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  starRow: {
     flexDirection: 'row',
     justifyContent: 'center',
     gap: 8,
-    marginTop: 6,
+    marginBottom: 6,
   },
-  starButton: {
-    padding: 2,
+  starBtn: {
+    padding: 4,
   },
-  ratingTextScore: {
-    color: '#0F172A',
-    fontSize: 13,
-    fontWeight: '700',
+  starWord: {
     textAlign: 'center',
-    marginTop: 4,
-  },
-  sectionSmallLabel: {
-    color: '#64748B',
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 0.6,
-    marginTop: 14,
-    marginBottom: 8,
+    color: '#4FA81A',
+    fontWeight: '700',
+    fontSize: 16,
+    marginBottom: 20,
   },
   chipsWrap: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
+    gap: 8,
+    marginBottom: 20,
   },
   complimentChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#E5E7EB',
     borderRadius: RADIUS.pill,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
   },
   complimentChipActive: {
     backgroundColor: '#F0FDF4',
     borderColor: '#54B713',
   },
   complimentChipText: {
-    color: '#475569',
-    fontSize: 12,
+    color: '#4B5563',
+    fontSize: 13,
     fontWeight: '600',
   },
   complimentChipTextActive: {
     color: '#15803D',
     fontWeight: '700',
   },
-  commentInput: {
-    width: '100%',
-    backgroundColor: '#F8FAFC',
+  commentWrap: {
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    fontSize: 13,
-    color: '#0F172A',
-    marginTop: 12,
-    minHeight: 48,
+    borderColor: '#E5E7EB',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 24,
   },
-  skipButton: {
-    paddingVertical: 10,
-    alignItems: 'center',
-    marginTop: 6,
+  commentField: {
+    minHeight: 70,
+    fontSize: 14,
+    color: '#111827',
+    textAlignVertical: 'top',
   },
-  skipButtonText: {
-    color: '#64748B',
-    fontSize: 13,
-    fontWeight: '600',
+  commentCount: {
+    fontSize: 11,
+    color: '#9CA3AF',
+    textAlign: 'right',
+    marginTop: 4,
   },
-  submittedContainer: {
-    width: '100%',
-    alignItems: 'center',
-    paddingVertical: 24,
+  footer: {
+    padding: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+    backgroundColor: '#FFFFFF',
   },
-  submittedCheckCircle: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
+  submitBtn: {
     backgroundColor: '#54B713',
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    shadowColor: '#54B713',
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
+  },
+  submitText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  thankYouWrap: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
-    shadowColor: '#54B713',
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 6,
+    padding: 40,
+    gap: 8,
   },
-  submittedTitle: {
-    color: '#0F172A',
-    fontSize: 24,
-    fontWeight: '800',
-    textAlign: 'center',
+  thankYouTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#111827',
   },
-  submittedSub: {
-    color: '#64748B',
+  thankYouSub: {
     fontSize: 14,
+    color: '#4B5563',
     textAlign: 'center',
-    marginTop: 6,
-    paddingHorizontal: 20,
+    maxWidth: 280,
+    marginBottom: 16,
     lineHeight: 20,
+  },
+  thankYouBtn: {
+    width: '100%',
+    backgroundColor: '#54B713',
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    shadowColor: '#54B713',
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
+  },
+  thankYouBtnText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
   },
 });

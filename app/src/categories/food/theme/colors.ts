@@ -36,13 +36,13 @@ export const lightColors = {
 
 export const darkColors = {
   ...lightColors,
-  bgDeep: '#121214',
-  ink: '#1D1E22',
-  inkDark: '#121214',
-  mist: '#F1F1EC',
-  mistDim: '#9BA08F',
-  cardBorders: 'rgba(255, 255, 255, 0.08)',
-  cardBgGlass: 'rgba(29, 30, 34, 0.85)',
+  bgDeep: '#000000',
+  ink: '#000000',
+  inkDark: '#000000',
+  mist: '#FFFFFF',
+  mistDim: '#E5E7EB',
+  cardBorders: 'rgba(255, 255, 255, 0.15)',
+  cardBgGlass: 'rgba(0, 0, 0, 0.95)',
 };
 
 export const COLORS = { ...lightColors };

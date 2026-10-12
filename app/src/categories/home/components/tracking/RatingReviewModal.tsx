@@ -16,7 +16,7 @@ import { ModalContainer } from '../common/ModalContainer';
 import { RatingStars } from '../common/RatingStars';
 import { Button } from '../common/Button';
 import { REVIEW_TAGS } from '../../data/mockData';
-import { COLORS, RADII, SPACING, SHADOWS } from '../../theme';
+import { useHomeTheme, COLORS, RADII, SPACING, SHADOWS } from '../../theme';
 import { useBooking } from '../../context/BookingContext';
 
 interface RatingReviewModalProps {
@@ -31,6 +31,7 @@ export const RatingReviewModal: React.FC<RatingReviewModalProps> = ({
   navigation,
 }) => {
   const insets = useSafeAreaInsets();
+  const { isDark, colors } = useHomeTheme();
   const { activeBooking, assignedProvider, submitReview, resetFlow } = useBooking();
 
   const [rating, setRating] = useState(5);
@@ -93,10 +94,10 @@ export const RatingReviewModal: React.FC<RatingReviewModalProps> = ({
         {submitted ? (
           <View style={styles.thankYouBox}>
             <View style={styles.thankYouCircle}>
-              <CheckCircle size={56} color={COLORS.success} />
+              <CheckCircle size={56} color={isDark ? '#4ADE80' : COLORS.success} />
             </View>
-            <Text style={styles.thankYouTitle}>Thank You for Your Feedback!</Text>
-            <Text style={styles.thankYouSub}>
+            <Text style={[styles.thankYouTitle, { color: colors.textPrimary }]}>Thank You for Your Feedback!</Text>
+            <Text style={[styles.thankYouSub, { color: colors.textSecondary }]}>
               Your rating helps us maintain top quality standards and rewards verified technicians.
             </Text>
           </View>
@@ -109,7 +110,7 @@ export const RatingReviewModal: React.FC<RatingReviewModalProps> = ({
             ]}
           >
             {/* Header with Provider Info */}
-            <View style={styles.header}>
+            <View style={[styles.header, isDark && { borderBottomColor: colors.border }]}>
               <Image
                 source={{
                   uri:
@@ -120,29 +121,29 @@ export const RatingReviewModal: React.FC<RatingReviewModalProps> = ({
               />
               <View style={styles.headerMeta}>
                 <View style={styles.nameRow}>
-                  <Text style={styles.techName}>{provider?.name || 'Rajesh Kumar'}</Text>
+                  <Text style={[styles.techName, { color: colors.textPrimary }]}>{provider?.name || 'Rajesh Kumar'}</Text>
                   <View style={styles.proTag}>
                     <Award size={10} color="#FFFFFF" style={{ marginRight: 2 }} />
                     <Text style={styles.proTagText}>{provider?.badge || 'Super Pro'}</Text>
                   </View>
                 </View>
-                <Text style={styles.serviceDoneText} numberOfLines={1}>
+                <Text style={[styles.serviceDoneText, { color: colors.textSecondary }]} numberOfLines={1}>
                   Completed {activeBooking?.category.title || 'Home Care Service'}
                 </Text>
               </View>
 
               <TouchableOpacity
-                style={styles.closeBtn}
+                style={[styles.closeBtn, isDark && { backgroundColor: colors.surfaceSubtle }]}
                 onPress={onClose}
                 activeOpacity={0.7}
               >
-                <X size={18} color={COLORS.textSecondary} />
+                <X size={18} color={colors.textSecondary} />
               </TouchableOpacity>
             </View>
 
             {/* 5-Star Rating Selector */}
-            <View style={styles.ratingSection}>
-              <Text style={styles.rateTitle}>How was your service experience?</Text>
+            <View style={[styles.ratingSection, isDark && { backgroundColor: colors.surfaceSubtle }]}>
+              <Text style={[styles.rateTitle, { color: colors.textPrimary }]}>How was your service experience?</Text>
               <View style={styles.starsWrapper}>
                 <RatingStars
                   rating={rating}
@@ -151,24 +152,32 @@ export const RatingReviewModal: React.FC<RatingReviewModalProps> = ({
                   onRatingChange={setRating}
                 />
               </View>
-              <Text style={styles.feedbackText}>{getRatingFeedback(rating)}</Text>
+              <Text style={[styles.feedbackText, isDark && { color: '#66D21E' }]}>{getRatingFeedback(rating)}</Text>
             </View>
 
             {/* Quick Feedback Tags */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>What did you like?</Text>
+              <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>What did you like?</Text>
               <View style={styles.tagsRow}>
                 {REVIEW_TAGS.map((tag) => {
                   const isSelected = selectedTags.includes(tag);
                   return (
                     <TouchableOpacity
                       key={tag}
-                      style={[styles.tagPill, isSelected && styles.tagPillSelected]}
+                      style={[
+                        styles.tagPill,
+                        isDark && { backgroundColor: colors.surface, borderColor: colors.border },
+                        isSelected && (isDark ? { backgroundColor: 'rgba(84, 183, 19, 0.18)', borderColor: '#54B713' } : styles.tagPillSelected),
+                      ]}
                       onPress={() => toggleTag(tag)}
                       activeOpacity={0.75}
                     >
                       <Text
-                        style={[styles.tagText, isSelected && styles.tagTextSelected]}
+                        style={[
+                          styles.tagText,
+                          { color: colors.textSecondary },
+                          isSelected && (isDark ? { color: '#66D21E', fontWeight: '800' } : styles.tagTextSelected),
+                        ]}
                       >
                         {tag}
                       </Text>
@@ -181,8 +190,8 @@ export const RatingReviewModal: React.FC<RatingReviewModalProps> = ({
             {/* Tip Technician Options */}
             <View style={styles.section}>
               <View style={styles.tipHeaderRow}>
-                <Text style={styles.sectionTitle}>Add a Tip for Professional</Text>
-                <Text style={styles.optionalBadge}>Optional</Text>
+                <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Add a Tip for Professional</Text>
+                <Text style={[styles.optionalBadge, { color: colors.textMuted }]}>Optional</Text>
               </View>
               <View style={styles.tipRow}>
                 {[0, 30, 50, 100].map((amt) => {
@@ -190,12 +199,20 @@ export const RatingReviewModal: React.FC<RatingReviewModalProps> = ({
                   return (
                     <TouchableOpacity
                       key={amt}
-                      style={[styles.tipPill, isSelected && styles.tipPillSelected]}
+                      style={[
+                        styles.tipPill,
+                        isDark && { backgroundColor: colors.surface, borderColor: colors.border },
+                        isSelected && (isDark ? { backgroundColor: 'rgba(84, 183, 19, 0.18)', borderColor: '#54B713' } : styles.tipPillSelected),
+                      ]}
                       onPress={() => setTipAmount(amt)}
                       activeOpacity={0.75}
                     >
                       <Text
-                        style={[styles.tipText, isSelected && styles.tipTextSelected]}
+                        style={[
+                          styles.tipText,
+                          { color: colors.textPrimary },
+                          isSelected && (isDark ? { color: '#66D21E', fontWeight: '800' } : styles.tipTextSelected),
+                        ]}
                       >
                         {amt === 0 ? 'No Tip' : `₹${amt}`}
                       </Text>
@@ -207,11 +224,18 @@ export const RatingReviewModal: React.FC<RatingReviewModalProps> = ({
 
             {/* Detailed Comment Box */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Detailed Comments (Optional)</Text>
+              <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Detailed Comments (Optional)</Text>
               <TextInput
-                style={styles.commentInput}
+                style={[
+                  styles.commentInput,
+                  isDark && {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.border,
+                    color: colors.textPrimary,
+                  },
+                ]}
                 placeholder="Share your thoughts about quality, timeliness..."
-                placeholderTextColor={COLORS.textMuted}
+                placeholderTextColor={colors.textMuted}
                 value={comment}
                 onChangeText={setComment}
                 multiline

@@ -16,20 +16,20 @@ export const lightColors = {
 };
 
 export const darkColors = {
-  bg: "#121214",
-  text: "#F1F1EC",
-  subtext: "#9BA08F",
-  border: "rgba(255, 255, 255, 0.08)",
-  divider: "rgba(255, 255, 255, 0.08)",
-  cardBg: "#1D1E22",
-  inputBg: "#24262B",
-  orderThumbBg: "#24262B",
+  bg: "#000000",
+  text: "#FFFFFF",
+  subtext: "#E5E7EB",
+  border: "rgba(255, 255, 255, 0.15)",
+  divider: "rgba(255, 255, 255, 0.15)",
+  cardBg: "#000000",
+  inputBg: "#000000",
+  orderThumbBg: "#000000",
   starActive: "#F0B429",
-  starInactive: "rgba(255, 255, 255, 0.15)",
+  starInactive: "rgba(255, 255, 255, 0.25)",
   green: "#4ADE80",
   orange: "#65A30D",
-  photoBoxBorder: "rgba(255, 255, 255, 0.12)",
-  photoIcon: "#9BA08F",
+  photoBoxBorder: "rgba(255, 255, 255, 0.18)",
+  photoIcon: "#E5E7EB",
 };
 
 export const colors = { ...lightColors };

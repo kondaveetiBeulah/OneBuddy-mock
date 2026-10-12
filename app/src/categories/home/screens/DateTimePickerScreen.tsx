@@ -88,6 +88,7 @@ export const DateTimePickerScreen: React.FC<DateTimePickerScreenProps> = ({
     icon: React.ReactNode,
     slots: TimeSlot[]
   ) => {
+    const isTwoSlots = slots.length === 2 || title.toLowerCase().includes('evening');
     return (
       <View style={styles.periodGroup}>
         <View style={styles.periodHeader}>
@@ -95,7 +96,7 @@ export const DateTimePickerScreen: React.FC<DateTimePickerScreenProps> = ({
           <Text style={styles.periodTitle}>{title}</Text>
         </View>
 
-        <View style={styles.slotsGrid}>
+        <View style={[styles.slotsGrid, isTwoSlots && styles.twoSlotsGrid]}>
           {slots.map((slot) => {
             const passed = isSlotPassed(slot.timeRange, selectedDate?.isToday);
             const isAvailable = slot.available && !passed;
@@ -106,6 +107,7 @@ export const DateTimePickerScreen: React.FC<DateTimePickerScreenProps> = ({
                 key={slot.id}
                 style={[
                   styles.smallSlotCard,
+                  isTwoSlots && styles.twoSlotCard,
                   isSelected && styles.selectedSlotCard,
                   !isAvailable && styles.disabledSlotCard,
                 ]}
@@ -214,16 +216,6 @@ export const DateTimePickerScreen: React.FC<DateTimePickerScreenProps> = ({
                     isSelected && styles.selectedDayCard,
                   ]}
                 >
-                  {day.isToday && (
-                    <View style={styles.todayTag}>
-                      <Text style={styles.todayTagText}>Today</Text>
-                    </View>
-                  )}
-                  {day.isTomorrow && (
-                    <View style={[styles.todayTag, { backgroundColor: COLORS.secondary }]}>
-                      <Text style={styles.todayTagText}>Tmrw</Text>
-                    </View>
-                  )}
 
                   <Text
                     style={[
@@ -395,19 +387,6 @@ const styles = StyleSheet.create({
     borderColor: COLORS.primaryDark,
     ...SHADOWS.md,
   },
-  todayTag: {
-    position: 'absolute',
-    top: 4,
-    backgroundColor: COLORS.accent,
-    paddingHorizontal: 5,
-    paddingVertical: 1,
-    borderRadius: RADII.pill,
-  },
-  todayTagText: {
-    fontSize: 8,
-    fontWeight: '800',
-    color: '#FFFFFF',
-  },
   dayName: {
     fontSize: 12,
     fontWeight: '600',
@@ -444,6 +423,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
+  },
+  twoSlotsGrid: {
+    justifyContent: 'flex-start',
+    gap: SPACING.sm,
+  },
+  twoSlotCard: {
+    flex: 1,
+    width: undefined,
   },
   smallSlotCard: {
     width: '31.5%',
