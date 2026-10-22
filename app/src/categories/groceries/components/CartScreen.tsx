@@ -1086,8 +1086,8 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation: navProp, onP
     if (setSelectedAddress) {
       setSelectedAddress({
         id: addr.id,
-        name: addr.receiverName || 'User',
-        phone: addr.receiverPhone || '9876543210',
+        name: addr.receiverName || '',
+        phone: addr.receiverPhone || '',
         houseNumber: addr.houseNo,
         street: addr.building || '',
         area: addr.landmark || '',
@@ -1116,8 +1116,8 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation: navProp, onP
             if (setSelectedAddress) {
               setSelectedAddress({
                 id: filtered[0].id,
-                name: filtered[0].receiverName || 'User',
-                phone: filtered[0].receiverPhone || '9876543210',
+                name: filtered[0].receiverName || '',
+                phone: filtered[0].receiverPhone || '',
                 houseNumber: filtered[0].houseNo,
                 street: filtered[0].building || '',
                 area: filtered[0].landmark || '',

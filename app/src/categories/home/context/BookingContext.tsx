@@ -99,7 +99,18 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [isAddressAlertDismissed, setIsAddressAlertDismissed] = useState<boolean>(false);
 
   // Service Selection State (Empty by default to prevent preselected price across categories)
-  const [selectedCategory, setSelectedCategory] = useState<ServiceCategory>(SERVICE_CATEGORIES[0]);
+  const [selectedCategory, setSelectedCategory] = useState<ServiceCategory>(
+    SERVICE_CATEGORIES[0] || {
+      id: 'house_cleaning',
+      title: '',
+      subtitle: '',
+      icon: '',
+      color: '',
+      gradient: ['', ''],
+      rating: 0,
+      reviewCount: 0,
+    }
+  );
   const [selectedSubServices, setSelectedSubServices] = useState<SubService[]>([]);
 
   // Date & Time State
@@ -116,7 +127,7 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // Active Booking & All Stored Bookings State
   const [allBookings, setAllBookings] = useState<BookingDetails[]>([]);
   const [activeBooking, setActiveBooking] = useState<BookingDetails | null>(null);
-  const [assignedProvider, setAssignedProvider] = useState<ServiceProvider | null>(MOCK_PROVIDERS[0]);
+  const [assignedProvider, setAssignedProvider] = useState<ServiceProvider | null>(null);
   const [feedbackList, setFeedbackList] = useState<FeedbackReview[]>([]);
   const [dismissedFeedbackIds, setDismissedFeedbackIds] = useState<string[]>([]);
 
@@ -260,16 +271,16 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // Create confirmed booking
   const createBooking = (): BookingDetails => {
     const randomOtp = String(Math.floor(1000 + Math.random() * 9000));
-    const randomProvider = MOCK_PROVIDERS[Math.floor(Math.random() * MOCK_PROVIDERS.length)];
+    const assigned = assignedProvider || (MOCK_PROVIDERS.length > 0 ? MOCK_PROVIDERS[0] : undefined);
     const bookingAddress: Address = currentAddress || {
       id: `addr-${Date.now()}`,
       type: 'Home',
       label: 'Service Address',
-      houseNo: 'Selected Location',
-      street: '100ft Road, Koramangala',
-      landmark: 'Bangalore',
-      city: 'Bangalore',
-      pincode: '560034',
+      houseNo: '',
+      street: '',
+      landmark: '',
+      city: '',
+      pincode: '',
     };
     
     const newBooking: BookingDetails = {
@@ -286,7 +297,7 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
       discountAmount,
       totalAmount,
       couponApplied: couponCode || undefined,
-      provider: randomProvider,
+      provider: assigned,
       otp: randomOtp,
       stage: 'ASSIGNED',
       etaMinutes: 20,
@@ -303,7 +314,7 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
 
     setActiveBooking(newBooking);
-    setAssignedProvider(randomProvider);
+    setAssignedProvider(assigned || null);
 
     setAllBookings((prev) => {
       const updated = [newBooking, ...prev.filter((b) => b.bookingId !== newBooking.bookingId)];
@@ -322,20 +333,20 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
               id: newBooking.bookingId,
               userId: auth?.currentUser?.uid || 'guest_user',
               service: 'homeServices',
-              providerId: randomProvider.id || 'pro-1',
+              providerId: assigned?.id || null,
               serviceType: selectedSubServices.map((s) => s.title).join(', ') || selectedCategory.title,
               status: 'confirmed',
               scheduledAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
               addressSnapshot: {
-                name: bookingAddress.type || 'Customer',
-                houseNo: bookingAddress.houseNo || 'Current Location',
-                landmarkAreaName: bookingAddress.landmark || bookingAddress.street || 'Main Road',
+                name: bookingAddress.label || bookingAddress.type || '',
+                houseNo: bookingAddress.houseNo || '',
+                landmarkAreaName: bookingAddress.landmark || bookingAddress.street || '',
                 state: 'Telangana',
-                phoneNumber: '9876543210',
+                phoneNumber: '',
                 label: bookingAddress.label || 'Home',
-                pincode: bookingAddress.pincode || '500081',
+                pincode: bookingAddress.pincode || '',
                 line1: `${bookingAddress.houseNo || ''} ${bookingAddress.street || ''}`.trim(),
-                city: bookingAddress.city || 'Hyderabad',
+                city: bookingAddress.city || '',
               },
               quotedPriceMinor: Math.round(totalAmount * 100),
               finalPriceMinor: null,
@@ -343,7 +354,7 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
               notes: couponCode ? `Coupon applied: ${couponCode}` : null,
               createdAt: serverTimestamp(),
               updatedAt: serverTimestamp(),
-              providerNameSnapshot: randomProvider.name,
+              providerNameSnapshot: assigned?.name || null,
             },
             { merge: true }
           );

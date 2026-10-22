@@ -69,9 +69,9 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
           </View>
 
           <View style={dynStyles.userInfoCol}>
-            <Text style={dynStyles.userName}>{user?.name || 'Anjali'}</Text>
-            <Text style={dynStyles.userSub}>{user?.email || 'anjali@example.com'}</Text>
-            <Text style={dynStyles.userSub}>+91 {user?.phone || '9876543210'}</Text>
+            <Text style={dynStyles.userName}>{user?.name || 'Guest User'}</Text>
+            <Text style={dynStyles.userSub}>{user?.email || 'No email set'}</Text>
+            <Text style={dynStyles.userSub}>{user?.phone ? `+91 ${user.phone}` : 'No phone set'}</Text>
           </View>
 
           <TouchableOpacity

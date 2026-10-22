@@ -128,17 +128,19 @@ export const RatingReviewScreen: React.FC<RatingReviewScreenProps> = ({
       >
         {/* Provider Info Card */}
         <View style={styles.providerSection}>
-          <Image
-            source={{
-              uri:
-                provider?.avatar ||
-                'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80',
-            }}
-            style={styles.avatar}
-          />
-          <Text style={styles.providerName}>{provider?.name || 'Rajesh Kumar'}</Text>
+          {provider?.avatar ? (
+            <Image
+              source={{ uri: provider.avatar }}
+              style={styles.avatar}
+            />
+          ) : (
+            <View style={[styles.avatar, { backgroundColor: '#E2E8F0', alignItems: 'center', justifyContent: 'center' }]}>
+              <Award size={24} color="#64748B" />
+            </View>
+          )}
+          <Text style={styles.providerName}>{provider?.name || 'Assigned Technician'}</Text>
           <Text style={styles.providerSubtitle}>
-            Completed {activeBooking?.selectedSubServices.map((s) => s.title).join(', ')}
+            Completed {activeBooking?.selectedSubServices?.map((s) => s.title).join(', ') || 'Service'}
           </Text>
 
           {/* Interactive 5 Star Rating */}

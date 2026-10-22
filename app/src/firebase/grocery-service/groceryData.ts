@@ -23,6 +23,13 @@ export function mapCategory(docId: string, data: any): Category {
   };
 }
 
+export function isDummyCategory(docId: string, data: any): boolean {
+  if (data?.isDummy === true || data?.isMock === true) return true;
+  const lowerId = docId.toLowerCase();
+  if (lowerId.startsWith('cat_') || lowerId.startsWith('sample_') || lowerId.startsWith('mock_')) return true;
+  return false;
+}
+
 /* ─────────────── One-Time Fetchers (Read-Only) ─────────────── */
 
 export async function fetchCategories(): Promise<Category[]> {
@@ -36,7 +43,9 @@ export async function fetchCategories(): Promise<Category[]> {
       where('active', '==', true)
     );
     const snap = await getDocs(q);
-    return snap.docs.map((d) => mapCategory(d.id, d.data()));
+    return snap.docs
+      .filter((d) => !isDummyCategory(d.id, d.data()))
+      .map((d) => mapCategory(d.id, d.data()));
   } catch (err) {
     console.error('[GroceryBackend] Error fetching categories:', err);
     return [];
@@ -49,6 +58,9 @@ export async function fetchCategoryById(categoryId: string): Promise<Category | 
     const ref = doc(db, 'catalogGroceryCategories', categoryId);
     const snap = await getDoc(ref);
     if (snap.exists()) {
+      if (isDummyCategory(snap.id, snap.data())) {
+        return null;
+      }
       return mapCategory(snap.id, snap.data());
     }
   } catch (err) {
@@ -74,7 +86,9 @@ export function subscribeCategories(
   return onSnapshot(
     q,
     (snap) => {
-      const categories = snap.docs.map((d) => mapCategory(d.id, d.data()));
+      const categories = snap.docs
+        .filter((d) => !isDummyCategory(d.id, d.data()))
+        .map((d) => mapCategory(d.id, d.data()));
       onData(categories);
     },
     (err) => {

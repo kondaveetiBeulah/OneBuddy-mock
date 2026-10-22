@@ -34,32 +34,8 @@ export default function OrdersHost({
 }: OrdersHostProps): React.JSX.Element {
   const { user, enabled } = useAuth();
   const { colors: themeColors, scheme } = useAppTheme();
-  const [orders, setOrders] = useState<OrderCard[] | undefined>(undefined);
+  const [orders, setOrders] = useState<OrderCard[]>([]);
 
-  useEffect(() => {
-    if (!visible || !enabled || !user) {
-      setOrders(undefined);
-      return;
-    }
-    const unsubscribe = subscribeUserOrders(user.uid, (fetched) => {
-      if (!fetched || fetched.length === 0) {
-        setOrders(ORDERS);
-      } else {
-        const activeCategories = new Set(
-          fetched
-            .filter((o) => o.group === 'Ongoing')
-            .map((o) => o.category)
-        );
-        const fallbackActive = ORDERS.filter(
-          (o) => o.group === 'Ongoing' && !activeCategories.has(o.category)
-        );
-        setOrders([...fetched, ...fallbackActive]);
-      }
-    });
-    return () => {
-      unsubscribe();
-    };
-  }, [visible, enabled, user]);
 
   const handleAction = (actionLabel: string, order: OrderCard) => {
     if (enabled && user && orders) {

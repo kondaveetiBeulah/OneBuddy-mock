@@ -25,10 +25,10 @@ interface RideConfirmationProps {
 const { height } = Dimensions.get('window');
 
 export const RideConfirmationScreen = ({ route, navigation, onCancelRide, onConfirmPickup, onBack }: RideConfirmationProps) => {
-  const vehicle = route?.params?.vehicle || { name: 'Auto', baseFare: 105, image: require('../assets/vehicles/auto.jpg') };
-  const pickup = route?.params?.pickup || { title: 'Kshatriya Foods', latitude: 17.385044, longitude: 78.486671, fare: 105 };
+  const vehicle = route?.params?.vehicle || { name: 'Auto', baseFare: 0, image: require('../assets/vehicles/auto.jpg') };
+  const pickup = route?.params?.pickup || { title: 'Pickup Location', latitude: 0, longitude: 0, fare: 0 };
   const price = route?.params?.price;
-  const destination = route?.params?.destination || '123 Main St, City Center';
+  const destination = route?.params?.destination || 'Destination';
 
   const [boostAmount, setBoostAmount] = useState(0);
   const [isSheetVisible, setIsSheetVisible] = useState(false);

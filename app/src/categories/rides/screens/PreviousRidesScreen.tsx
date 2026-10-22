@@ -21,8 +21,18 @@ export default function PreviousRidesScreen({ isDark: isDarkProp }: { isDark?: b
       <FlatList
         data={PREVIOUS_RIDES}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, PREVIOUS_RIDES.length === 0 && { flex: 1, justifyContent: 'center' }]}
         showsVerticalScrollIndicator={false}
+        ListEmptyComponent={
+          <View style={{ alignItems: 'center', justifyContent: 'center', padding: 32 }}>
+            <Text style={[{ fontSize: 16, fontWeight: '700', color: isDark ? '#F1F1EC' : '#1E293B', marginBottom: 6 }]}>
+              No orders found
+            </Text>
+            <Text style={[{ fontSize: 13, color: isDark ? '#9BA08F' : '#64748B', textAlign: 'center' }]}>
+              Your completed and past rides will appear here.
+            </Text>
+          </View>
+        }
         renderItem={({ item }: { item: PreviousRide }) => (
           <TouchableOpacity
             style={[styles.row, isDark && { borderBottomColor: 'rgba(255, 255, 255, 0.08)' }]}

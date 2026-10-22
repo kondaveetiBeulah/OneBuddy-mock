@@ -35,6 +35,13 @@ import FeedbackScreen from './FeedbackScreen';
 import { RideAssigningScreen } from './RideAssigningScreen';
 import { useRideTheme } from '../theme';
 import { rideService } from '../../../firebase';
+import {
+  ShimmerBox,
+  ShimmerText,
+  RideOptionRowSkeleton,
+  RideOptionsListSkeleton,
+  RideRecentDestinationSkeleton,
+} from '@/components/common/skeletons';
 
 
 const RECENT_DESTINATIONS_KEY = '@onebuddy_recent_destinations';
@@ -720,60 +727,60 @@ export default function RideScreen({
         baseFare: 49,
         image: require('../assets/vehicles/bike.png'),
         type: 'bike',
-        driverName: 'Ramesh Kumar',
-        plate: 'TS 09 BK 2041',
-        model: 'Hero Splendor Plus',
+        driverName: '',
+        plate: '',
+        model: '',
       },
       auto: {
         name: 'Auto',
         baseFare: 89,
         image: require('../assets/vehicles/auto.png'),
         type: 'auto',
-        driverName: 'Sai Krishna',
-        plate: 'AP 16 TG 6843',
-        model: 'Bajaj RE Compact Auto',
+        driverName: '',
+        plate: '',
+        model: '',
       },
       mini: {
         name: 'Go Mini (Cab)',
         baseFare: 139,
         image: require('../assets/vehicles/car.png'),
         type: 'cab',
-        driverName: 'Karthik Rao',
-        plate: 'TS 08 AB 1102',
-        model: 'Maruti Suzuki WagonR',
+        driverName: '',
+        plate: '',
+        model: '',
       },
       xl4: {
         name: 'Prime Sedan (Cab)',
         baseFare: 178,
         image: require('../assets/vehicles/car.png'),
         type: 'cab',
-        driverName: 'Aarav Sharma',
-        plate: 'TS 09 EA 4821',
-        model: 'Maruti Suzuki Dzire',
+        driverName: '',
+        plate: '',
+        model: '',
       },
       xl7: {
         name: 'Prime SUV (7 Seater)',
         baseFare: 248,
         image: require('../assets/vehicles/xl7.png'),
         type: 'cab',
-        driverName: 'Vikram Singh',
-        plate: 'TS 07 HY 9912',
-        model: 'Toyota Innova Crysta',
+        driverName: '',
+        plate: '',
+        model: '',
       },
       premier: {
         name: 'Premier Luxury (Cab)',
         baseFare: 299,
         image: require('../assets/vehicles/car.png'),
         type: 'cab',
-        driverName: 'Sanjay Reddy',
-        plate: 'TS 09 LX 0077',
-        model: 'Honda City ZX',
+        driverName: '',
+        plate: '',
+        model: '',
       },
     };
     const vehicle = vehicleMap[selectedVehicle] || vehicleMap.auto;
     const pickup = pickupCoords
-      ? { id: '1', title: pickupAddress || '1373, Madhapur, Hyderabad', subtitle: 'Your location', latitude: pickupCoords.latitude, longitude: pickupCoords.longitude, fare: vehicle.baseFare }
-      : { id: '1', title: pickupAddress || '1373, Madhapur, Hyderabad', subtitle: 'Your location', latitude: 17.4483, longitude: 78.3915, fare: vehicle.baseFare };
+      ? { id: '1', title: pickupAddress || 'Pickup Location', subtitle: 'Your location', latitude: pickupCoords.latitude, longitude: pickupCoords.longitude, fare: vehicle.baseFare }
+      : { id: '1', title: pickupAddress || 'Pickup Location', subtitle: 'Your location', latitude: 17.4483, longitude: 78.3915, fare: vehicle.baseFare };
     const destinationTitle = (selectedDestination?.title || searchQuery.trim() || activeLocationName || 'Destination').trim();
     setBookingData({ vehicle, pickup, destination: destinationTitle, price: vehicle.baseFare });
     setBookingStep('pickup');
@@ -925,19 +932,19 @@ export default function RideScreen({
         showBookingNotifications={false}
         initialRideType={rideType}
         customRideDetails={{
-          pickupSpotName: currentTripData.pickup?.title || '1373, Madhapur, Hyderabad',
-          pickupAddress: currentTripData.pickup?.subtitle || currentTripData.pickup?.description || 'VIP Hills, Jaihind Enclave',
+          pickupSpotName: currentTripData.pickup?.title || 'Pickup Location',
+          pickupAddress: currentTripData.pickup?.subtitle || currentTripData.pickup?.description || '',
           dropSpotName: currentTripData.destination || selectedDestination?.title || 'Destination',
-          dropAddress: selectedDestination?.subtitle || currentTripData.destination || 'Hyderabad, Telangana',
-          fare: currentTripData.price ? `₹${currentTripData.price}` : (vehicleInfo.baseFare ? `₹${vehicleInfo.baseFare}` : '₹89'),
+          dropAddress: selectedDestination?.subtitle || currentTripData.destination || '',
+          fare: currentTripData.price ? `₹${currentTripData.price}` : (vehicleInfo.baseFare ? `₹${vehicleInfo.baseFare}` : ''),
           driver: {
-            name: vehicleInfo.driverName || (rideType === 'bike' ? 'Ramesh Kumar' : rideType === 'cab' ? 'Aarav Sharma' : 'Sai Krishna'),
-            vehiclePlate: vehicleInfo.plate || (rideType === 'bike' ? 'TS 09 BK 2041' : rideType === 'cab' ? 'TS 09 EA 4821' : 'AP 16 TG 6843'),
-            vehicleModel: vehicleInfo.model || (rideType === 'bike' ? 'Hero Splendor Plus' : rideType === 'cab' ? 'Maruti Suzuki Dzire' : 'Bajaj RE Compact Auto'),
-            avatar: vehicleInfo.driverName ? vehicleInfo.driverName[0] : 'S',
-            phone: '+91 98765 43210',
-            rating: 4.9,
-            completedRides: 1240,
+            name: vehicleInfo.driverName || 'Driver',
+            vehiclePlate: vehicleInfo.plate || '',
+            vehicleModel: vehicleInfo.model || '',
+            avatar: vehicleInfo.driverName ? vehicleInfo.driverName[0] : 'D',
+            phone: '',
+            rating: 0,
+            completedRides: 0,
           },
         }}
         onBack={() => {
@@ -984,15 +991,15 @@ export default function RideScreen({
     return (
       <FeedbackScreen
         ride={{
-          riderName: vehicleInfo.driverName || (rideType === 'bike' ? 'Ramesh Kumar' : rideType === 'cab' ? 'Aarav Sharma' : 'Sai Krishna'),
-          vehicleNumber: vehicleInfo.plate || (rideType === 'bike' ? 'TS 09 BK 2041' : rideType === 'cab' ? 'TS 09 EA 4821' : 'AP 16 TG 6843'),
+          riderName: vehicleInfo.driverName || 'Driver',
+          vehicleNumber: vehicleInfo.plate || '',
           vehicleType: vehicleInfo.name || (rideType === 'bike' ? 'Bike Saver' : rideType === 'cab' ? 'Prime Sedan (Cab)' : 'Auto'),
-          pickup: currentTripData.pickup?.title || currentTripData.pickup?.subtitle || '1373, Madhapur, Hyderabad',
-          dropOff: currentTripData.destination || 'Ammerpet, Hyderabad',
+          pickup: currentTripData.pickup?.title || currentTripData.pickup?.subtitle || 'Pickup Location',
+          dropOff: currentTripData.destination || 'Destination',
           amount: accuratePrice,
           fare: `₹${accuratePrice}`,
-          distance: '6.8 km',
-          duration: '10 sec',
+          distance: currentTripData.distance || '',
+          duration: currentTripData.duration || '',
         }}
         isDark={isDark}
         onDone={() => {
@@ -1057,7 +1064,7 @@ export default function RideScreen({
           >
             <Marker
               coordinate={pickupCoord}
-              title={pickupAddress || 'Kshatriya Foods'}
+              title={pickupAddress || 'Pickup Location'}
               type="pickup"
             />
             <Marker
@@ -1465,20 +1472,26 @@ export default function RideScreen({
                   <Ionicons name="close" size={24} color={isDark ? '#F1F1EC' : '#334155'} />
                 </TouchableOpacity>
               </View>
-              {INITIAL_SAVED_PLACES.map((place) => (
-                <TouchableOpacity
-                  key={place.id}
-                  style={[styles.savedAddressRow, isDark && { borderTopColor: 'rgba(255, 255, 255, 0.08)' }]}
-                  onPress={() => handleSelectSavedAddress(place.address)}
-                >
-                  <Ionicons name={place.icon === 'home' ? 'home-outline' : 'briefcase-outline'} size={21} color="#54B713" />
-                  <View style={styles.savedAddressCopy}>
-                    <Text style={[styles.savedAddressLabel, isDark && { color: '#F1F1EC' }]}>{place.label}</Text>
-                    <Text style={[styles.savedAddressText, isDark && { color: '#9BA08F' }]} numberOfLines={1}>{place.address}</Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={18} color={isDark ? '#9BA08F' : '#94a3b8'} />
-                </TouchableOpacity>
-              ))}
+              {INITIAL_SAVED_PLACES.length === 0 ? (
+                <Text style={[{ padding: 20, textAlign: 'center', color: isDark ? '#9BA08F' : '#64748B' }]}>
+                  No saved addresses yet.
+                </Text>
+              ) : (
+                INITIAL_SAVED_PLACES.map((place) => (
+                  <TouchableOpacity
+                    key={place.id}
+                    style={[styles.savedAddressRow, isDark && { borderTopColor: 'rgba(255, 255, 255, 0.08)' }]}
+                    onPress={() => handleSelectSavedAddress(place.address)}
+                  >
+                    <Ionicons name={place.icon === 'home' ? 'home-outline' : 'briefcase-outline'} size={21} color="#54B713" />
+                    <View style={styles.savedAddressCopy}>
+                      <Text style={[styles.savedAddressLabel, isDark && { color: '#F1F1EC' }]}>{place.label}</Text>
+                      <Text style={[styles.savedAddressText, isDark && { color: '#9BA08F' }]} numberOfLines={1}>{place.address}</Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={18} color={isDark ? '#9BA08F' : '#94a3b8'} />
+                  </TouchableOpacity>
+                ))
+              )}
             </View>
           </View>
         </Modal>
@@ -1577,7 +1590,7 @@ export default function RideScreen({
         )}
         {locationLoading && (
           <View style={styles.mapLoadingOverlay}>
-            <ActivityIndicator size="large" color="#54B713" />
+            <ShimmerBox width={140} height={16} borderRadius={4} isDark={isDark} style={{ marginBottom: 8 }} />
             <Text style={styles.mapLoadingText}>Getting your live location…</Text>
           </View>
         )}
@@ -1670,9 +1683,13 @@ export default function RideScreen({
 
         <View style={[styles.addressPill, isDark && { backgroundColor: 'rgba(29, 30, 34, 0.95)' }]}>
           <View style={styles.addressDot} />
-          <Text style={[styles.addressText, isDark && { color: '#F1F1EC' }]} numberOfLines={1}>
-            {pickupAddress}
-          </Text>
+          {locationLoading ? (
+            <ShimmerText width={150} height={13} borderRadius={3} isDark={isDark} />
+          ) : (
+            <Text style={[styles.addressText, isDark && { color: '#F1F1EC' }]} numberOfLines={1}>
+              {pickupAddress}
+            </Text>
+          )}
         </View>
       </View>
 
@@ -2014,10 +2031,7 @@ export default function RideScreen({
         <View style={styles.homeContentScroll}>
           {destinations.length === 0 ? (
             <View style={styles.emptyRecentContainer}>
-              <View style={[styles.emptyRecentIconWrap, isDark && { backgroundColor: '#24262B' }]}>
-                <Ionicons name="location-outline" size={24} color="#54B713" />
-              </View>
-              <Text style={[styles.emptyRecentTitle, isDark && { color: '#F1F1EC' }]}>No previous destinations</Text>
+              <Text style={[styles.emptyRecentTitle, isDark && { color: '#F1F1EC' }]}>No orders found</Text>
               <Text style={[styles.emptyRecentSubtitle, isDark && { color: '#9BA08F' }]}>
                 Searched locations will appear here for one-tap booking.
               </Text>

@@ -17,6 +17,7 @@ import { Header } from '../components/Header';
 import { RatingStars } from '../components/RatingStars';
 import { QuantitySelector } from '../components/QuantitySelector';
 import { LoadingState } from '../components/LoadingState';
+import { EmptyState } from '../components/EmptyState';
 import { NetworkErrorState } from '@/components/NetworkErrorState';
 import { productService } from '../services/productService';
 import { Product } from '../types/product.types';
@@ -99,7 +100,7 @@ export const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({
   if (!product) {
     if (networkError) {
       return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? '#000000' : colors.background }}>
           <Header title="Product Details" showBack onBack={() => navigation.goBack()} />
           <NetworkErrorState
             title="Product Unavailable"
@@ -109,7 +110,21 @@ export const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({
         </SafeAreaView>
       );
     }
-    return <LoadingState message={loading ? "Loading product..." : "Product not found"} />;
+    if (!loading) {
+      return (
+        <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? '#000000' : colors.background }}>
+          <Header title="Product Details" showBack onBack={() => navigation.goBack()} />
+          <EmptyState
+            iconName="alert-circle-outline"
+            title="Product Not Found"
+            message="This product is currently unavailable or has been removed."
+            buttonTitle="Browse Products"
+            onButtonPress={() => navigation.goBack()}
+          />
+        </SafeAreaView>
+      );
+    }
+    return <LoadingState message="Loading product..." />;
   }
 
   const isFavorite = isInWishlist(product.id);

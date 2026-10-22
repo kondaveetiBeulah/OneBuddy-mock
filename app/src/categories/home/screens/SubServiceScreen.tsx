@@ -23,6 +23,7 @@ import { Button } from '../components/common/Button';
 import { Badge } from '../components/common/Badge';
 import { Card } from '../components/common/Card';
 import { useHomeTheme, COLORS, RADII, SPACING, SHADOWS } from '../theme';
+import { HomeSubServiceListSkeleton } from '@/components/common/skeletons';
 
 interface SubServiceScreenProps {
   navigation: any;
@@ -73,8 +74,18 @@ export const SubServiceScreen: React.FC<SubServiceScreenProps> = ({
       >
         {/* List of Sub-Services */}
         <View style={styles.servicesList}>
-          {currentCategoryServices.map((service) => {
-            const isSelected = isSubServiceSelected(service.id);
+          {currentCategoryServices.length === 0 ? (
+            <View style={{ padding: 32, alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ fontSize: 15, fontWeight: '600', color: colors.textPrimary, marginBottom: 8, textAlign: 'center' }}>
+                No Services Available
+              </Text>
+              <Text style={{ fontSize: 13, color: colors.textSecondary, textAlign: 'center' }}>
+                There are currently no sub-services available in this category.
+              </Text>
+            </View>
+          ) : (
+            currentCategoryServices.map((service) => {
+              const isSelected = isSubServiceSelected(service.id);
 
             return (
               <Card
@@ -169,7 +180,7 @@ export const SubServiceScreen: React.FC<SubServiceScreenProps> = ({
                 </View>
               </Card>
             );
-          })}
+          }))}
         </View>
       </ScrollView>
 

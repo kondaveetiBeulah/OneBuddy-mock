@@ -1,92 +1,42 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  FlatList,
-  RefreshControl,
+  TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, typography, spacing } from '../theme';
 import { useGroceryColors } from '../theme/colors';
 import { isCategoryDark } from '@/theme/categoryThemeBridge';
 import { Header } from '../components/Header';
-import { OrderCard } from '../components/OrderCard';
-import { EmptyState } from '../components/EmptyState';
-import { LoadingState } from '../components/LoadingState';
-import { orderService } from '../services/orderService';
-import { Order } from '../types/order.types';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/navigation.types';
 
 export const OrdersScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const groceryColors = useGroceryColors();
   const isDark = isCategoryDark() || groceryColors.cardBackground === '#000000';
   const dynStyles = getStyles(isDark);
-
-  useEffect(() => {
-    fetchOrders();
-  }, []);
-
-  const fetchOrders = async () => {
-    try {
-      const data = await orderService.getOrders();
-      if (data) setOrders(data);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
-
-  const handleRefresh = () => {
-    setRefreshing(true);
-    fetchOrders();
-  };
 
   return (
     <SafeAreaView style={dynStyles.container}>
       <Header title="My Orders" showBack onBack={() => navigation.goBack()} />
 
-      {loading && orders.length === 0 ? (
-        <LoadingState message="Loading your orders..." />
-      ) : orders.length === 0 ? (
-        <EmptyState
-          iconName="receipt-outline"
-          title="No Orders Placed Yet"
-          message="When you order fresh groceries from 1Buddy, your order history will appear here."
-          buttonTitle="Start Shopping"
-          onButtonPress={() => navigation.navigate('Main')}
-        />
-      ) : (
-        <FlatList
-          data={orders}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={dynStyles.listPadding}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
-              colors={[colors.primary]}
-            />
-          }
-          renderItem={({ item }) => (
-            <OrderCard
-              order={item}
-              onPress={(o) => navigation.navigate('OrderDetails', { orderId: o.id })}
-              onTrackPress={(o) =>
-                navigation.navigate('OrderDetails', { orderId: o.id })
-              }
-            />
-          )}
-        />
-      )}
+      <View style={dynStyles.emptyContainer}>
+        <Text style={dynStyles.emptyTitle}>No orders found</Text>
+        <Text style={dynStyles.emptySubtitle}>
+          When you order fresh groceries from 1Buddy, your orders will appear here.
+        </Text>
+        <TouchableOpacity
+          style={dynStyles.shopBtn}
+          onPress={() => navigation.navigate('Main')}
+          activeOpacity={0.8}
+        >
+          <Text style={dynStyles.shopBtnText}>Start Shopping</Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 };
@@ -96,7 +46,37 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     flex: 1,
     backgroundColor: isDark ? '#000000' : colors.background,
   },
-  listPadding: {
-    padding: spacing.md,
+  emptyContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.xl,
+    paddingBottom: 60,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: isDark ? '#FFFFFF' : colors.textPrimary,
+    marginBottom: spacing.xs,
+    textAlign: 'center',
+  },
+  emptySubtitle: {
+    fontSize: 13,
+    color: isDark ? '#9CA3AF' : colors.textMuted,
+    textAlign: 'center',
+    marginBottom: spacing.lg,
+    lineHeight: 18,
+  },
+  shopBtn: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 22,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  shopBtnText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 14,
   },
 });
+

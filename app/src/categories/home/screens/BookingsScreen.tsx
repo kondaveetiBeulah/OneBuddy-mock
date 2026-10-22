@@ -169,10 +169,7 @@ export const BookingsScreen: React.FC<BookingsScreenProps> = ({ navigation, onGo
             </View>
           ) : (
             <View style={styles.emptyState}>
-              <View style={styles.emptyIconCircle}>
-                <Clock size={36} color={COLORS.textMuted} />
-              </View>
-              <Text style={styles.emptyTitle}>No Ongoing Bookings</Text>
+              <Text style={styles.emptyTitle}>No orders found</Text>
               <Text style={styles.emptySubtitle}>
                 You don't have any active service requests right now. Book a service to get started!
               </Text>
@@ -236,10 +233,7 @@ export const BookingsScreen: React.FC<BookingsScreenProps> = ({ navigation, onGo
             </View>
           ) : (
             <View style={styles.emptyState}>
-              <View style={styles.emptyIconCircle}>
-                <Receipt size={36} color={COLORS.textMuted} />
-              </View>
-              <Text style={styles.emptyTitle}>No Past Bookings</Text>
+              <Text style={styles.emptyTitle}>No orders found</Text>
               <Text style={styles.emptySubtitle}>
                 You haven't completed any service bookings yet. Once a service is finished, it will appear here.
               </Text>

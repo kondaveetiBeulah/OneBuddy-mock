@@ -14,8 +14,10 @@ import {
 import { OfferBanner } from '../../types';
 import { useFoodData } from '../../context/FoodDataContext';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Sparkles, Tag, ChevronLeft, ChevronRight } from 'lucide-react-native';
 import { useCart } from '../../context/CartContext';
+import { FoodBannerSkeleton } from '@/components/common/skeletons';
+import { isCategoryDark } from '@/theme/categoryThemeBridge';
+import { Sparkles, Tag } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
 const ITEM_WIDTH = width;
@@ -209,11 +211,7 @@ export const DiscountCarousel: React.FC<DiscountCarouselProps> = ({ onSelectRest
 
   if (banners.length === 0) {
     if (isLoading) {
-      return (
-        <View style={[styles.wrapper, { height: 180, justifyContent: 'center', alignItems: 'center' }]}>
-          <ActivityIndicator color="#65A30D" />
-        </View>
-      );
+      return <FoodBannerSkeleton isDark={isCategoryDark()} />;
     }
     return null;
   }

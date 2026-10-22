@@ -40,6 +40,7 @@ import MedicineCategoryCard from './components/MedicineCategoryCard';
 import FooterIcon from './components/FooterIcon';
 import ProductCard from './components/ProductCard';
 import LocationPickerModal from './components/LocationPickerModal';
+import { CareMedicineGridSkeleton } from '@/components/common/skeletons';
 import {
   BackIcon,
   CardPayIcon,
@@ -121,6 +122,7 @@ export function BrowseScreen() {
     onClose,
     medColors,
     products,
+    orders,
   } = useApp();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -357,40 +359,34 @@ export function BrowseScreen() {
             </View>
 
             {/* Order Again Section */}
-            <View style={styles.sectionTitleRow}>
-              <Text style={[styles.sectionTitle, { color: medColors.ink }]}>Order again</Text>
-              <TouchableOpacity onPress={openOrders}>
-                <Text style={styles.linkText}>See all</Text>
-              </TouchableOpacity>
-            </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 20 }}>
-              <TouchableOpacity
-                style={[styles.reorderCard, { backgroundColor: medColors.card, borderColor: medColors.line }]}
-                onPress={() => reorder([['vitd3', 2], ['ors', 3]])}
-                activeOpacity={0.8}
-              >
-                <Text style={[styles.reorderTitle, { color: medColors.ink }]}>Order #OB4471</Text>
-                <Text style={[styles.reorderSub, { color: medColors.inkSoft }]} numberOfLines={2}>
-                  Vitamin D3 60K · 2 packs, ORS Sachets
-                </Text>
-                <View style={styles.againBtn}>
-                  <Text style={styles.againBtnText}>Order again</Text>
+            {orders && orders.length > 0 && (
+              <>
+                <View style={styles.sectionTitleRow}>
+                  <Text style={[styles.sectionTitle, { color: medColors.ink }]}>Order again</Text>
+                  <TouchableOpacity onPress={openOrders}>
+                    <Text style={styles.linkText}>See all</Text>
+                  </TouchableOpacity>
                 </View>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.reorderCard, { backgroundColor: medColors.card, borderColor: medColors.line }]}
-                onPress={() => reorder([['ndl-insulin', 1], ['san-sanitizer', 1]])}
-                activeOpacity={0.8}
-              >
-                <Text style={[styles.reorderTitle, { color: medColors.ink }]}>Order #OB4102</Text>
-                <Text style={[styles.reorderSub, { color: medColors.inkSoft }]} numberOfLines={2}>
-                  Insulin pen needles, Sanitizer 500ml
-                </Text>
-                <View style={styles.againBtn}>
-                  <Text style={styles.againBtnText}>Order again</Text>
-                </View>
-              </TouchableOpacity>
-            </ScrollView>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 20 }}>
+                  {orders.map((ord) => (
+                    <TouchableOpacity
+                      key={ord.id}
+                      style={[styles.reorderCard, { backgroundColor: medColors.card, borderColor: medColors.line }]}
+                      onPress={() => reorder(ord.items.map((it) => [it.id, it.qty]))}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={[styles.reorderTitle, { color: medColors.ink }]}>Order {ord.id}</Text>
+                      <Text style={[styles.reorderSub, { color: medColors.inkSoft }]} numberOfLines={2}>
+                        {ord.items.map((it) => `${it.name} (x${it.qty})`).join(', ')}
+                      </Text>
+                      <View style={styles.againBtn}>
+                        <Text style={styles.againBtnText}>Order again</Text>
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </>
+            )}
 
             {/* Subcategory Showcase */}
             {Object.entries(GROUPS).map(([gid, g]) => (
@@ -584,11 +580,17 @@ export function CategoryScreen() {
 
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
           <Text style={[styles.sectionTitle, { fontSize: 13, color: medColors.inkSoft, marginBottom: 0 }]}>
-            {filteredIds.length} {filteredIds.length === 1 ? 'Product' : 'Products'}
+            {filteredIds.length > 0
+              ? `${filteredIds.length} ${filteredIds.length === 1 ? 'Product' : 'Products'}`
+              : query
+              ? '0 Products'
+              : 'Loading medicines...'}
           </Text>
         </View>
 
-        {filteredIds.length === 0 ? (
+        {filteredIds.length === 0 && !query ? (
+          <CareMedicineGridSkeleton count={6} isDark={medColors.isDark} />
+        ) : filteredIds.length === 0 ? (
           <View style={{ paddingVertical: 40, alignItems: 'center', justifyContent: 'center' }}>
             <SearchIcon size={40} color={medColors.inkSoft} />
             <Text style={{ fontSize: 14, fontWeight: '700', color: medColors.ink, marginBottom: 4, marginTop: 8 }}>
@@ -683,13 +685,17 @@ export function GroupCategoryScreen() {
       </ScrollView>
 
       <ScrollView style={styles.scroll} contentContainerStyle={{ paddingBottom: (cartCount > 0 ? 80 : 20) + bottomInset, paddingTop: 12 }}>
-        <View style={styles.grid2}>
-          {ids.map((id) => (
-            <View key={id} style={{ width: '48%' }}>
-              <ProductCard id={id} accent={COLORS.green} />
-            </View>
-          ))}
-        </View>
+        {ids.length === 0 ? (
+          <CareMedicineGridSkeleton count={6} isDark={medColors.isDark} />
+        ) : (
+          <View style={styles.grid2}>
+            {ids.map((id) => (
+              <View key={id} style={{ width: '48%' }}>
+                <ProductCard id={id} accent={COLORS.green} />
+              </View>
+            ))}
+          </View>
+        )}
       </ScrollView>
 
       {cartCount > 0 && (
@@ -2788,40 +2794,7 @@ export function OrdersScreen() {
 
       {orders.length === 0 ? (
         <View style={[styles.emptyOrdersContainer, { paddingBottom: 24 + bottomInset }]}>
-          <View style={[styles.emptyOrdersIconCircle, { backgroundColor: medColors.greenLight }]}>
-            <Svg width={52} height={52} viewBox="0 0 24 24" fill="none">
-              <Path
-                d="M21 8l-9-5-9 5 9 5 9-5z"
-                stroke={medColors.isDark ? '#86EFAC' : COLORS.greenDark}
-                strokeWidth={1.8}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                fill={medColors.greenPale}
-              />
-              <Path
-                d="M3 8v8l9 5 9-5V8"
-                stroke={medColors.isDark ? '#86EFAC' : COLORS.greenDark}
-                strokeWidth={1.8}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <Path
-                d="M12 13v8"
-                stroke={medColors.isDark ? '#86EFAC' : COLORS.greenDark}
-                strokeWidth={1.8}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <Path
-                d="M12 5.5v3M10.5 7h3"
-                stroke={COLORS.green}
-                strokeWidth={1.5}
-                strokeLinecap="round"
-              />
-            </Svg>
-          </View>
-
-          <Text style={[styles.emptyOrdersTitle, { color: medColors.ink }]}>No Orders</Text>
+          <Text style={[styles.emptyOrdersTitle, { color: medColors.ink }]}>No orders found</Text>
           <Text style={[styles.emptyOrdersSub, { color: medColors.inkSoft }]}>
             You haven't placed any medicine orders yet. Explore our wide range of medicines and health products!
           </Text>
@@ -2926,11 +2899,11 @@ export function OrdersScreen() {
 export function AccountScreen() {
   const { goBack, goTo, openOrders, orders, showToast, bottomInset, medColors } = useApp();
 
-  const [userName, setUserName] = useState('Aarav Sharma');
-  const [userPhone, setUserPhone] = useState('+91 98765 43210');
+  const [userName, setUserName] = useState('');
+  const [userPhone, setUserPhone] = useState('');
   const [isEditing, setIsEditing] = useState(false);
-  const [tempName, setTempName] = useState('Aarav Sharma');
-  const [tempPhone, setTempPhone] = useState('+91 98765 43210');
+  const [tempName, setTempName] = useState('');
+  const [tempPhone, setTempPhone] = useState('');
 
   const initials = userName
     .split(' ')

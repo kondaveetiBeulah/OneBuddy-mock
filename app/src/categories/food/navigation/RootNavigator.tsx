@@ -39,7 +39,7 @@ const Stack = createNativeStackNavigator<FoodStackParamList>();
 
 function RestaurantMenuWrapper({ route, navigation }: any) {
   const isDark = isCategoryDark();
-  const restaurantId = route.params?.restaurantId || 'paradise-restaurant';
+  const restaurantId = route.params?.restaurantId || '';
   const initialSearchQuery = route.params?.initialSearchQuery;
 
   const handleNavigate = (screen: string) => {

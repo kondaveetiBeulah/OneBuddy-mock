@@ -144,33 +144,7 @@ type AddressColors = typeof DARK_C;
 
 const LABELS: AddressLabel[] = ['Home', 'Work', 'Other'];
 
-const SEED: Address[] = [
-  {
-    id: 'addr-1',
-    label: 'Home',
-    receiverName: 'Ravi Kumar',
-    phone: '9876543210',
-    line1: 'Flat 302, Sai Residency',
-    line2: 'Road No. 12, Banjara Hills',
-    landmark: 'Opposite Care Hospital',
-    city: 'Hyderabad',
-    state: 'Telangana',
-    pincode: '500034',
-    isDefault: true,
-  },
-  {
-    id: 'addr-2',
-    label: 'Work',
-    receiverName: 'Ravi Kumar',
-    phone: '9876543210',
-    line1: 'Level 4, Cyber Towers',
-    line2: 'HITEC City',
-    city: 'Hyderabad',
-    state: 'Telangana',
-    pincode: '500081',
-    isDefault: false,
-  },
-];
+const SEED: Address[] = [];
 
 const glyphFor = (label: AddressLabel) =>
   label === 'Home' ? '\u{1F3E0}' : label === 'Work' ? '\u{1F4BC}' : '\u{1F4CD}';

@@ -38,6 +38,11 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/navigation.types';
 import { NetworkErrorState } from '@/components/NetworkErrorState';
+import {
+  GroceryBannerSkeleton,
+  GroceryCategoryGridSkeleton,
+  GroceryProductGridSkeleton,
+} from '@/components/common/skeletons';
 
 
 interface SavedAddressItem {
@@ -52,30 +57,7 @@ interface SavedAddressItem {
   isDefault?: boolean;
 }
 
-const DEFAULT_SAVED_ADDRESSES: SavedAddressItem[] = [
-  {
-    id: 'addr_default_1',
-    label: 'Home',
-    houseNo: 'Flat 402',
-    building: 'Sunshine Apts',
-    landmark: 'Main Road',
-    formattedAddress: 'Flat 402, Sunshine Apts, Main Road, Kurnool',
-    receiverName: 'Anjali',
-    receiverPhone: '9876543210',
-    isDefault: true,
-  },
-  {
-    id: 'addr_default_2',
-    label: 'Work',
-    houseNo: '3rd Floor, Tech Park',
-    building: 'Cyber Towers',
-    landmark: 'Hitec City, Madhapur',
-    formattedAddress: '3rd Floor, Tech Park, Cyber Towers, Hitec City, Madhapur',
-    receiverName: 'Anjali',
-    receiverPhone: '9876543210',
-    isDefault: false,
-  }
-];
+const DEFAULT_SAVED_ADDRESSES: SavedAddressItem[] = [];
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -89,7 +71,7 @@ export const HomeScreen: React.FC = () => {
   const { wishlistCount } = useWishlist();
   const cartCount = getCartCount();
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [networkError, setNetworkError] = useState(false);
 
@@ -106,7 +88,7 @@ export const HomeScreen: React.FC = () => {
   const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
 
   const [savedAddresses, setSavedAddresses] = useState<SavedAddressItem[]>(DEFAULT_SAVED_ADDRESSES);
-  const [selectedAddressId, setSelectedAddressId] = useState<string>('addr_default_1');
+  const [selectedAddressId, setSelectedAddressId] = useState<string>('');
 
   // Form Fields
   const [houseNo, setHouseNo] = useState<string>('');
@@ -183,11 +165,11 @@ export const HomeScreen: React.FC = () => {
     if (setSelectedAddress) {
       setSelectedAddress({
         id: addr.id,
-        name: addr.receiverName || 'User',
-        phone: addr.receiverPhone || '9876543210',
+        name: addr.receiverName || '',
+        phone: addr.receiverPhone || '',
         houseNumber: addr.houseNo,
         street: addr.building || '',
-        area: addr.landmark || 'Suryaraopeta',
+        area: addr.landmark || '',
         city: 'Kurnool',
         state: 'Andhra Pradesh',
         pincode: '518001',
@@ -436,11 +418,11 @@ export const HomeScreen: React.FC = () => {
                 if (setSelectedAddress) {
                   setSelectedAddress({
                     id: updated[0].id,
-                    name: updated[0].receiverName || 'User',
-                    phone: updated[0].receiverPhone || '9876543210',
+                    name: updated[0].receiverName || '',
+                    phone: updated[0].receiverPhone || '',
                     houseNumber: updated[0].houseNo,
                     street: updated[0].building || '',
-                    area: updated[0].landmark || 'Suryaraopeta',
+                    area: updated[0].landmark || '',
                     city: 'Kurnool',
                     state: 'Andhra Pradesh',
                     pincode: '518001',
@@ -852,6 +834,7 @@ export const HomeScreen: React.FC = () => {
           <SearchBar
             editable={false}
             onPress={() => navigation.navigate('Search')}
+            rotatingCategories={categories.length > 0 ? categories.map((c) => c.name).filter(Boolean) : undefined}
           />
           <View style={styles.freeDeliveryPill}>
             <Ionicons name="flash" size={13} color={colors.primary} />
@@ -872,17 +855,21 @@ export const HomeScreen: React.FC = () => {
             </View>
           </View>
 
-          <OfferCarousel
-            data={offers}
-            onPress={(off) => {
-              if (off.categoryId) {
-                navigation.navigate('ProductList', {
-                  categoryId: off.categoryId,
-                  categoryName: off.title,
-                });
-              }
-            }}
-          />
+          {offers.length === 0 ? (
+            <GroceryBannerSkeleton isDark={isDark} />
+          ) : (
+            <OfferCarousel
+              data={offers}
+              onPress={(off) => {
+                if (off.categoryId) {
+                  navigation.navigate('ProductList', {
+                    categoryId: off.categoryId,
+                    categoryName: off.title,
+                  });
+                }
+              }}
+            />
+          )}
         </View>
 
         {/* ── 5. Categories Section ("Shop by Category") ── */}
@@ -897,42 +884,46 @@ export const HomeScreen: React.FC = () => {
             </TouchableOpacity>
           </View>
 
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.categoryTwoRowContainer}
-          >
-            <View style={styles.categoryColumn}>
-              <View style={styles.categoryRow}>
-                {categoryRow1.map((cat) => (
-                  <CategoryCard
-                    key={cat.id}
-                    category={cat}
-                    onPress={(c) =>
-                      navigation.navigate('ProductList', {
-                        categoryId: c.id,
-                        categoryName: c.name,
-                      })
-                    }
-                  />
-                ))}
+          {categories.length === 0 ? (
+            <GroceryCategoryGridSkeleton isDark={isDark} />
+          ) : (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.categoryTwoRowContainer}
+            >
+              <View style={styles.categoryColumn}>
+                <View style={styles.categoryRow}>
+                  {categoryRow1.map((cat) => (
+                    <CategoryCard
+                      key={cat.id}
+                      category={cat}
+                      onPress={(c) =>
+                        navigation.navigate('ProductList', {
+                          categoryId: c.id,
+                          categoryName: c.name,
+                        })
+                      }
+                    />
+                  ))}
+                </View>
+                <View style={[styles.categoryRow, { marginTop: 4 }]}>
+                  {categoryRow2.map((cat) => (
+                    <CategoryCard
+                      key={cat.id}
+                      category={cat}
+                      onPress={(c) =>
+                        navigation.navigate('ProductList', {
+                          categoryId: c.id,
+                          categoryName: c.name,
+                        })
+                      }
+                    />
+                  ))}
+                </View>
               </View>
-              <View style={[styles.categoryRow, { marginTop: 4 }]}>
-                {categoryRow2.map((cat) => (
-                  <CategoryCard
-                    key={cat.id}
-                    category={cat}
-                    onPress={(c) =>
-                      navigation.navigate('ProductList', {
-                        categoryId: c.id,
-                        categoryName: c.name,
-                      })
-                    }
-                  />
-                ))}
-              </View>
-            </View>
-          </ScrollView>
+            </ScrollView>
+          )}
         </View>
 
         {/* ── 6. Popular Products Section ── */}
@@ -942,17 +933,21 @@ export const HomeScreen: React.FC = () => {
             <Text style={styles.sectionSubBadge}>TOP PICKS</Text>
           </View>
 
-          <View style={styles.productsGrid}>
-            {popularProducts.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                variant="grid"
-                onPress={(p) => navigation.navigate('ProductDetails', { productId: p.id })}
-                onAddToCart={(p) => addToCart(p)}
-              />
-            ))}
-          </View>
+          {popularProducts.length === 0 ? (
+            <GroceryProductGridSkeleton isDark={isDark} count={4} />
+          ) : (
+            <View style={styles.productsGrid}>
+              {popularProducts.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  variant="grid"
+                  onPress={(p) => navigation.navigate('ProductDetails', { productId: p.id })}
+                  onAddToCart={(p) => addToCart(p)}
+                />
+              ))}
+            </View>
+          )}
         </View>
 
         {/* ── 7. Fresh Picks Section ── */}

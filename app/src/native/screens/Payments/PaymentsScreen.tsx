@@ -41,6 +41,7 @@ export interface PaymentsScreenProps {
   onAddMoney?: (amount: number) => void;
   onCardsChange?: (cards: SavedCard[]) => void;
   onUpiChange?: (handles: UpiHandle[]) => void;
+  initialPage?: PageName;
 }
 
 // ---------------- Icons (inline SVG, no icon library needed) ----------
@@ -117,23 +118,13 @@ function HistoryIcon({ size = 15, color }: IconProps) {
 
 // ---------------- Mock data ------------------
 
-const INITIAL_WALLET_BALANCE = 1248.0;
-const CASHBACK_EARNED = 86.5;
+const INITIAL_WALLET_BALANCE = 0;
+const CASHBACK_EARNED = 0;
 const REFUNDS_PENDING = 0;
 
-const INITIAL_SAVED_CARDS: SavedCard[] = [
-  { id: 'card_1', brand: 'Visa', last4: '4821', expiry: '08/28', isDefault: true },
-  { id: 'card_2', brand: 'Mastercard', last4: '0099', expiry: '02/27' },
-];
-
-const INITIAL_UPI_HANDLES: UpiHandle[] = [{ id: 'upi_1', vpa: 'user@okhdfc', isDefault: true }];
-
-const MOCK_TRANSACTIONS: Transaction[] = [
-  { id: 't1', title: 'Order #45231 refund', date: '18 Aug, 4:12 PM', amount: 240 },
-  { id: 't2', title: 'Grocery order payment', date: '16 Aug, 11:02 AM', amount: -560 },
-  { id: 't3', title: 'Cashback credited', date: '12 Aug, 9:30 AM', amount: 45 },
-  { id: 't4', title: 'Wallet top-up', date: '05 Aug, 7:45 PM', amount: 1000 },
-];
+const INITIAL_SAVED_CARDS: SavedCard[] = [];
+const INITIAL_UPI_HANDLES: UpiHandle[] = [];
+const MOCK_TRANSACTIONS: Transaction[] = [];
 
 const QUICK_ADD_AMOUNTS = [100, 250, 500, 1000];
 
@@ -231,6 +222,7 @@ const PaymentsScreen = React.forwardRef<PaymentsScreenRef, PaymentsScreenProps>(
     onAddMoney,
     onCardsChange,
     onUpiChange,
+    initialPage = 'main',
   },
   ref
 ) {
@@ -238,7 +230,7 @@ const PaymentsScreen = React.forwardRef<PaymentsScreenRef, PaymentsScreenProps>(
   const styles = createStyles(COLORS);
 
   // ---- internal page stack ----
-  const [pageStack, setPageStack] = useState<PageName[]>(['main']);
+  const [pageStack, setPageStack] = useState<PageName[]>([initialPage ?? 'main']);
   const page = pageStack[pageStack.length - 1] ?? 'main';
 
   // ---- toast ----
@@ -445,21 +437,27 @@ const PaymentsScreen = React.forwardRef<PaymentsScreenRef, PaymentsScreenProps>(
 
           <Text style={[styles.inputLabel, { marginTop: 24 }]}>RECENT ACTIVITY</Text>
           <View style={styles.card}>
-            {MOCK_TRANSACTIONS.map((txn, index) => (
-              <React.Fragment key={txn.id}>
-                {index > 0 && <Divider styles={styles} />}
-                <View style={styles.txnRow}>
-                  <View>
-                    <Text style={styles.txnTitle}>{txn.title}</Text>
-                    <Text style={styles.txnDate}>{txn.date}</Text>
+            {MOCK_TRANSACTIONS.length === 0 ? (
+              <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+                <Text style={{ fontSize: 13, color: COLORS.grayDim }}>No recent transactions</Text>
+              </View>
+            ) : (
+              MOCK_TRANSACTIONS.map((txn, index) => (
+                <React.Fragment key={txn.id}>
+                  {index > 0 && <Divider styles={styles} />}
+                  <View style={styles.txnRow}>
+                    <View>
+                      <Text style={styles.txnTitle}>{txn.title}</Text>
+                      <Text style={styles.txnDate}>{txn.date}</Text>
+                    </View>
+                    <Text style={[styles.txnAmount, txn.amount >= 0 ? styles.txnAmountPositive : styles.txnAmountNegative]}>
+                      {txn.amount >= 0 ? '+' : '-'}
+                      {formatRupees(Math.abs(txn.amount))}
+                    </Text>
                   </View>
-                  <Text style={[styles.txnAmount, txn.amount >= 0 ? styles.txnAmountPositive : styles.txnAmountNegative]}>
-                    {txn.amount >= 0 ? '+' : '-'}
-                    {formatRupees(Math.abs(txn.amount))}
-                  </Text>
-                </View>
-              </React.Fragment>
-            ))}
+                </React.Fragment>
+              ))
+            )}
           </View>
         </ScrollView>
         {Toast}

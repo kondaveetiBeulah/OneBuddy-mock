@@ -81,14 +81,7 @@ export default function FeedbackFormScreen({
   };
 
   // Use real ordered items if available
-  const hasRealItems = order?.items && Array.isArray(order.items) && order.items.length > 0;
-  const mockGroceryItems = hasRealItems ? order.items : [
-    { id: '1', name: 'Fresh Organic Apples (1 kg)', image: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6fac6?auto=format&fit=crop&w=200&q=80' },
-    { id: '2', name: 'Pure Farm Milk (500 ml)', image: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=200&q=80' },
-    { id: '3', name: 'Whole Wheat Farm Bread (400g)', image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=200&q=80' },
-    { id: '4', name: 'Fresh Organic Vegetables', image: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=200&q=80' },
-    { id: '5', name: 'Crispy Snacks & Chips', image: 'https://images.unsplash.com/photo-1599490659213-e2b9527bd087?auto=format&fit=crop&w=200&q=80' }
-  ];
+  const orderItems = order?.items && Array.isArray(order.items) ? order.items : [];
 
   if (submitted) {
     return (
@@ -117,7 +110,7 @@ export default function FeedbackFormScreen({
           <CategoryList categories={categories} onChange={setCategoryValue} />
 
           <FoodRatingCard
-            items={mockGroceryItems}
+            items={orderItems}
             ratings={itemRatings}
             onChange={setItemRatingValue}
           />

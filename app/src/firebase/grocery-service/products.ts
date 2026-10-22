@@ -51,6 +51,13 @@ export function mapProduct(docId: string, data: any): Product {
   };
 }
 
+export function isDummyProduct(docId: string, data: any): boolean {
+  if (data?.isDummy === true || data?.isMock === true) return true;
+  const lowerId = docId.toLowerCase();
+  if (lowerId.startsWith('p_') || lowerId.startsWith('sample_') || lowerId.startsWith('mock_')) return true;
+  return false;
+}
+
 /* ─────────────── One-Time Fetchers (Read-Only) ─────────────── */
 
 export async function fetchProducts(): Promise<Product[]> {
@@ -65,6 +72,7 @@ export async function fetchProducts(): Promise<Product[]> {
     );
     const snap = await getDocs(q);
     return snap.docs
+      .filter((d) => !isDummyProduct(d.id, d.data()))
       .map((d) => mapProduct(d.id, d.data()))
       .filter((p) => Boolean(p.image && p.image.trim().length > 0 && p.image !== 'null' && p.image !== 'undefined'));
   } catch (err) {
@@ -79,6 +87,9 @@ export async function fetchProductById(productId: string): Promise<Product | nul
     const ref = doc(db, 'catalogGroceryProducts', productId);
     const snap = await getDoc(ref);
     if (snap.exists()) {
+      if (isDummyProduct(snap.id, snap.data())) {
+        return null;
+      }
       const prod = mapProduct(snap.id, snap.data());
       if (!prod.image || !prod.image.trim() || prod.image === 'null' || prod.image === 'undefined') {
         return null;
@@ -101,6 +112,7 @@ export async function fetchFeaturedProducts(): Promise<Product[]> {
     );
     const snap = await getDocs(q);
     return snap.docs
+      .filter((d) => !isDummyProduct(d.id, d.data()))
       .map((d) => mapProduct(d.id, d.data()))
       .filter((p) => Boolean(p.image && p.image.trim().length > 0 && p.image !== 'null' && p.image !== 'undefined'));
   } catch (err) {
@@ -127,6 +139,7 @@ export function subscribeProducts(
     q,
     (snap) => {
       const products = snap.docs
+        .filter((d) => !isDummyProduct(d.id, d.data()))
         .map((d) => mapProduct(d.id, d.data()))
         .filter((p) => Boolean(p.image && p.image.trim().length > 0 && p.image !== 'null' && p.image !== 'undefined'));
       onData(products);

@@ -2357,11 +2357,11 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({ navigation, route 
             const first = stored[0];
             activeAddress = {
               id: first.id || 'addr_1',
-              name: first.receiverName || user?.name || 'Customer',
-              phone: first.receiverPhone || user?.phone || '9876543210',
-              houseNumber: first.houseNo || 'Flat 402, Royal Residency',
-              street: first.building || 'Main Road',
-              area: first.landmark || 'Suryaraopeta',
+              name: first.receiverName || user?.name || '',
+              phone: first.receiverPhone || user?.phone || '',
+              houseNumber: first.houseNo || '',
+              street: first.building || '',
+              area: first.landmark || '',
               city: 'Kurnool',
               state: 'Andhra Pradesh',
               pincode: '518001',

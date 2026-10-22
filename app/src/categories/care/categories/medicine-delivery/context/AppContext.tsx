@@ -87,30 +87,7 @@ interface AppContextValue {
 
 const AppContext = createContext<AppContextValue | null>(null);
 
-const INITIAL_ORDERS: OrderHistoryItem[] = [
-  {
-    id: '#OB4471',
-    date: '14 Sep 2026, 11:30 AM',
-    status: 'Delivered',
-    total: 218,
-    deliveryAddress: 'Flat 402, Jubilee Residency, Hyderabad',
-    items: [
-      { id: 'vitd3', name: 'Vitamin D3 60K', qty: 2, price: 142, icon: 'capsule' },
-      { id: 'ors', name: 'ORS Sachets', qty: 3, price: 65, icon: 'drop' },
-    ],
-  },
-  {
-    id: '#OB4102',
-    date: '10 Sep 2026, 04:15 PM',
-    status: 'Delivered',
-    total: 330,
-    deliveryAddress: 'Flat 402, Jubilee Residency, Hyderabad',
-    items: [
-      { id: 'ndl-insulin', name: 'Insulin pen needles', qty: 1, price: 220, icon: 'needle' },
-      { id: 'san-sanitizer', name: 'Hand sanitizer', qty: 1, price: 110, icon: 'drop' },
-    ],
-  },
-];
+const INITIAL_ORDERS: OrderHistoryItem[] = [];
 
 export interface NavEntry {
   screen: Screen;
@@ -199,7 +176,7 @@ export function AppProvider({
           manufacturer: med.manufacturer || 'Certified Pharmacy',
           pack: med.packSize || med.dosageForm || 'Standard Pack',
           desc: med.desc || `${med.name} - ${med.category || 'Pharmaceutical Care'}. Fast doorstep delivery.`,
-          image: med.image || 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400&q=80',
+          image: med.image || '',
         };
         updated[med.id] = productObj;
         PRODUCTS[med.id] = productObj;

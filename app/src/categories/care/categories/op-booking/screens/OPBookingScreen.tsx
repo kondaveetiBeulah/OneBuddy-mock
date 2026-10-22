@@ -19,6 +19,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppTheme } from '@/theme/ThemeContext';
 import { careService } from '@/firebase';
+import { CareHospitalListSkeleton } from '@/components/common/skeletons';
 import PaymentCheckoutScreen from '../../../../food/components/cart/PaymentCheckoutScreen';
 import {
   ChevronLeft,
@@ -128,6 +129,7 @@ export default function OPBookingScreen({
   // Step 2 Selection State
   const [hospitalSearch, setHospitalSearch] = useState<string>('');
   const [hospitalsList, setHospitalsList] = useState<Hospital[]>(HOSPITALS);
+  const [isLoadingHospitals, setIsLoadingHospitals] = useState<boolean>(true);
   const [selectedHospital, setSelectedHospital] = useState<Hospital | null>(
     initialHospital || null
   );
@@ -138,25 +140,32 @@ export default function OPBookingScreen({
     let isMounted = true;
     async function loadBackendHospitals() {
       try {
+        setIsLoadingHospitals(true);
         const fetched = await careService.fetchHospitals('hyderabad');
         if (isMounted && fetched && fetched.length > 0) {
           const mapped: Hospital[] = fetched.map((h: any) => ({
             id: h.id,
             name: h.name,
-            branch: typeof h.address === 'string' ? h.address : (h.address?.area || h.address?.line1 || 'Hyderabad'),
-            address: typeof h.address === 'string' ? h.address : `${h.address?.line1 || ''}, ${h.address?.area || ''}, ${h.address?.city || 'Hyderabad'}`,
-            rating: h.rating || 4.8,
-            departments: h.departments || ['General OPD', 'Cardiology', 'Orthopedics'],
-            consultationFee: h.opFee || 600,
-            distance: h.distance || '2.5 km away',
-            imageUrl: h.coverImagePath || 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=300&q=80',
+            branch: typeof h.address === 'string' ? h.address : (h.address?.area || h.address?.line1 || ''),
+            address: typeof h.address === 'string' ? h.address : `${h.address?.line1 || ''}, ${h.address?.area || ''}, ${h.address?.city || ''}`,
+            rating: typeof h.rating === 'number' ? h.rating : 0,
+            departments: Array.isArray(h.departments) ? h.departments : (Array.isArray(h.services) ? h.services : []),
+            consultationFee: h.opFee || h.consultationFee || 0,
+            distance: h.distance || '',
+            imageUrl: h.coverImagePath || h.imageUrl || '',
             description: h.description || '',
-            opFee: h.opFee || 600,
+            opFee: h.opFee || 0,
           }));
           setHospitalsList(mapped);
+        } else if (isMounted) {
+          setHospitalsList([]);
         }
       } catch (err) {
         console.warn('[OPBookingScreen] Error fetching hospitals from backend:', err);
+      } finally {
+        if (isMounted) {
+          setIsLoadingHospitals(false);
+        }
       }
     }
     loadBackendHospitals();
@@ -467,7 +476,7 @@ export default function OPBookingScreen({
 
     // Asynchronously create canonical appointment in Firestore via Cloud Function
     careService.bookAppointment({
-      hospitalId: selectedHospital?.id || 'hyd-apollo',
+      hospitalId: selectedHospital?.id || '',
       doctorId: selectedDepartment?.id ? `doc-${selectedDepartment.id}` : 'doc-general-opd',
       departmentId: selectedDepartment?.name || 'General OPD',
       slotId: selectedSlot?.id,
@@ -1223,66 +1232,85 @@ export default function OPBookingScreen({
                 </View>
 
                 <View style={styles.hospitalList}>
-                  {filteredHospitals.map((hosp) => {
-                    const isSelected = selectedHospital?.id === hosp.id;
-                    return (
-                      <TouchableOpacity
-                        key={hosp.id}
-                        style={[styles.hospitalCard, isSelected && styles.hospitalCardActive, { flexDirection: 'column' }]}
-                        onPress={() => {
-                          setSelectedHospital(hosp);
-                        }}
-                        activeOpacity={0.8}
-                      >
-                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-                          <View style={styles.hospitalRadio}>
-                            {isSelected && <View style={styles.radioDotInner} />}
-                          </View>
-                          <Text style={[styles.hospitalName, isSelected && styles.hospitalNameActive, { flex: 1 }]}>
-                            {hosp.name}
-                          </Text>
-                        </View>
-
-                        <View style={{ flexDirection: 'row' }}>
-                          {hosp.imageUrl && (
-                            <Image
-                              source={{ uri: hosp.imageUrl }}
-                              style={{ width: 70, height: 70, borderRadius: 8, marginRight: 12, backgroundColor: '#E2E8F0' }}
-                            />
-                          )}
-                          <View style={styles.hospitalDetails}>
-                            <Text style={styles.hospitalBranch}>{hosp.branch}</Text>
-
-                            {/* Diseases / Specialties the hospital treats */}
-                            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 6 }}>
-                              {hosp.departments.map((dept) => {
-                                const label = DEPT_TO_DISEASE[dept] || dept;
-                                return (
-                                  <View key={dept} style={{ backgroundColor: '#EFF8E6', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 }}>
-                                    <Text style={{ fontSize: 9, color: '#65B300', fontWeight: '600' }}>{label}</Text>
-                                  </View>
-                                );
-                              })}
+                  {isLoadingHospitals || hospitalsList.length === 0 ? (
+                    <CareHospitalListSkeleton isDark={isDark} count={3} />
+                  ) : filteredHospitals.length === 0 ? (
+                    <View style={{ padding: 32, alignItems: 'center', justifyContent: 'center' }}>
+                      <Text style={{ fontSize: 15, fontWeight: '600', color: isDark ? '#FFFFFF' : '#1E293B', marginBottom: 6, textAlign: 'center' }}>
+                        No Partner Hospitals Found
+                      </Text>
+                      <Text style={{ fontSize: 13, color: isDark ? '#94A3B8' : '#64748B', textAlign: 'center' }}>
+                        No hospitals match your search criteria. Please adjust your keywords or check back later.
+                      </Text>
+                    </View>
+                  ) : (
+                    filteredHospitals.map((hosp) => {
+                      const isSelected = selectedHospital?.id === hosp.id;
+                      return (
+                        <TouchableOpacity
+                          key={hosp.id}
+                          style={[styles.hospitalCard, isSelected && styles.hospitalCardActive, { flexDirection: 'column' }]}
+                          onPress={() => {
+                            setSelectedHospital(hosp);
+                          }}
+                          activeOpacity={0.8}
+                        >
+                          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                            <View style={styles.hospitalRadio}>
+                              {isSelected && <View style={styles.radioDotInner} />}
                             </View>
+                            <Text style={[styles.hospitalName, isSelected && styles.hospitalNameActive, { flex: 1 }]}>
+                              {hosp.name}
+                            </Text>
+                          </View>
 
-                            <View style={[styles.hospitalRatingRow, { marginTop: 6 }]}>
-                              <Award size={12} color="#059669" />
-                              <Text style={styles.hospitalRatingText}>
-                                {hosp.rating} Rating
-                              </Text>
-                              {hosp.distance && (
-                                <>
-                                  <Text style={{ fontSize: 10, color: '#94A3B8', marginHorizontal: 6 }}>•</Text>
-                                  <MapPin size={10} color="#64748B" />
-                                  <Text style={{ fontSize: 10, color: '#64748B', marginLeft: 2 }}>{hosp.distance}</Text>
-                                </>
+                          <View style={{ flexDirection: 'row' }}>
+                            {hosp.imageUrl ? (
+                              <Image
+                                source={{ uri: hosp.imageUrl }}
+                                style={{ width: 70, height: 70, borderRadius: 8, marginRight: 12, backgroundColor: '#E2E8F0' }}
+                              />
+                            ) : null}
+                            <View style={styles.hospitalDetails}>
+                              <Text style={styles.hospitalBranch}>{hosp.branch}</Text>
+
+                              {/* Diseases / Specialties the hospital treats */}
+                              {hosp.departments.length > 0 && (
+                                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 6 }}>
+                                  {hosp.departments.map((dept) => {
+                                    const label = DEPT_TO_DISEASE[dept] || dept;
+                                    return (
+                                      <View key={dept} style={{ backgroundColor: '#EFF8E6', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 }}>
+                                        <Text style={{ fontSize: 9, color: '#65B300', fontWeight: '600' }}>{label}</Text>
+                                      </View>
+                                    );
+                                  })}
+                                </View>
                               )}
+
+                              <View style={[styles.hospitalRatingRow, { marginTop: 6 }]}>
+                                {hosp.rating > 0 ? (
+                                  <>
+                                    <Award size={12} color="#059669" />
+                                    <Text style={styles.hospitalRatingText}>
+                                      {hosp.rating} Rating
+                                    </Text>
+                                  </>
+                                ) : null}
+                                {hosp.distance ? (
+                                  <>
+                                    {hosp.rating > 0 ? <Text style={{ fontSize: 10, color: '#94A3B8', marginHorizontal: 6 }}>•</Text> : null}
+                                    <MapPin size={10} color="#64748B" />
+                                    <Text style={{ fontSize: 10, color: '#64748B', marginLeft: 2 }}>{hosp.distance}</Text>
+                                  </>
+                                ) : null}
+                              </View>
                             </View>
                           </View>
-                        </View>
-                      </TouchableOpacity>
-                    );
-                  })}
+                        </TouchableOpacity>
+                      );
+                    })
+                  )}
                 </View>
               </View>
 

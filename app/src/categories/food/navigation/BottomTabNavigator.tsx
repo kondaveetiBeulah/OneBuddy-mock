@@ -41,7 +41,7 @@ export const BottomTabNavigator: React.FC = () => {
           } else if (screen === 'cart') {
             rootNavigation.navigate('Cart');
           } else if (screen === 'restaurant-menu') {
-            rootNavigation.navigate('RestaurantMenu', { restaurantId: 'paradise-restaurant' });
+            props.navigation.navigate('Home');
           }
         };
 
@@ -71,7 +71,7 @@ export const BottomTabNavigator: React.FC = () => {
                   else if (screen === 'location-search') rootNavigation.navigate('LocationSearch');
                   else if (screen === 'add-address') rootNavigation.navigate('AddAddress', {});
                   else if (screen === 'restaurant-menu') {
-                    rootNavigation.navigate('RestaurantMenu', { restaurantId: 'paradise-restaurant' });
+                    tabNav.navigate('Home');
                   }
                 }}
                 onEditAddress={(address) => {
@@ -88,7 +88,7 @@ export const BottomTabNavigator: React.FC = () => {
                   else if (screen === 'orders') tabNav.navigate('Orders');
                   else if (screen === 'favorites') tabNav.navigate('Favorites');
                   else if (screen === 'restaurant-menu') {
-                    rootNavigation.navigate('RestaurantMenu', { restaurantId: 'paradise-restaurant' });
+                    tabNav.navigate('Home');
                   }
                 }}
               />

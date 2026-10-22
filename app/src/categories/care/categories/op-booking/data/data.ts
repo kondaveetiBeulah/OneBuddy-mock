@@ -161,15 +161,15 @@ export async function fetchHospitalsFromBackend(): Promise<Hospital[]> {
       return fetched.map((h: any) => ({
         id: h.id,
         name: h.name,
-        branch: typeof h.address === 'string' ? h.address : (h.address?.area || h.address?.line1 || 'Hyderabad'),
-        address: typeof h.address === 'string' ? h.address : `${h.address?.line1 || ''}, ${h.address?.area || ''}, ${h.address?.city || 'Hyderabad'}`,
-        rating: h.rating || 4.8,
-        departments: h.departments || ['General OPD', 'Cardiology', 'Orthopedics'],
-        consultationFee: h.opFee || 600,
-        distance: h.distance || '2.5 km away',
-        imageUrl: h.coverImagePath || 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=300&q=80',
+        branch: typeof h.address === 'string' ? h.address : (h.address?.area || h.address?.line1 || ''),
+        address: typeof h.address === 'string' ? h.address : `${h.address?.line1 || ''}, ${h.address?.area || ''}, ${h.address?.city || ''}`,
+        rating: typeof h.rating === 'number' ? h.rating : 0,
+        departments: Array.isArray(h.departments) ? h.departments : (Array.isArray(h.services) ? h.services : []),
+        consultationFee: h.opFee || h.consultationFee || 0,
+        distance: h.distance || '',
+        imageUrl: h.coverImagePath || h.imageUrl || '',
         description: h.description || '',
-        opFee: h.opFee || 600,
+        opFee: h.opFee || 0,
       }));
     }
   } catch (err) {

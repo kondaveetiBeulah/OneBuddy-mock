@@ -1,5 +1,6 @@
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Image } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { colors } from "../theme/colors";
 import { SENTIMENT_FACES } from "../types";
 import type { SentimentValue } from "../types";
@@ -13,11 +14,9 @@ export default function RiderRatingCard({ rating, onChange }: Props) {
   return (
     <View style={styles.card}>
       <View style={styles.row}>
-        <Image
-          source={{ uri: "https://cdn.dribbble.com/userupload/25651927/file/original-6501e52c3e9c850da0cf82d96845b15d.gif" }}
-          style={styles.image}
-          resizeMode="cover"
-        />
+        <View style={styles.avatarWrap}>
+          <Ionicons name="bicycle" size={24} color="#059669" />
+        </View>
         <View style={styles.content}>
           <Text style={styles.title}>Rate Your Delivery Partner</Text>
           <View style={styles.faces}>
@@ -62,11 +61,13 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingVertical: 12,
   },
-  image: {
+  avatarWrap: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: colors.cardBg,
+    backgroundColor: "#ECFDF5",
+    alignItems: "center",
+    justifyContent: "center",
     flexShrink: 0,
   },
   content: {

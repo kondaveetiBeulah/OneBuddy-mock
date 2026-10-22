@@ -106,8 +106,8 @@ export const LiveMap: React.FC<LiveMapProps> = ({
   stage,
   etaMinutes = 12,
   distanceKm = 2.4,
-  providerName = 'Rajesh Kumar',
-  vehicleNo = 'KA 03 EJ 4821',
+  providerName = 'Technician',
+  vehicleNo = '',
   onMovementComplete,
 }) => {
   // Vehicle route index

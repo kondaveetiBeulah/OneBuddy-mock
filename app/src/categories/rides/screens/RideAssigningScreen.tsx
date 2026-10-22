@@ -198,25 +198,13 @@ export const RideAssigningScreen: React.FC<RideAssigningProps> = ({
       isTransitioningRef.current = true;
       setIsAssigned(true);
 
-      const driverName =
-        vehicle.driverName ||
-        (vehicle.type === 'bike'
-          ? 'Ramesh Kumar'
-          : vehicle.type === 'cab'
-          ? 'Aarav Sharma'
-          : 'Sai Krishna');
-      const plate =
-        vehicle.plate ||
-        (vehicle.type === 'bike'
-          ? 'TS 09 BK 2041'
-          : vehicle.type === 'cab'
-          ? 'TS 09 EA 4821'
-          : 'AP 16 TG 6843');
+      const driverName = vehicle.driverName || 'Driver';
+      const plate = vehicle.plate || '';
 
       // Trigger smooth centered alert: "Driver assigned"
       triggerCenterAlert(
         'Driver assigned!',
-        `${driverName} (${plate}) is on the way to pick you up.`,
+        plate ? `${driverName} (${plate}) is on the way to pick you up.` : `${driverName} is on the way to pick you up.`,
         'checkmark-circle',
         '#16A34A',
         0 // keep visible until transition
@@ -281,7 +269,7 @@ export const RideAssigningScreen: React.FC<RideAssigningProps> = ({
                 latitude: pickupCoord.latitude + 0.007,
                 longitude: pickupCoord.longitude + 0.008,
               }}
-              title={`${vehicle.driverName || (vehicle.type === 'bike' ? 'Ramesh Kumar' : vehicle.type === 'cab' ? 'Aarav Sharma' : 'Sai Krishna')} (${vehicle.plate || (vehicle.type === 'bike' ? 'TS 09 BK 2041' : vehicle.type === 'cab' ? 'TS 09 EA 4821' : 'AP 16 TG 6843')})`}
+              title={vehicle?.plate ? `${vehicle.driverName || 'Driver'} (${vehicle.plate})` : (vehicle?.driverName || 'Driver')}
               type="vehicle"
               rideType={vehicle?.type || vehicle?.id || 'auto'}
             />

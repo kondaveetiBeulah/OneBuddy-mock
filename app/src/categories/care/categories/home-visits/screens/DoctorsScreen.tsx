@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, useColors, Header } from '../components/UI';
 import { useBooking } from '../context/BookingContext';
 import { doctors, healthIssues } from '../mockData';
+import { CareDoctorCardSkeleton } from '@/components/common/skeletons';
 
 interface Props {
   navigation: {
@@ -20,9 +21,9 @@ interface Props {
 }
 
 export function DoctorsScreen({ navigation, route }: Props) {
-  const { chooseDoctor, doctorsList } = useBooking();
+  const { chooseDoctor, doctorsList, isLoadingDoctors } = useBooking();
   const tc = useColors();
-  const currentDoctors = doctorsList && doctorsList.length > 0 ? doctorsList : doctors;
+  const currentDoctors = doctorsList || [];
   const issue = healthIssues.find((item) => item.id === route.params?.issueId);
   const query = route.params?.query?.trim().toLowerCase() ?? '';
   const searchedIssue = healthIssues.find(
@@ -55,15 +56,27 @@ export function DoctorsScreen({ navigation, route }: Props) {
         <Text style={[styles.heading, { color: tc.ink }]}>
           {issue ? issue.name : query ? `Results for "${route.params?.query}"` : 'Top rated professionals'}
         </Text>
-        <Text style={[styles.sub, { color: tc.muted }]}>{results.length} {isNurseCategory ? 'nurses' : 'doctors'} available for a home visit</Text>
+        <Text style={[styles.sub, { color: tc.muted }]}>
+          {results.length > 0
+            ? `${results.length} ${isNurseCategory ? 'nurses' : 'doctors'} available for a home visit`
+            : query
+            ? `0 ${isNurseCategory ? 'nurses' : 'doctors'} available`
+            : 'Finding verified professionals near you...'}
+        </Text>
 
-        {results.length === 0 && (
+        {results.length === 0 && !query ? (
+          <View>
+            <CareDoctorCardSkeleton />
+            <CareDoctorCardSkeleton />
+            <CareDoctorCardSkeleton />
+          </View>
+        ) : results.length === 0 ? (
           <View style={[styles.emptyCard, { backgroundColor: tc.soft, borderColor: tc.border }]}>
             <Ionicons name="search-outline" size={38} color={tc.muted} />
             <Text style={[styles.emptyTitle, { color: tc.ink }]}>No matching doctors or nurses found</Text>
             <Text style={[styles.emptySub, { color: tc.muted }]}>Please check spelling or search for valid symptoms like "fever", "headache", "chest pain", "injection", "skin rash", or "back pain".</Text>
           </View>
-        )}
+        ) : null}
 
         {results.map((doctor) => {
           const isNurse = doctor.name.startsWith('Nurse') || doctor.issueIds.includes('nursing');

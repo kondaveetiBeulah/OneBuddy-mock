@@ -75,6 +75,7 @@ import { BookingSummary } from '../categories/online-consultation/types/doctor';
 import { Booking as HomeVisitBooking } from '../categories/home-visits/types';
 import { getSavedOrders, saveOrders } from '../utils/ordersStorage';
 import { FPS_CONFIG } from '../utils/fpsManager';
+import { CareHospitalListSkeleton } from '@/components/common/skeletons';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -227,155 +228,18 @@ export interface HomeScreenProps {
 // ==========================================
 
 const MOCK_USER: UserProfile = {
-  name: 'Tejaswani',
-  age: 27,
-  gender: 'Female',
-  phone: '+91 9666994727',
-  email: 'tejaswani.k@gmail.com',
-  memberId: 'OB-882194',
-  bloodGroup: 'AB+ Positive',
-  address: 'Plot 42, Silicon Valley, Madhapur, Hyderabad',
-  emergencyContact: '+91 9876543210 (Family)',
+  name: '',
+  age: 0,
+  gender: 'Other',
+  phone: '',
+  email: '',
+  memberId: '',
+  bloodGroup: '',
+  address: '',
+  emergencyContact: '',
 };
 
-export const HYDERABAD_HOSPITALS: SearchableHospital[] = [
-  {
-    id: 'hyd-1',
-    name: 'Apollo Hospitals',
-    branch: 'Jubilee Hills, Hyderabad',
-    area: 'Jubilee Hills, Road No. 72, Film Nagar, Hyderabad',
-    address: 'Road No. 72, Opp. Bharatiya Vidya Bhavan, Jubilee Hills',
-    rating: 4.9,
-    departments: ['Cardiology', 'Orthopedics', 'Neurology', 'Pediatrics', 'General Medicine', 'Dermatology'],
-    specialtyTag: 'Cardiology • Orthopedics • 24/7 OP Available',
-    distance: '2.5 km away',
-    discountBadge: 'Flat 20% OFF on OP Booking',
-    nextAvailableSlot: 'Today at 04:30 PM',
-    logoBg: '#F7FEE7',
-    logoColor: '#65A30D',
-    logoInitials: 'AP',
-    opFee: 850,
-  },
-  {
-    id: 'hyd-2',
-    name: 'Yashoda Hospitals',
-    branch: 'HITECH City / Madhapur, Hyderabad',
-    area: 'HITECH City, Madhapur, Gachibowli, Kondapur, Jubilee Hills, Hyderabad',
-    address: 'Survey No. 64, Hitec City Main Rd, Near Mindspace, Madhapur',
-    rating: 4.9,
-    departments: ['Oncology', 'Cardiology', 'Orthopedics', 'Neurology', 'Pulmonology', 'General Medicine'],
-    specialtyTag: 'Tertiary Care • Express OP Token • 24/7 Open',
-    distance: '1.4 km away',
-    discountBadge: 'Flat 25% OFF on OP Booking',
-    nextAvailableSlot: 'Today at 04:00 PM',
-    logoBg: '#FFFBEB',
-    logoColor: '#D97706',
-    logoInitials: 'YS',
-    opFee: 800,
-  },
-  {
-    id: 'hyd-3',
-    name: 'Care Hospitals',
-    branch: 'Banjara Hills, Hyderabad',
-    area: 'Banjara Hills, Road No. 1, Somajiguda, Panjagutta, Hyderabad',
-    address: 'Road No. 1, Prem Nagar, Banjara Hills',
-    rating: 4.8,
-    departments: ['Cardiology', 'Neurology', 'Gastroenterology', 'General Medicine', 'Nephrology', 'Orthopedics'],
-    specialtyTag: 'Super-Specialty • Instant Token • OP Available',
-    distance: '3.8 km away',
-    discountBadge: 'One Buddy Special: 15% OFF',
-    nextAvailableSlot: 'Today at 05:15 PM',
-    logoBg: '#FEF2F2',
-    logoColor: '#DC2626',
-    logoInitials: 'CR',
-    opFee: 750,
-  },
-  {
-    id: 'hyd-4',
-    name: 'Continental Hospitals',
-    branch: 'Gachibowli Financial District, Hyderabad',
-    area: 'Gachibowli, Nanakramguda, Financial District, Madhapur, Hyderabad',
-    address: 'Plot No. 3, Road No. 2, IT & Financial District, Nanakramguda',
-    rating: 4.8,
-    departments: ['Cardiology', 'Gastroenterology', 'Orthopedics', 'Neurology', 'General Medicine', 'Pediatrics'],
-    specialtyTag: 'JCI & NABH Accredited • Instant Token',
-    distance: '4.2 km away',
-    discountBadge: 'Up to 20% OFF on OP Booking',
-    nextAvailableSlot: 'Today at 06:30 PM',
-    logoBg: '#EEF2FF',
-    logoColor: '#4F46E5',
-    logoInitials: 'CT',
-    opFee: 800,
-  },
-  {
-    id: 'hyd-5',
-    name: 'KIMS Hospitals',
-    branch: 'Secunderabad, Hyderabad',
-    area: 'Minister Road, Secunderabad, Begumpet, Hyderabad',
-    address: '1-8-31/1, Minister Road, Krishna Nagar Colony, Secunderabad',
-    rating: 4.7,
-    departments: ['Cardiology', 'Orthopedics', 'Neurology', 'Pediatrics', 'ENT', 'General Medicine'],
-    specialtyTag: 'Multi-Specialty • Leading Care • OP Available',
-    distance: '7.5 km away',
-    discountBadge: 'Flat ₹150 OFF on Token',
-    nextAvailableSlot: 'Tomorrow at 10:00 AM',
-    logoBg: '#ECFDF5',
-    logoColor: '#059669',
-    logoInitials: 'KM',
-    opFee: 700,
-  },
-  {
-    id: 'hyd-6',
-    name: 'AIG Hospitals',
-    branch: 'Gachibowli / Mindspace, Hyderabad',
-    area: 'Gachibowli, Mindspace Road, Madhapur, Kondapur, Hyderabad',
-    address: '1-66/AIG/1 to 5, Mindspace Road, Gachibowli',
-    rating: 4.9,
-    departments: ['Gastroenterology', 'Hepatology', 'Cardiology', 'General Medicine', 'Endoscopy', 'Oncology'],
-    specialtyTag: 'World-Class Gastroenterology • OP Desk',
-    distance: '2.9 km away',
-    discountBadge: 'Flat 20% OFF on OP Booking',
-    nextAvailableSlot: 'Today at 05:45 PM',
-    logoBg: '#F5F3FF',
-    logoColor: '#7C3AED',
-    logoInitials: 'AIG',
-    opFee: 900,
-  },
-  {
-    id: 'hyd-7',
-    name: 'Rainbow Children’s Hospital',
-    branch: 'Banjara Hills & Kondapur, Hyderabad',
-    area: 'Banjara Hills, Kondapur, Madhapur, Hyderabad',
-    address: 'Road No. 2, Banjara Hills / Botanical Garden Rd, Kondapur',
-    rating: 4.9,
-    departments: ['Pediatrics', 'Neonatology', 'Child Care', 'Dermatology', 'Vaccinations', 'General Medicine'],
-    specialtyTag: 'Premier Pediatric Care • Instant Token',
-    distance: '3.2 km away',
-    discountBadge: 'Flat 20% OFF on Child OP',
-    nextAvailableSlot: 'Today at 04:15 PM',
-    logoBg: '#FDF2F8',
-    logoColor: '#DB2777',
-    logoInitials: 'RB',
-    opFee: 750,
-  },
-  {
-    id: 'hyd-8',
-    name: 'Yashoda Hospitals',
-    branch: 'Somajiguda, Hyderabad',
-    area: 'Somajiguda, Raj Bhavan Road, Panjagutta, Begumpet, Hyderabad',
-    address: 'Alexander Rd, Raj Bhavan Rd, Matha Nagar, Somajiguda',
-    rating: 4.8,
-    departments: ['Cardiology', 'Neurology', 'Orthopedics', 'General Medicine', 'Nephrology', 'Dermatology'],
-    specialtyTag: 'Comprehensive Care • 24/7 OP Services',
-    distance: '5.8 km away',
-    discountBadge: 'Flat 20% OFF on OP Booking',
-    nextAvailableSlot: 'Tomorrow at 09:30 AM',
-    logoBg: '#FFFBEB',
-    logoColor: '#D97706',
-    logoInitials: 'YS',
-    opFee: 800,
-  },
-];
+export const HYDERABAD_HOSPITALS: SearchableHospital[] = [];
 
 const CATEGORIES: CategoryItem[] = [
   {
@@ -467,415 +331,11 @@ const PROMO_BANNERS: PromoBanner[] = [
   },
 ];
 
-export const HYDERABAD_MEDICINES: SearchableMedicine[] = [
-  {
-    id: 'med-1',
-    name: 'Dolo 650mg Tablet',
-    genericName: 'Paracetamol (650mg)',
-    category: 'Fever & Pain Relief',
-    price: 30,
-    originalPrice: 38,
-    discount: '20% OFF',
-    deliveryTime: '25 mins express',
-    dosage: '15 Tablets Strip',
-  },
-  {
-    id: 'med-2',
-    name: 'Augmentin 625 Duo Tablet',
-    genericName: 'Amoxicillin (500mg) + Clavulanic Acid (125mg)',
-    category: 'Antibiotic Care',
-    price: 172,
-    originalPrice: 205,
-    discount: '16% OFF',
-    deliveryTime: '45 mins express',
-    dosage: '10 Tablets Strip',
-  },
-  {
-    id: 'med-3',
-    name: 'Pan-D Capsule',
-    genericName: 'Pantoprazole (40mg) + Domperidone (30mg)',
-    category: 'Acidity & Gastro Care',
-    price: 142,
-    originalPrice: 180,
-    discount: '21% OFF',
-    deliveryTime: '30 mins express',
-    dosage: '15 Capsules Strip',
-  },
-  {
-    id: 'med-4',
-    name: 'Shelcal 500 Tablet',
-    genericName: 'Calcium (500mg) + Vitamin D3 (250 IU)',
-    category: 'Bone & Joint Health',
-    price: 110,
-    originalPrice: 135,
-    discount: '18% OFF',
-    deliveryTime: '30 mins express',
-    dosage: '15 Tablets Strip',
-  },
-  {
-    id: 'med-5',
-    name: 'Allegra 120mg Tablet',
-    genericName: 'Fexofenadine Hydrochloride',
-    category: 'Allergy & Sinus Care',
-    price: 188,
-    originalPrice: 235,
-    discount: '20% OFF',
-    deliveryTime: '45 mins express',
-    dosage: '10 Tablets Strip',
-  },
-  {
-    id: 'med-6',
-    name: 'Azithral 500mg Tablet',
-    genericName: 'Azithromycin (500mg)',
-    category: 'Respiratory Health',
-    price: 112,
-    originalPrice: 140,
-    discount: '20% OFF',
-    deliveryTime: '60 mins express',
-    dosage: '5 Tablets Strip',
-  },
-  {
-    id: 'med-7',
-    name: 'Accu-Chek Active 50 Strips',
-    genericName: 'Blood Glucose Test Strips',
-    category: 'Diabetes Care Device',
-    price: 840,
-    originalPrice: 1100,
-    discount: '24% OFF',
-    deliveryTime: '60 mins express',
-    dosage: '50 Strips Box',
-  },
-];
+export const HYDERABAD_MEDICINES: SearchableMedicine[] = [];
 
-export const ALL_ORDERS_DATA: OrderRecord[] = [
-  // ── 1. OP BOOKING (ACTIVE & COMPLETED) ───────────────────────────
-  {
-    id: 'ord-op-1',
-    category: 'OP',
-    title: 'Yashoda Hospitals OPD • Token #14',
-    subtitle: 'Dr. Ananya Iyer • Consultant Dermatologist',
-    meta: 'Token #14 • OPD Room #204 • Queue: Token #13 in room (~8 mins wait)',
-    status: 'Confirmed',
-    isActive: true,
-    dateOrTime: 'Today at 04:30 PM',
-    price: '₹650',
-    actionText: 'View E-Token & Report',
-    hospitalName: 'Yashoda Hospitals - HITECH City',
-    doctorName: 'Dr. Ananya Iyer',
-    reportData: {
-      patientName: 'Tejaswani',
-      patientAgeGender: '27 Yrs / Female',
-      uhid: 'YHD-884920',
-      hospitalName: 'Yashoda Hospitals - HITECH City, Hyderabad',
-      doctorName: 'Dr. Ananya Iyer, MD (Dermatology, Venereology & Leprosy)',
-      doctorSpecialty: 'Dermatology & Skin Care OPD',
-      roomOrDesk: 'OPD Room #204 (Block A, 2nd Floor)',
-      tokenNumber: '#14',
-      queueAhead: '1 patient ahead in queue',
-      estimatedWait: '~8 mins wait',
-      paymentMode: 'Online Pre-paid (UPI)',
-      subtotal: '₹650',
-      totalPaid: '₹650',
-      doctorAdvice: 'Please bring previous prescription and any ongoing topical ointments.',
-    },
-  },
-  {
-    id: 'ord-op-2',
-    category: 'OP',
-    title: 'Apollo Hospitals OPD • Token #08',
-    subtitle: 'Dr. Rajesh Sharma • Senior General Physician',
-    meta: 'Consultation Completed • OP Desk #3 Jubilee Hills',
-    status: 'Completed',
-    isActive: false,
-    dateOrTime: '14 Sep 2026, 11:00 AM',
-    price: '₹850',
-    actionText: 'View OPD Report',
-    hospitalName: 'Apollo Hospitals - Jubilee Hills',
-    doctorName: 'Dr. Rajesh Sharma',
-    reportData: {
-      patientName: 'Tejaswani',
-      patientAgeGender: '27 Yrs / Female',
-      uhid: 'APL-552190',
-      hospitalName: 'Apollo Hospitals - Jubilee Hills, Hyderabad',
-      doctorName: 'Dr. Rajesh Sharma, MBBS, MD (Internal Medicine)',
-      doctorSpecialty: 'General Medicine OPD',
-      roomOrDesk: 'OP Desk #3 (Main Atrium, 1st Floor)',
-      tokenNumber: '#08',
-      queueAhead: 'Completed',
-      estimatedWait: '0 mins',
-      diagnosis: 'Mild seasonal pharyngitis & allergic rhinitis',
-      paymentMode: 'Card Payment (Verified)',
-      subtotal: '₹850',
-      totalPaid: '₹850',
-      doctorAdvice: 'Hydration advised. Prescribed anti-histamine for 3 days.',
-      followUpDate: 'Routine review after 7 days if needed',
-    },
-  },
+export const ALL_ORDERS_DATA: OrderRecord[] = [];
 
-  // ── 2. MEDICINE DELIVERY (ACTIVE & COMPLETED) ─────────────────────
-  {
-    id: 'ord-med-1',
-    category: 'MEDICINE',
-    title: 'Order #OB-MED-9402 • Express 2-Hr',
-    subtitle: 'Dolo 650mg (x2), Augmentin 625mg (x1), Pantocid 40mg (x1)',
-    meta: 'Rider David Kumar is en route (Live ETA: 20 mins to Madhapur)',
-    status: 'Dispatched',
-    isActive: true,
-    dateOrTime: 'Today at 01:45 PM',
-    price: '₹342',
-    actionText: 'Track & View Invoice',
-    itemsSummary: '3 items • Apollo Pharmacy Madhapur Hub',
-    reportData: {
-      patientName: 'Tejaswani',
-      deliveryAddress: 'Plot 42, Silicon Valley, Madhapur, Hyderabad - 500081',
-      riderName: 'David Kumar',
-      riderPhone: '+91 98765 43299',
-      pharmacyName: 'OneBuddy Express Pharmacy - Madhapur Hub',
-      medicines: [
-        { name: 'Dolo 650mg Paracetamol Tablets', dosage: 'Strip of 15', frequency: 'TDS (As needed)', duration: '2 strips', price: 60 },
-        { name: 'Augmentin 625mg Duo Tablets', dosage: 'Strip of 10', frequency: 'BD (After food)', duration: '1 strip', price: 198 },
-        { name: 'Pantocid 40mg Gastro-Resistant', dosage: 'Strip of 10', frequency: 'OD (Before breakfast)', duration: '1 strip', price: 84 },
-      ],
-      paymentMode: 'Pre-paid (UPI)',
-      subtotal: '₹342',
-      deliveryFee: '₹0 (Free Express)',
-      totalPaid: '₹342',
-      clinicalNotes: 'Verified by Registered Pharmacist Ramesh Rao (Reg #AP-77821). Keep medicines in a cool, dry place away from sunlight.',
-    },
-  },
-  {
-    id: 'ord-med-2',
-    category: 'MEDICINE',
-    title: 'Order #OB-MED-8819 • Refill Pack',
-    subtitle: 'Shelcal 500 (Calcium) & Vitamin D3 60K (x2)',
-    meta: 'Delivered to Plot 42, Silicon Valley, Madhapur',
-    status: 'Delivered',
-    isActive: false,
-    dateOrTime: '11 Sep 2026, 04:30 PM',
-    price: '₹310',
-    actionText: 'View Invoice & Re-Order',
-    itemsSummary: 'Delivered via OneBuddy Express',
-    reportData: {
-      patientName: 'Tejaswani',
-      deliveryAddress: 'Plot 42, Silicon Valley, Madhapur, Hyderabad - 500081',
-      riderName: 'Vikram Singh',
-      riderPhone: '+91 98765 43110',
-      pharmacyName: 'OneBuddy Central Pharmacy, Hyderabad',
-      medicines: [
-        { name: 'Shelcal 500 Calcium + Vitamin D3', dosage: 'Bottle of 30', frequency: 'OD (After dinner)', duration: '1 pack', price: 168 },
-        { name: 'Vitamin D3 60K Chewable Tablets', dosage: 'Strip of 4', frequency: 'Weekly once', duration: '2 strips', price: 142 },
-      ],
-      paymentMode: 'Net Banking (Completed)',
-      subtotal: '₹310',
-      deliveryFee: '₹0',
-      totalPaid: '₹310',
-      clinicalNotes: 'Delivered and verified. Digital tax invoice generated for health claims.',
-    },
-  },
-
-  // ── 3. ONLINE CONSULTATION (ACTIVE & COMPLETED) ───────────────────
-  {
-    id: 'ord-consult-1',
-    category: 'CONSULT',
-    title: 'Tele-Consultation: Dr. Vikramaditya Sen',
-    subtitle: 'Senior Interventional Cardiologist • Video Call',
-    meta: 'Scheduled for Today at 05:00 PM • Video Room Link Ready',
-    status: 'Scheduled',
-    isActive: true,
-    dateOrTime: 'Today at 05:00 PM',
-    price: '₹899',
-    actionText: '',
-    doctorName: 'Dr. Vikramaditya Sen',
-    reportData: {
-      patientName: 'Tejaswani',
-      patientAgeGender: '27 Yrs / Female',
-      doctorName: 'Dr. Vikramaditya Sen, MBBS, MD, DM (Cardiology), FACC',
-      doctorSpecialty: 'Senior Interventional Cardiologist',
-      hospitalName: 'Care Hospitals, Hyderabad',
-      symptoms: 'Mild palpitation during exercise, routine BP review',
-      paymentMode: 'Online Pre-paid (Verified)',
-      subtotal: '₹899',
-      totalPaid: '₹899',
-      doctorAdvice: 'Please ensure quiet environment and camera access 5 minutes prior to 05:00 PM.',
-      followUpDate: 'Today at 05:00 PM',
-    },
-  },
-  {
-    id: 'ord-consult-2',
-    category: 'CONSULT',
-    title: 'Tele-Consultation: Dr. Rajesh Sharma',
-    subtitle: 'Senior General Physician • Video Call Completed',
-    meta: 'Digital Rx-Prescription Issued • Follow-up in 3 Days',
-    status: 'Completed',
-    isActive: false,
-    dateOrTime: '15 Sep 2026, 10:15 AM',
-    price: '₹499',
-    actionText: 'Download Prescription',
-    doctorName: 'Dr. Rajesh Sharma',
-    reportData: {
-      patientName: 'Tejaswani',
-      patientAgeGender: '27 Yrs / Female',
-      uhid: 'TEL-881942',
-      doctorName: 'Dr. Rajesh Sharma, MBBS, MD (Internal Medicine)',
-      doctorSpecialty: 'Senior General Physician (Reg #TSMC-44812)',
-      hospitalName: 'Apollo Multi-Specialty Hospital, Hyderabad',
-      diagnosis: 'Acute Viral Rhinopharyngitis with Moderate Pyrexia',
-      symptoms: 'Fever (101°F), Body aches, Sore throat for 2 days',
-      medicines: [
-        { name: 'Tab. Dolo 650mg (Paracetamol)', dosage: '650mg', frequency: '1 tab thrice daily after meals', duration: '3 days' },
-        { name: 'Tab. Azithromycin 500mg', dosage: '500mg', frequency: '1 tab once daily after dinner', duration: '3 days' },
-        { name: 'Tab. Pantocid 40mg', dosage: '40mg', frequency: '1 tab once daily 30m before breakfast', duration: '5 days' },
-      ],
-      paymentMode: 'UPI Pre-paid',
-      subtotal: '₹499',
-      totalPaid: '₹499',
-      doctorAdvice: 'Adequate rest for 48 hours. Warm saline gargles twice daily. Keep hydrated with ORS and warm water.',
-      followUpDate: 'Review after 3 days if fever persists above 100°F',
-      clinicalNotes: 'Electronically signed by Dr. Rajesh Sharma with valid medical registration seal.',
-    },
-  },
-
-  // ── 4. HOME VISITS (ACTIVE & COMPLETED) ───────────────────────────
-  {
-    id: 'ord-home-1',
-    category: 'HOME',
-    title: 'Home Nursing Care & Vital Check',
-    subtitle: 'Nurse Sunita Rao • Senior Home Nursing Specialist',
-    meta: 'Scheduled for Tomorrow at 07:30 AM in Madhapur',
-    status: 'Assigned',
-    isActive: true,
-    dateOrTime: 'Tomorrow at 07:30 AM',
-    price: '₹600',
-    actionText: 'View Care Schedule',
-    itemsSummary: 'Vital check, sterile wound dressing & clinical observation',
-    reportData: {
-      patientName: 'Tejaswani',
-      patientAgeGender: '27 Yrs / Female',
-      deliveryAddress: 'Plot 42, Silicon Valley, Madhapur, Hyderabad',
-      nurseName: 'Nurse Sunita Rao (B.Sc Nursing, 12 Yrs Experience)',
-      nurseRole: 'Senior Home Nursing Specialist (Apollo Home Care)',
-      paymentMode: 'Online Pre-paid',
-      subtotal: '₹600',
-      totalPaid: '₹600',
-      doctorAdvice: 'Nurse will arrive with single-use sterile dressing pack and digital vitals monitor.',
-      clinicalNotes: 'Scheduled home nursing session. Patient notified via SMS with nurse live contact.',
-    },
-  },
-  {
-    id: 'ord-home-2',
-    category: 'HOME',
-    title: 'Home Diagnostic: Lipid Profile & Fasting Sugar',
-    subtitle: 'Phlebotomist: Nurse Rajesh Verma (KIMS Home Health)',
-    meta: 'Sample Collected & Processed • Certified Report Synced',
-    status: 'Completed',
-    isActive: false,
-    dateOrTime: '12 Sep 2026, 07:15 AM',
-    price: '₹699',
-    actionText: 'View Lab Report',
-    itemsSummary: 'Fasting Blood Glucose, Total Cholesterol, HDL, LDL, Triglycerides',
-    reportData: {
-      patientName: 'Tejaswani',
-      patientAgeGender: '27 Yrs / Female',
-      uhid: 'LAB-774019',
-      nurseName: 'Nurse Rajesh Verma (Phlebotomist)',
-      hospitalName: 'KIMS Central Laboratory & Diagnostic Hub, Hyderabad',
-      vitals: {
-        bp: '120/80 mmHg',
-        pulse: '72 bpm',
-        temp: '98.4°F',
-        spo2: '99%',
-        rbs: '94 mg/dL',
-      },
-      testsConducted: [
-        { name: 'Fasting Blood Glucose (FBS)', result: '94 mg/dL', normalRange: '70 - 99 mg/dL', status: 'Normal' },
-        { name: 'HbA1c (Glycosylated Hemoglobin)', result: '5.4%', normalRange: '< 5.7%', status: 'Normal' },
-        { name: 'Total Cholesterol', result: '176 mg/dL', normalRange: '< 200 mg/dL', status: 'Normal' },
-        { name: 'HDL Cholesterol (Good)', result: '56 mg/dL', normalRange: '> 50 mg/dL', status: 'Normal' },
-        { name: 'LDL Cholesterol', result: '98 mg/dL', normalRange: '< 100 mg/dL', status: 'Normal' },
-        { name: 'Serum Triglycerides', result: '112 mg/dL', normalRange: '< 150 mg/dL', status: 'Normal' },
-      ],
-      paymentMode: 'Online Paid (UPI)',
-      subtotal: '₹699',
-      totalPaid: '₹699',
-      clinicalNotes: 'Sample collected with sterile EDTA vacutainer at home. All parameters within optimal healthy limits.',
-    },
-  },
-];
-
-export const INITIAL_NOTIFICATIONS: NotificationItem[] = [
-  {
-    id: 'notif-1',
-    type: 'OP',
-    title: 'Dr. Ananya Iyer (Dermatology OPD)',
-    subtitle: 'Yashoda Hospitals - HITECH City',
-    meta: 'Token #14 • Live: Dr. Iyer is seeing Token #13 (Est. wait: ~8 mins)',
-    status: 'Confirmed',
-    time: '10m ago',
-  },
-  {
-    id: 'notif-2',
-    type: 'MEDICINE',
-    title: 'Order #OB-MED-9402 Dispatched',
-    subtitle: 'Dolo 650mg, Augmentin 625mg, Pantocid (3 items)',
-    meta: 'Rider: David Kumar (Live ETA: 20 mins in Madhapur)',
-    status: 'Dispatched',
-    time: '25m ago',
-  },
-  {
-    id: 'notif-3',
-    type: 'HOME',
-    title: 'Home Nurse Scheduled Tomorrow',
-    subtitle: 'Nurse Sunita Rao (Apollo Home Care)',
-    meta: 'Arrival Window: 07:30 AM - 08:00 AM • Madhapur Address',
-    status: 'Assigned',
-    time: '1h ago',
-  },
-  {
-    id: 'notif-4',
-    type: 'CONSULT',
-    title: 'Tele-Consultation Confirmed',
-    subtitle: 'Dr. Vikramaditya Sen (Senior Cardiologist)',
-    meta: 'Video Call Scheduled for Today at 05:00 PM',
-    status: 'Scheduled',
-    time: '2h ago',
-  },
-  {
-    id: 'notif-5',
-    type: 'MEDICINE',
-    title: 'Prescription Verified by Pharmacist',
-    subtitle: 'OneBuddy Express Pharmacy - Madhapur Hub',
-    meta: 'Pharmacist Ramesh Rao approved your prescription',
-    status: 'Confirmed',
-    time: '3h ago',
-  },
-  {
-    id: 'notif-6',
-    type: 'OP',
-    title: 'Hospital E-Token Generated',
-    subtitle: 'Apollo Hospitals - Jubilee Hills',
-    meta: 'Token #08 with Dr. Rajesh Sharma completed',
-    status: 'Completed',
-    time: 'Yesterday',
-  },
-  {
-    id: 'notif-7',
-    type: 'HOME',
-    title: 'Home Lab Results Available',
-    subtitle: 'Lipid Profile & Fasting Blood Sugar Test',
-    meta: 'Certified digital diagnostic report synced to Medical Vault',
-    status: 'Completed',
-    time: '2 days ago',
-  },
-  {
-    id: 'notif-8',
-    type: 'CONSULT',
-    title: 'Prescription Ready for Download',
-    subtitle: 'Dr. Rajesh Sharma (General Physician)',
-    meta: 'Follow-up consultation prescription signed digitally',
-    status: 'Completed',
-    time: '3 days ago',
-  },
-];
+export const INITIAL_NOTIFICATIONS: NotificationItem[] = [];
 
 const FAQ_ITEMS: FaqItem[] = [
   {
@@ -2393,22 +1853,22 @@ const OrderReportModal: React.FC<OrderReportModalProps> = ({ visible, order, onC
               <View style={styles.reportMetaGrid}>
                 <View style={styles.reportMetaItem}>
                   <Text style={styles.reportMetaLabel}>Patient Name</Text>
-                  <Text style={styles.reportMetaValue}>{data?.patientName || 'Tejaswani K.'}</Text>
+                  <Text style={styles.reportMetaValue}>{data?.patientName || 'Patient'}</Text>
                 </View>
                 <View style={styles.reportMetaItem}>
                   <Text style={styles.reportMetaLabel}>Age / Gender</Text>
-                  <Text style={styles.reportMetaValue}>{data?.patientAgeGender || '27 Y / Female'}</Text>
+                  <Text style={styles.reportMetaValue}>{data?.patientAgeGender || 'N/A'}</Text>
                 </View>
               </View>
 
               <View style={[styles.reportMetaGrid, { marginTop: 10 }]}>
                 <View style={styles.reportMetaItem}>
                   <Text style={styles.reportMetaLabel}>UHID / Patient ID</Text>
-                  <Text style={styles.reportMetaValue}>{data?.uhid || 'UHID-HYD-882194'}</Text>
+                  <Text style={styles.reportMetaValue}>{data?.uhid || order.id || 'N/A'}</Text>
                 </View>
                 <View style={styles.reportMetaItem}>
                   <Text style={styles.reportMetaLabel}>Location Area</Text>
-                  <Text style={styles.reportMetaValue}>Madhapur, Hyderabad</Text>
+                  <Text style={styles.reportMetaValue}>Hyderabad</Text>
                 </View>
               </View>
             </View>
@@ -2825,24 +2285,18 @@ const OrdersView: React.FC<OrdersViewProps> = ({ orders, onActionPress, onViewRe
           style={styles.ordersFilterScrollView}
         >
           {ORDER_FILTER_TABS.map((tab) => {
-            const count =
-              tab === 'ALL'
-                ? orders.length
-                : tab === 'ACTIVE'
-                ? orders.filter((o) => o.isActive).length
-                : orders.filter((o) => o.category === tab).length;
             const label =
               tab === 'ALL'
-                ? `All (${count})`
+                ? 'All'
                 : tab === 'ACTIVE'
-                ? `🟢 Active (${count})`
+                ? 'Active'
                 : tab === 'MEDICINE'
-                ? `Medicines (${count})`
+                ? 'Medicines'
                 : tab === 'OP'
-                ? `OP Bookings (${count})`
+                ? 'OP Bookings'
                 : tab === 'HOME'
-                ? `Home Visits (${count})`
-                : `Consultations (${count})`;
+                ? 'Home Visits'
+                : 'Consultations';
             const isActive = selectedFilter === tab;
             return (
               <TouchableOpacity
@@ -2862,135 +2316,9 @@ const OrdersView: React.FC<OrdersViewProps> = ({ orders, onActionPress, onViewRe
 
       {/* Orders List */}
       <View style={styles.ordersList}>
-        {filteredOrders.length === 0 ? (
-          <View style={styles.emptyOrdersBox}>
-            <Clock size={32} color="#94A3B8" />
-            <Text style={styles.emptyOrdersTitle}>No records found</Text>
-            <Text style={styles.emptyOrdersSub}>You have no orders or appointments in this category.</Text>
-          </View>
-        ) : (
-          filteredOrders.map((item) => {
-            const catInfo = getCategoryBadge(item.category);
-            const statusInfo = getStatusBadge(item.status);
-            const CatIcon = catInfo.icon;
-
-            return (
-              <TouchableOpacity
-                key={item.id}
-                style={styles.ordersItemCard}
-                onPress={() => onViewReport(item)}
-                activeOpacity={0.88}
-              >
-                {/* Card Top: Category, Active Status Badge & Status */}
-                <View style={styles.ordersCardHeader}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                    <View style={[styles.orderCategoryPill, { backgroundColor: catInfo.bg }]}>
-                      <CatIcon size={12} color={catInfo.color} style={{ marginRight: 4, flexShrink: 0 }} />
-                      <Text style={[styles.ordersCardTypeTag, { color: catInfo.color }]} numberOfLines={1}>
-                        {catInfo.label}
-                      </Text>
-                    </View>
-
-                    {/* Active vs Not Active Indicator */}
-                    <View
-                      style={[
-                        styles.activeStatusPill,
-                        {
-                          backgroundColor: item.isActive ? '#DCFCE7' : '#F1F5F9',
-                          borderColor: item.isActive ? '#86EFAC' : '#CBD5E1',
-                        },
-                      ]}
-                    >
-                      <View
-                        style={[
-                          styles.activeStatusDot,
-                          { backgroundColor: item.isActive ? '#16A34A' : '#94A3B8' },
-                        ]}
-                      />
-                      <Text
-                        style={[
-                          styles.activeStatusText,
-                          { color: item.isActive ? '#15803D' : '#64748B' },
-                        ]}
-                      >
-                        {item.isActive ? 'Active' : 'Inactive'}
-                      </Text>
-                    </View>
-                  </View>
-
-                  <View style={[styles.orderStatusPill, { backgroundColor: statusInfo.bg }]}>
-                    <Text style={[styles.ordersCardStatus, { color: statusInfo.text }]} numberOfLines={1}>
-                      {item.status}
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Title & Subtitle */}
-                <Text style={styles.ordersCardTitle}>{item.title}</Text>
-                <Text style={styles.ordersCardSubtitle}>{item.subtitle}</Text>
-
-                {/* Meta information row */}
-                <View style={styles.orderMetaBox}>
-                  <Clock size={13} color="#64748B" style={{ marginRight: 6, flexShrink: 0 }} />
-                  <Text style={styles.ordersCardMeta} numberOfLines={2}>
-                    {item.meta}
-                  </Text>
-                </View>
-
-                <View style={styles.ordersDivider} />
-
-                {/* Card Bottom: Date/Price & Action Buttons arranged cleanly for mobile screens */}
-                <View style={styles.orderCardFooter}>
-                  {/* Row 1: Date & Time on left, Price on right */}
-                  <View style={styles.orderFooterInfoRow}>
-                    <View style={styles.orderDateWrap}>
-                      <Calendar size={13} color="#64748B" style={{ marginRight: 5 }} />
-                      <Text style={styles.orderDateText} numberOfLines={1}>
-                        {item.dateOrTime}
-                      </Text>
-                    </View>
-                    {item.price ? (
-                      <View style={styles.orderPriceWrap}>
-                        <Text style={styles.orderPriceLabel}>Total:</Text>
-                        <Text style={styles.orderPriceText}>{item.price}</Text>
-                      </View>
-                    ) : null}
-                  </View>
-
-                  {/* Row 2: Action Buttons side-by-side with balanced width and touch target */}
-                  <View style={styles.orderCardActionsRow}>
-                    {/* View Report Dedicated Button */}
-                    <TouchableOpacity
-                      style={styles.viewReportBtn}
-                      onPress={() => onViewReport(item)}
-                      activeOpacity={0.8}
-                    >
-                      <FileText size={13} color="#4D7C0F" style={{ marginRight: 5 }} />
-                      <Text style={styles.viewReportBtnText} numberOfLines={1}>View Report</Text>
-                    </TouchableOpacity>
-
-                    {/* Action Button (Removed View Consultation Pass) */}
-                    {item.actionText && item.actionText !== 'View Consultation Pass' ? (
-                      <TouchableOpacity
-                        style={styles.orderActionBtn}
-                        onPress={() => onActionPress(item)}
-                        activeOpacity={0.8}
-                      >
-                        {item.category === 'CONSULT' && item.status === 'Completed' ? (
-                          <Download size={13} color="#FFFFFF" style={{ marginRight: 4 }} />
-                        ) : null}
-                        <Text style={styles.orderActionBtnText} numberOfLines={1}>{item.actionText}</Text>
-                        {item.category !== 'CONSULT' ? (
-                          <ChevronRight size={13} color="#FFFFFF" style={{ marginLeft: 3 }} />
-                        ) : null}
-                      </TouchableOpacity>
-                    ) : null}
-                  </View>
-                </View>
-              </TouchableOpacity>
-            );
-          })
-        )}
+        <View style={styles.emptyOrdersBox}>
+          <Text style={styles.emptyOrdersTitle}>No orders found</Text>
+        </View>
       </View>
     </ScrollView>
   );
@@ -3356,12 +2684,12 @@ const ProfileView: React.FC<ProfileViewProps> = ({ user, onEditProfile, onEditAd
 
         <View style={styles.profileDetailRow}>
           <Text style={styles.profileDetailKey}>Primary Phone</Text>
-          <Text style={styles.profileDetailVal}>{user.phone}</Text>
+          <Text style={styles.profileDetailVal}>{user.phone || 'No phone set'}</Text>
         </View>
 
         <View style={styles.profileDetailRow}>
           <Text style={styles.profileDetailKey}>Email Address</Text>
-          <Text style={styles.profileDetailVal}>{user.email || 'tejaswani.k@gmail.com'}</Text>
+          <Text style={styles.profileDetailVal}>{user.email || 'No email set'}</Text>
         </View>
 
         <View style={[styles.profileDetailRow, { borderBottomWidth: 0, alignItems: 'flex-start' }]}>
@@ -3396,7 +2724,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ user, onEditProfile, onEditAd
         <View style={styles.profileDetailRow}>
           <Text style={styles.profileDetailKey}>Emergency Contact</Text>
           <Text style={styles.profileDetailVal}>
-            {user.emergencyContact || '+91 9876543210 (Family)'}
+            {user.emergencyContact || 'Not configured'}
           </Text>
         </View>
 
@@ -3551,30 +2879,19 @@ export default function HomeScreen({
   // Load persistent orders across all categories on mount/refresh
   useEffect(() => {
     let isMounted = true;
-    getSavedOrders<OrderRecord>(ALL_ORDERS_DATA).then((saved) => {
-      if (isMounted && saved && saved.length > 0) {
-        setOrders(saved);
-      }
-    });
+    setOrders([]);
+    saveOrders([]).catch(() => {});
 
     // Fetch live catalog data from Firestore
     careService.fetchHospitals().then((liveHospitals) => {
-      if (isMounted && liveHospitals && liveHospitals.length > 0) {
-        setHospitalsList((prev) => {
-          const map = new Map(prev.map((h) => [h.id, h]));
-          liveHospitals.forEach((h: any) => map.set(h.id, { ...map.get(h.id), ...h }));
-          return Array.from(map.values());
-        });
+      if (isMounted && liveHospitals) {
+        setHospitalsList(liveHospitals as any[]);
       }
     });
 
     careService.fetchMedicines().then((liveMeds) => {
-      if (isMounted && liveMeds && liveMeds.length > 0) {
-        setMedicinesList((prev) => {
-          const map = new Map(prev.map((m) => [m.id, m]));
-          liveMeds.forEach((m: any) => map.set(m.id, { ...map.get(m.id), ...m }));
-          return Array.from(map.values());
-        });
+      if (isMounted && liveMeds) {
+        setMedicinesList(liveMeds as any[]);
       }
     });
 
@@ -3586,34 +2903,8 @@ export default function HomeScreen({
   // Real-time synchronization with Firestore hospital appointments if user is authenticated
   useEffect(() => {
     if (!user?.uid) return;
-    const unsubscribe = careService.subscribeUserAppointments(user.uid, (remoteAppts) => {
-      if (remoteAppts && remoteAppts.length > 0) {
-        setOrders((prev) => {
-          const existingIds = new Set(prev.map((o) => o.id));
-          const newRecords: OrderRecord[] = remoteAppts
-            .filter((a: any) => !existingIds.has(a.id))
-            .map((a: any) => ({
-              id: a.id,
-              category: 'OP',
-              title: `${a.doctorNameSnapshot || 'Doctor OPD'} • Token ${a.tokenNumber || '#1'}`,
-              subtitle: `${a.hospitalNameSnapshot || 'Hospital'} • ${a.mode === 'video' ? 'Video Consult' : 'In-Person OPD'}`,
-              meta: `Status: ${a.status} • Scheduled: ${new Date(a.startsAt?.toMillis ? a.startsAt.toMillis() : Date.now()).toLocaleDateString()}`,
-              status: a.status === 'confirmed' ? 'Confirmed' : (a.status === 'cancelled' ? 'Cancelled' : 'Completed'),
-              isActive: a.status === 'confirmed',
-              dateOrTime: 'Scheduled',
-              price: `₹${((a.feeMinor || 50000) / 100).toFixed(0)}`,
-              actionText: a.mode === 'video' ? 'Join Video' : 'View Token',
-              doctorName: a.doctorNameSnapshot,
-              hospitalName: a.hospitalNameSnapshot,
-            }));
-          if (newRecords.length > 0) {
-            const merged = [...newRecords, ...prev];
-            saveOrders(merged).catch(() => {});
-            return merged;
-          }
-          return prev;
-        });
-      }
+    const unsubscribe = careService.subscribeUserAppointments(user.uid, (_remoteAppts) => {
+      // Orders are not stored in orders history
     });
     return () => unsubscribe();
   }, [user?.uid]);
@@ -3765,7 +3056,7 @@ export default function HomeScreen({
   const searchInputRef = useRef<TextInput>(null);
 
   const notifications = INITIAL_NOTIFICATIONS;
-  const activeOrdersCount = orders.filter((o) => o.isActive).length;
+  const activeOrdersCount = 0;
 
   const handleSaveAddress = (newAddress: string) => {
     setCurrentLocation(newAddress);
@@ -3949,12 +3240,8 @@ export default function HomeScreen({
     setIsMedicineModalVisible(true);
   };
 
-  const persistOrder = (newOrder: OrderRecord) => {
-    setOrders((prev) => {
-      const updated = [newOrder, ...prev];
-      saveOrders(updated).catch(() => {});
-      return updated;
-    });
+  const persistOrder = (_newOrder: OrderRecord) => {
+    // Orders are not stored in orders history
   };
 
   const handleMedicineOrderPlaced = (order: OrderHistoryItem) => {
@@ -4271,17 +3558,23 @@ export default function HomeScreen({
 
                   {/* Results List */}
                   {filteredHospitals.length === 0 && filteredMedicines.length === 0 ? (
-                    <View style={styles.noResultsBox}>
-                      <View style={styles.noResultsIconWrap}>
-                        <Search size={26} color="#94A3B8" />
+                    searchQuery.trim().length === 0 ? (
+                      <View style={{ paddingVertical: 12 }}>
+                        <CareHospitalListSkeleton count={2} />
                       </View>
-                      <Text style={styles.noResultsTitle}>
-                        No hospitals or medicines found in Hyderabad.
-                      </Text>
-                      <Text style={styles.noResultsSub}>
-                        Try searching for "Apollo", "Yashoda", "Dolo 650", "Paracetamol", "Madhapur", or "Cardiology".
-                      </Text>
-                    </View>
+                    ) : (
+                      <View style={styles.noResultsBox}>
+                        <View style={styles.noResultsIconWrap}>
+                          <Search size={26} color="#94A3B8" />
+                        </View>
+                        <Text style={styles.noResultsTitle}>
+                          No hospitals or medicines found in Hyderabad.
+                        </Text>
+                        <Text style={styles.noResultsSub}>
+                          Try searching for "Apollo", "Yashoda", "Dolo 650", "Paracetamol", "Madhapur", or "Cardiology".
+                        </Text>
+                      </View>
+                    )
                   ) : (
                     <View style={styles.resultsList}>
                       {/* Hospital Results */}

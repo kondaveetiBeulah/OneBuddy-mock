@@ -7,7 +7,7 @@ export interface OrderCardProps {
 }
 
 export default function OrderCard({ order }: OrderCardProps) {
-  const amount = order?.total ?? order?.amount ?? 249;
+  const amount = order?.total ?? order?.amount ?? 0;
   const formattedDate = (() => {
     if (!order?.createdAt && !order?.date) return 'Just now';
     if (order?.date && typeof order.date === 'string' && !order.date.includes('T') && isNaN(Date.parse(order.date))) {
@@ -31,7 +31,7 @@ export default function OrderCard({ order }: OrderCardProps) {
         </View>
         <View style={{ flex: 1 }}>
           <Text style={styles.name}>{order?.storeName || "1Buddy Grocery Store"}</Text>
-          <Text style={styles.meta}>Order ID: #{order?.id || "OBG-84920"}</Text>
+          {order?.id ? <Text style={styles.meta}>Order ID: #{order.id}</Text> : null}
           <Text style={styles.meta}>{formattedDate}</Text>
         </View>
         <View style={{ alignItems: "flex-end" }}>

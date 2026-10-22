@@ -27,9 +27,12 @@ export default function OrderSectionList({
       {...webNoScrollbar}
     >
       {sections.length === 0 ? (
-        <Text style={styles.emptyMsg}>
-          No orders or bookings in this category yet.
-        </Text>
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyTitle}>No orders found</Text>
+          <Text style={styles.emptyMsg}>
+            No orders or bookings yet.
+          </Text>
+        </View>
       ) : (
         sections.map(({ group, items }) => (
           <View key={group}>

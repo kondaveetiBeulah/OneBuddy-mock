@@ -6,6 +6,7 @@ import { doctors as defaultDoctors } from '../mockData';
 
 interface BookingContextValue {
   doctorsList: Doctor[];
+  isLoadingDoctors: boolean;
   selectedDoctor?: Doctor;
   selectedDate?: string;
   selectedSlot?: TimeSlot;
@@ -29,6 +30,7 @@ interface BookingProviderProps extends PropsWithChildren {
 
 export function BookingProvider({ children, onBookingSuccess }: BookingProviderProps) {
   const [doctorsList, setDoctorsList] = useState<Doctor[]>(defaultDoctors);
+  const [isLoadingDoctors, setIsLoadingDoctors] = useState<boolean>(true);
   const [selectedDoctor, setDoctor] = useState<Doctor>();
   const [selectedDate, setDate] = useState<string>();
   const [selectedSlot, setSlot] = useState<TimeSlot>();
@@ -42,6 +44,7 @@ export function BookingProvider({ children, onBookingSuccess }: BookingProviderP
     let isMounted = true;
     async function loadBackendProviders() {
       try {
+        setIsLoadingDoctors(true);
         const providers = await careService.fetchHomeVisitProviders();
         if (isMounted && providers && providers.length > 0) {
           const mapped: Doctor[] = providers.map((p: any) => ({
@@ -50,12 +53,12 @@ export function BookingProvider({ children, onBookingSuccess }: BookingProviderP
             specialty: p.specialty || p.serviceTypes?.[0] || 'Certified Care Specialist',
             hospital: p.hospital || p.serviceArea || 'OneBuddy Care Network',
             location: p.location || p.serviceArea || 'Hyderabad',
-            rating: p.rating || 4.9,
-            experience: p.experience || 8,
-            fee: p.fee || 499,
-            phone: p.phone || '+919876543210',
-            initials: p.initials || (p.name ? p.name.split(' ').map((w: string) => w[0]).join('').slice(0, 2) : 'CP'),
-            avatar: p.avatar || p.image || 'https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?w=200&auto=format&fit=crop&q=80',
+            rating: p.rating || 0,
+            experience: p.experience || 0,
+            fee: p.fee || 0,
+            phone: p.phone || '',
+            initials: p.initials || (p.name ? p.name.split(' ').map((w: string) => w[0]).join('').slice(0, 2) : ''),
+            avatar: p.avatar || p.image || '',
             issueIds: p.issueIds || p.serviceTypes || ['nursing', 'elderly', 'checkup', 'injections'],
             symptoms: p.symptoms || p.serviceTypes || ['home care', 'nursing'],
             slots: p.slots || {},
@@ -64,6 +67,10 @@ export function BookingProvider({ children, onBookingSuccess }: BookingProviderP
         }
       } catch (err) {
         console.warn('[HomeVisits] Failed to fetch providers from backend:', err);
+      } finally {
+        if (isMounted) {
+          setIsLoadingDoctors(false);
+        }
       }
     }
     loadBackendProviders();
@@ -136,6 +143,7 @@ export function BookingProvider({ children, onBookingSuccess }: BookingProviderP
     <BookingContext.Provider
       value={{
         doctorsList,
+        isLoadingDoctors,
         selectedDoctor,
         selectedDate,
         selectedSlot,

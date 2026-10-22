@@ -15,20 +15,6 @@ import { typography, spacing } from '../theme';
 
 export const DEFAULT_ROTATING_CATEGORIES = [
   'Groceries',
-  'Fruits',
-  'Vegetables',
-  'Dairy Products',
-  'Snacks',
-  'House Necessities',
-  'Cosmetics',
-  'Toys',
-  'Stationery',
-  'Gifts',
-  'Jewellery',
-  'Ice Creams',
-  'Atta, Rice & Dals',
-  'Pet Care',
-  'Electronics',
 ];
 
 interface SearchBarProps {

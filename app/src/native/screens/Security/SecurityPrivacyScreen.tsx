@@ -44,8 +44,8 @@ export default function SecurityPrivacyScreen({
 
   /* ---------------- emergency contact ---------------- */
   const [emergencyContact, setEmergencyContact] = useState<EmergencyContact>({
-    name: initialValues?.emergencyContact || 'Aarav',
-    phone: '+91 98765 43210',
+    name: initialValues?.emergencyContact || '',
+    phone: '',
   });
   const [emergencyModalVisible, setEmergencyModalVisible] = useState<boolean>(false);
   const [contactTab, setContactTab] = useState<ContactTab>('manual');

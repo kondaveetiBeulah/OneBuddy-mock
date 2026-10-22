@@ -10,6 +10,7 @@ import {
 } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { db, functions, firebaseConfigured } from '../config';
+import { isDummyProvider } from './careService';
 
 export type ServiceCategory = 'care' | 'homeServices';
 export type BookingStatus = 'requested' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled';
@@ -146,10 +147,12 @@ export async function fetchProviders(
     q = query(q, limit(limitCount));
     const snap = await getDocs(q);
 
-    let items: CatalogServiceProviderItem[] = snap.docs.map((docSnap) => ({
-      id: docSnap.id,
-      ...(docSnap.data() as Omit<CatalogServiceProviderItem, 'id'>),
-    }));
+    let items: CatalogServiceProviderItem[] = snap.docs
+      .filter((docSnap) => !isDummyProvider(docSnap.id, (docSnap.data() as any)?.name))
+      .map((docSnap) => ({
+        id: docSnap.id,
+        ...(docSnap.data() as Omit<CatalogServiceProviderItem, 'id'>),
+      }));
 
     if (serviceType && serviceType.trim()) {
       const lower = serviceType.toLowerCase().trim();

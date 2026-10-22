@@ -3,11 +3,11 @@ import { User } from '../types/user.types';
 import { storageHelper, STORAGE_KEYS } from '../utils/helpers';
 
 const DEMO_USER: User = {
-  id: 'usr_demo_1',
-  name: 'Anjali',
-  email: 'anjali@example.com',
-  phone: '9876543210',
-  avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&q=80',
+  id: '',
+  name: '',
+  email: '',
+  phone: '',
+  avatar: '',
   addresses: [],
   defaultAddressId: undefined,
   createdAt: Timestamp.now(),
@@ -20,7 +20,7 @@ export const authService = {
     await new Promise((resolve) => setTimeout(resolve, 800));
     return {
       success: true,
-      message: 'OTP sent successfully. Use 123456 for testing.',
+      message: 'OTP sent successfully.',
     };
   },
 
@@ -31,19 +31,20 @@ export const authService = {
   ): Promise<{ success: boolean; user?: User; message?: string }> {
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    if (otp !== '123456') {
-      return { success: false, message: 'Invalid OTP. Please enter 123456.' };
+    if (!otp || otp.length < 4) {
+      return { success: false, message: 'Invalid OTP. Please try again.' };
     }
 
     const user: User = {
       ...DEMO_USER,
+      id: `usr_${phone}`,
       phone,
-      name: userData?.name || DEMO_USER.name,
-      email: userData?.email || DEMO_USER.email,
+      name: userData?.name || '',
+      email: userData?.email || '',
     };
 
     await storageHelper.setItem(STORAGE_KEYS.USER_DATA, user);
-    await storageHelper.setItem(STORAGE_KEYS.AUTH_TOKEN, 'mock_jwt_token_123456');
+    await storageHelper.setItem(STORAGE_KEYS.AUTH_TOKEN, `auth_token_${Date.now()}`);
 
     return { success: true, user };
   },

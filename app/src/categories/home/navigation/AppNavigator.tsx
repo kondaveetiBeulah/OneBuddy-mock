@@ -13,6 +13,7 @@ import { BookingConfirmationScreen } from '../screens/BookingConfirmationScreen'
 import { LiveTrackingScreen } from '../screens/LiveTrackingScreen';
 import { RatingReviewScreen } from '../screens/RatingReviewScreen';
 import { COLORS } from '../theme';
+import PaymentsHost from '@/screens/PaymentsHost';
 
 export type RootStackParamList = {
   MainTabs: { initialTab?: 'Home' | 'Bookings' | 'HelpSupport' | 'Profile' } | undefined;
@@ -27,6 +28,8 @@ export type RootStackParamList = {
   BookingConfirmation: undefined;
   LiveTracking: undefined;
   RatingReview: undefined;
+  Wallet: undefined;
+  SavedPayments: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -65,6 +68,26 @@ export const AppNavigator: React.FC = () => {
         component={RatingReviewScreen}
         options={{ gestureEnabled: false }}
       />
+      <Stack.Screen name="Wallet">
+        {({ navigation }) => (
+          <PaymentsHost
+            visible
+            onClose={() => navigation.goBack()}
+            asModal={false}
+            initialPage="wallet"
+          />
+        )}
+      </Stack.Screen>
+      <Stack.Screen name="SavedPayments">
+        {({ navigation }) => (
+          <PaymentsHost
+            visible
+            onClose={() => navigation.goBack()}
+            asModal={false}
+            initialPage="main"
+          />
+        )}
+      </Stack.Screen>
     </Stack.Navigator>
   );
 };

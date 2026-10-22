@@ -19,6 +19,8 @@ import { Sparkles, Award, ShieldCheck } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { isCategoryDark } from '@/theme/categoryThemeBridge';
 
+import { HorizontalPillsSkeleton } from '@/components/common/skeletons';
+
 interface HomeScreenProps {
   onSelectRestaurant: (restaurantId: string, initialSearchQuery?: string) => void;
   onNavigate: (screen: 'home' | 'restaurant-menu' | 'orders' | 'favorites') => void;
@@ -54,17 +56,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSelectRestaurant }) =>
     }
   };
 
-  const cuisineHighlights = [
-    { name: 'All', image: 'https://cdn-icons-png.flaticon.com/512/3565/3565401.png' },
-    { name: 'Biryani', image: 'https://png.pngtree.com/png-clipart/20250607/original/pngtree-spicy-chicken-biryani-flavorful-rice-png-image_21135573.png' },
-    { name: 'Pure Veg', image: 'https://cdn-icons-png.flaticon.com/512/2808/2808284.png' },
-    { name: 'Pizzas', image: 'https://cdn-icons-png.flaticon.com/512/3595/3595458.png' },
-    { name: 'Seafood', image: 'https://cdn-icons-png.flaticon.com/512/6254/6254256.png' },
-    { name: 'Kebabs', image: 'https://cdn-icons-png.flaticon.com/512/3143/3143643.png' },
-    { name: 'Pan-Asian', image: 'https://cdn-icons-png.flaticon.com/512/3448/3448011.png' },
-    { name: 'Burgers', image: 'https://cdn-icons-png.flaticon.com/512/3075/3075977.png' },
-    { name: 'Desserts', image: 'https://cdn-icons-png.flaticon.com/512/4241/4241664.png' },
-  ];
+  const dynamicCuisines = React.useMemo(() => {
+    if (!restaurants || restaurants.length === 0) return [];
+    const cuisineSet = new Set<string>();
+    restaurants.forEach((r) => {
+      if (Array.isArray(r.cuisine)) {
+        r.cuisine.forEach((c) => {
+          if (c && c.trim()) cuisineSet.add(c.trim());
+        });
+      }
+    });
+    const list = Array.from(cuisineSet);
+    return list.length > 0 ? ['All', ...list] : ['All'];
+  }, [restaurants]);
 
   return (
     <ScrollView ref={scrollViewRef} style={[styles.container, isDark && { backgroundColor: '#000000' }]} showsVerticalScrollIndicator={false}>
@@ -79,46 +83,56 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSelectRestaurant }) =>
           onVoicePress={() => setIsVoiceModalOpen(true)}
         />
 
-        {/* Popular Quick Pills */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.cuisinePillsScroll}
-        >
-          {cuisineHighlights.map((item) => {
-            const isSelected = item.name === 'All' 
-              ? filters.searchQuery === '' 
-              : filters.searchQuery.toLowerCase() === item.name.toLowerCase();
-              
-            return (
-              <TouchableOpacity
-                key={item.name}
-                onPress={() => {
-                  if (item.name === 'All') {
-                    updateFilter('searchQuery', '');
-                  } else {
-                    updateFilter('searchQuery', isSelected ? '' : item.name);
-                  }
-                }}
-                style={[
-                  styles.cuisineChip,
-                  isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.15)' },
-                  isSelected && (isDark ? { backgroundColor: '#FFFFFF', borderColor: '#FFFFFF' } : styles.cuisineChipActive),
-                ]}
-              >
-                <Text
+        {/* Popular Quick Pills: animated grey shimmer skeletons when unavailable, genuine cuisines when loaded */}
+        {dynamicCuisines.length === 0 ? (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.cuisinePillsScroll}
+          >
+            <HorizontalPillsSkeleton isDark={isDark} count={4} />
+          </ScrollView>
+        ) : (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.cuisinePillsScroll}
+          >
+            {dynamicCuisines.map((cuisineName) => {
+              const isSelected = cuisineName === 'All' 
+                ? filters.searchQuery === '' 
+                : filters.searchQuery.toLowerCase() === cuisineName.toLowerCase();
+                
+              return (
+                <TouchableOpacity
+                  key={cuisineName}
+                  onPress={() => {
+                    if (cuisineName === 'All') {
+                      updateFilter('searchQuery', '');
+                    } else {
+                      updateFilter('searchQuery', isSelected ? '' : cuisineName);
+                    }
+                  }}
                   style={[
-                    styles.cuisineChipText,
-                    isDark && { color: '#FFFFFF' },
-                    isSelected && { color: isDark ? '#000000' : '#111827', fontWeight: 'bold' },
+                    styles.cuisineChip,
+                    isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.15)' },
+                    isSelected && (isDark ? { backgroundColor: '#FFFFFF', borderColor: '#FFFFFF' } : styles.cuisineChipActive),
                   ]}
                 >
-                  {item.name}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
+                  <Text
+                    style={[
+                      styles.cuisineChipText,
+                      isDark && { color: '#FFFFFF' },
+                      isSelected && { color: isDark ? '#000000' : '#111827', fontWeight: 'bold' },
+                    ]}
+                  >
+                    {cuisineName}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        )}
       </View>
 
       {/* 3. Section Title & Horizontal Filters */}
@@ -130,9 +144,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSelectRestaurant }) =>
           <Text style={[styles.sectionTitle, isDark && { color: '#FFFFFF' }]}>Curated Partner Restaurants</Text>
         </View>
 
-        <Text style={[styles.restaurantCountText, isDark && { color: '#A3E635' }]}>
-          {filteredRestaurants.length} spots
-        </Text>
+        {restaurants.length > 0 && (
+          <Text style={[styles.restaurantCountText, isDark && { color: '#A3E635' }]}>
+            {filteredRestaurants.length} spots
+          </Text>
+        )}
       </View>
 
       {/* Horizontal Swipe Filter Chips */}
