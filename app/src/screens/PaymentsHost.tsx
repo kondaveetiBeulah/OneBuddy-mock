@@ -3,6 +3,7 @@ import { Modal, StatusBar, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PaymentsScreen, type PaymentsScreenRef } from '../native/screens/Payments';
+import type { PageName } from '../native/screens/Payments/PaymentsScreen';
 import type { SavedCard, UpiHandle } from '../native/screens/Payments/types';
 import { useAuth } from '../firebase/context/AuthContext';
 import { useAppTheme } from '../theme/ThemeContext';
@@ -19,6 +20,7 @@ interface PaymentsHostProps {
   visible?: boolean;
   onClose: () => void;
   asModal?: boolean;
+  initialPage?: PageName;
 }
 
 /**
@@ -36,6 +38,7 @@ export default function PaymentsHost({
   visible = true,
   onClose,
   asModal = false,
+  initialPage = 'main',
 }: PaymentsHostProps): React.JSX.Element {
   const { user, enabled } = useAuth();
   const { colors: themeColors, scheme } = useAppTheme();
@@ -123,6 +126,7 @@ export default function PaymentsHost({
       <PaymentsScreen
         ref={paymentsRef}
         onBack={onClose}
+        initialPage={initialPage}
         initialWalletBalance={walletBalance}
         initialCards={cards}
         initialUpiHandles={upiHandles}

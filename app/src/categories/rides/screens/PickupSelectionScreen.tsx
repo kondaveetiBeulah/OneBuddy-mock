@@ -46,12 +46,12 @@ export const PickupSelectionScreen = ({
 
   const pickupLocation = {
     id: passedPickup?.id || '1',
-    latitude: passedPickup?.latitude || 17.385044,
-    longitude: passedPickup?.longitude || 78.486671,
-    title: passedPickup?.title || 'Kshatriya Foods',
+    latitude: passedPickup?.latitude || 0,
+    longitude: passedPickup?.longitude || 0,
+    title: passedPickup?.title || 'Pickup Location',
     subtitle: passedPickup?.subtitle || 'Selected pickup',
-    description: passedPickup?.description || passedPickup?.title || 'VIP Hills, Jaihind Enclave, Madhapur, Hyderabad',
-    fare: vehicle?.baseFare ?? (passedPickup?.fare || 105),
+    description: passedPickup?.description || passedPickup?.title || '',
+    fare: vehicle?.baseFare ?? (passedPickup?.fare || 0),
   };
 
   const handleConfirmPickup = () => {

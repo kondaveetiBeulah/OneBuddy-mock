@@ -46,8 +46,8 @@ export const SetPriceScreen = ({ route, navigation, onBook, onBack }: SetPricePr
     }
   };
 
-  const pickupTitle = pickup?.title || 'Kshatriya Foods';
-  const destinationTitle = destination || 'Bachpan Play School, Chintal';
+  const pickupTitle = pickup?.title || 'Pickup Location';
+  const destinationTitle = destination || 'Destination';
 
   const pickupCoord = {
     latitude: pickup?.latitude || 17.355,

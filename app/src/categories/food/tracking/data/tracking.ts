@@ -24,37 +24,33 @@ export interface SheetOption {
 }
 
 export const ORDER = {
-  id: '#45231',
-  restaurant: 'Spice Route Kitchen',
-  itemCount: 2,
-  total: '₹486',
-  paidWith: 'OneBuddy Wallet',
-  arrivalTime: '8:42 PM',
-  deliveredTime: '8:41 PM',
+  id: '',
+  restaurant: '',
+  itemCount: 0,
+  total: '',
+  paidWith: '',
+  arrivalTime: '',
+  deliveredTime: '',
 };
 
 export const LEGS: [Leg, Leg] = [
   {
     kind: 'Pickup',
-    name: 'Spice Route Kitchen',
-    address: 'Road No. 12, Banjara Hills',
-    pendingStamp: 'Preparing',
-    doneStamp: '8:18 PM',
+    name: '',
+    address: '',
+    pendingStamp: '',
+    doneStamp: '',
   },
   {
     kind: 'Drop',
-    name: 'Home · Ravi',
-    address: 'Flat 402, Lotus Residency, Jubilee Hills',
-    pendingStamp: '8:42 PM',
-    doneStamp: '8:41 PM',
+    name: '',
+    address: '',
+    pendingStamp: '',
+    doneStamp: '',
   },
 ];
 
-export const ORDER_ITEMS: OrderItem[] = [
-  { qty: 1, name: 'Hyderabadi dum biryani', note: 'Boneless · extra raita', price: '₹329' },
-  { qty: 1, name: 'Double ka meetha', note: 'Serves one', price: '₹129' },
-  { qty: 1, name: 'Delivery & taxes', price: '₹28' },
-];
+export const ORDER_ITEMS: OrderItem[] = [];
 
 export const HELP_OPTIONS: SheetOption[] = [
   { title: 'Chat with support', subtitle: 'Replies in about 2 minutes', toast: 'Opening chat with support…' },

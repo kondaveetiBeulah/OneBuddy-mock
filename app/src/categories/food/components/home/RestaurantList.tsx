@@ -9,6 +9,7 @@ import { useFoodData } from '../../context/FoodDataContext';
 import { useNetwork } from '@/context/NetworkContext';
 import { NetworkErrorState } from '@/components/NetworkErrorState';
 import { isCategoryDark } from '@/theme/categoryThemeBridge';
+import { RestaurantCardSkeleton } from '@/components/common/skeletons';
 
 interface RestaurantListProps {
   restaurants: Restaurant[];
@@ -21,10 +22,20 @@ export const RestaurantList: React.FC<RestaurantListProps> = ({
 }) => {
   const isDark = isCategoryDark();
   const { resetFilters } = useFilter();
-  const { error, refresh } = useFoodData();
+  const { error, refresh, isLoading, restaurants: allRestaurants } = useFoodData();
   const { isConnected } = useNetwork();
 
   if (restaurants.length === 0) {
+    if (isLoading || allRestaurants.length === 0) {
+      return (
+        <View style={styles.listContainer}>
+          <RestaurantCardSkeleton isDark={isDark} />
+          <RestaurantCardSkeleton isDark={isDark} />
+          <RestaurantCardSkeleton isDark={isDark} />
+        </View>
+      );
+    }
+
     if (!isConnected || error) {
       return (
         <NetworkErrorState

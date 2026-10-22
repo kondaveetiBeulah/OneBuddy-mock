@@ -90,24 +90,7 @@ async function createRideDirectlyInFirestore(params: RequestRideParams) {
     await setDoc(rideRef, rideRecord);
     console.log(`[rideService] Direct Firestore write successful: rides/${rideId}`);
 
-    // If user is logged in, also project to users/{userId}/orders/{orderId}
-    if (user?.uid) {
-      const projectionRef = doc(db, 'users', user.uid, 'orders', orderId);
-      await setDoc(projectionRef, {
-        id: orderId,
-        rideId,
-        category: 'rides',
-        icon: '🚗',
-        title: `${params.vehicleType.toUpperCase()} Ride`,
-        status: 'Searching Driver',
-        statusKind: 'ongoing',
-        subtitle: `${pickupCoord.label} → ${destinationCoord.label}`,
-        actions: ['Track', 'Cancel'],
-        group: 'Ongoing',
-        totalMinor: quotedFareMinor,
-        updatedAt: serverTimestamp(),
-      });
-    }
+
   } catch (firestoreErr) {
     console.warn('[rideService] Direct Firestore write note (using simulated fallback):', firestoreErr);
   }

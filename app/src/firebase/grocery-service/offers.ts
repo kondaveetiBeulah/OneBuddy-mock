@@ -25,6 +25,13 @@ export function mapOffer(docId: string, data: any): Offer {
   };
 }
 
+export function isDummyOffer(docId: string, data: any): boolean {
+  if (data?.isDummy === true || data?.isMock === true) return true;
+  const lowerId = docId.toLowerCase();
+  if (lowerId.startsWith('off_') || lowerId.startsWith('sample_') || lowerId.startsWith('mock_')) return true;
+  return false;
+}
+
 /* ─────────────── One-Time Fetchers (Read-Only) ─────────────── */
 
 export async function fetchOffers(): Promise<Offer[]> {
@@ -38,7 +45,9 @@ export async function fetchOffers(): Promise<Offer[]> {
       where('active', '==', true)
     );
     const snap = await getDocs(q);
-    return snap.docs.map((d) => mapOffer(d.id, d.data()));
+    return snap.docs
+      .filter((d) => !isDummyOffer(d.id, d.data()))
+      .map((d) => mapOffer(d.id, d.data()));
   } catch (err) {
     console.error('[GroceryBackend] Error fetching offers:', err);
     return [];
@@ -51,6 +60,9 @@ export async function fetchOfferById(offerId: string): Promise<Offer | null> {
     const ref = doc(db, 'catalogGroceryOffers', offerId);
     const snap = await getDoc(ref);
     if (snap.exists()) {
+      if (isDummyOffer(snap.id, snap.data())) {
+        return null;
+      }
       return mapOffer(snap.id, snap.data());
     }
   } catch (err) {
@@ -76,7 +88,9 @@ export function subscribeOffers(
   return onSnapshot(
     q,
     (snap) => {
-      const offers = snap.docs.map((d) => mapOffer(d.id, d.data()));
+      const offers = snap.docs
+        .filter((d) => !isDummyOffer(d.id, d.data()))
+        .map((d) => mapOffer(d.id, d.data()));
       onData(offers);
     },
     (err) => {

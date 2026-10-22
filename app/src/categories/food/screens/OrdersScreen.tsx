@@ -48,105 +48,22 @@ export const OrdersScreen: React.FC<OrdersScreenProps> = ({
     <ScrollView style={[styles.container, isDark && { backgroundColor: '#000000' }]} showsVerticalScrollIndicator={false}>
       {/* Top Header */}
       <View style={styles.header}>
-        <View style={styles.headIcon}>
-          <ClipboardList size={18} color="#65A30D" />
-        </View>
         <View>
           <Text style={[styles.title, isDark && { color: '#FFFFFF' }]}>Your Orders & Tracking</Text>
           <Text style={[styles.subtitle, isDark && { color: '#E5E7EB' }]}>Track live deliveries and re-order</Text>
         </View>
       </View>
 
-      {orders.length === 0 ? (
-        <View style={[styles.emptyCard, isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.15)' }]}>
-          <Text style={{ fontSize: 44, marginBottom: 12 }}>📦</Text>
-          <Text style={[styles.emptyTitle, isDark && { color: '#FFFFFF' }]}>No Orders Placed Yet</Text>
-          <Text style={[styles.emptyDesc, isDark && { color: '#E5E7EB' }]}>
-            Discover delicious dishes from our 6 partner restaurants and order now!
-          </Text>
-          <TouchableOpacity onPress={onNavigateHome} style={[styles.exploreBtn, isDark && { backgroundColor: '#FFFFFF' }]}>
-            <Text style={[styles.exploreText, isDark && { color: '#000000' }]}>Browse Restaurants</Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <View style={styles.ordersList}>
-          {orders.map((order, idx) => {
-            const isLive = idx === 0;
-            return (
-              <View
-                key={order.orderId}
-                style={[
-                  styles.orderCard,
-                  isLive && styles.liveOrderCard,
-                  isDark && { backgroundColor: '#000000', borderColor: isLive ? '#A3E635' : 'rgba(255, 255, 255, 0.15)' },
-                ]}
-              >
-                {/* Restaurant Head */}
-                <View style={styles.orderHead}>
-                  <View style={{ flex: 1 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                      <Text style={[styles.restName, isDark && { color: '#FFFFFF' }]}>{order.restaurant.name}</Text>
-                      {isLive ? (
-                        <View style={styles.liveBadge}>
-                          <Text style={styles.liveBadgeText}>LIVE ORDER</Text>
-                        </View>
-                      ) : null}
-                    </View>
-                    <Text style={[styles.orderMeta, isDark && { color: '#E5E7EB' }]}>
-                      Order #{order.orderId} • {order.placedAt}
-                    </Text>
-                  </View>
+      <View style={[styles.emptyCard, isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.15)' }]}>
+        <Text style={[styles.emptyTitle, isDark && { color: '#FFFFFF' }]}>No orders found</Text>
+        <Text style={[styles.emptyDesc, isDark && { color: '#E5E7EB' }]}>
+          Discover delicious dishes from our 6 partner restaurants and order now!
+        </Text>
+        <TouchableOpacity onPress={onNavigateHome} style={[styles.exploreBtn, isDark && { backgroundColor: '#FFFFFF' }]}>
+          <Text style={[styles.exploreText, isDark && { color: '#000000' }]}>Browse Restaurants</Text>
+        </TouchableOpacity>
+      </View>
 
-                  <Text style={[styles.orderTotal, isDark && { color: '#A3E635' }]}>₹{order.finalTotal}</Text>
-                </View>
-
-                {/* Live Status Tracker */}
-                {isLive ? (
-                  <View style={[styles.liveBanner, isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.2)' }]}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                      <Bike size={16} color="#0284C7" />
-                      <View>
-                        <Text style={[styles.liveBannerTitle, isDark && { color: '#FFFFFF' }]}>Rider on the Way</Text>
-                        <Text style={[styles.liveBannerSub, isDark && { color: '#E5E7EB' }]}>Arriving in ~{order.estimatedDelivery}</Text>
-                      </View>
-                    </View>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                      <Clock size={12} color="#34D399" />
-                      <Text style={styles.liveTime}>On Time</Text>
-                    </View>
-                  </View>
-                ) : null}
-
-                {/* Items */}
-                <View style={[styles.itemsList, isDark && { borderTopColor: 'rgba(255, 255, 255, 0.1)' }]}>
-                  {order.items.map((i) => (
-                    <View key={i.item.id} style={styles.itemRow}>
-                      <Text style={[styles.itemText, isDark && { color: '#E5E7EB' }]}>{i.quantity}x {i.item.name}</Text>
-                      <Text style={[styles.itemPrice, isDark && { color: '#FFFFFF' }]}>₹{i.item.price * i.quantity}</Text>
-                    </View>
-                  ))}
-                </View>
-
-                {/* Footer Address & Reorder */}
-                <View style={[styles.orderFooter, isDark && { borderTopColor: 'rgba(255, 255, 255, 0.1)' }]}>
-                  <View style={styles.addressRow}>
-                    <MapPin size={12} color="#65A30D" />
-                    <Text style={[styles.addressText, isDark && { color: '#E5E7EB' }]} numberOfLines={1}>{order.deliveryAddress}</Text>
-                  </View>
-
-                  <TouchableOpacity
-                    onPress={() => handleReorder(order.orderId)}
-                    style={[styles.reorderBtn, isDark && { backgroundColor: '#000000', borderColor: 'rgba(255, 255, 255, 0.2)' }]}
-                  >
-                    <RotateCw size={12} color={isDark ? '#FFFFFF' : '#4D7C0F'} />
-                    <Text style={[styles.reorderText, isDark && { color: '#FFFFFF' }]}>Re-Order</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            );
-          })}
-        </View>
-      )}
     </ScrollView>
   );
 };

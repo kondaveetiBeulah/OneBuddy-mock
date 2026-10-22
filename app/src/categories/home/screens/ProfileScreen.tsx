@@ -32,6 +32,7 @@ import { Card } from '../components/common/Card';
 import { Badge } from '../components/common/Badge';
 import { Button } from '../components/common/Button';
 import { useHomeTheme, COLORS, RADII, SPACING, SHADOWS } from '../theme';
+import PaymentsHost from '@/screens/PaymentsHost';
 
 interface ProfileScreenProps {
   navigation: any;
@@ -45,9 +46,9 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation, onGoHo
   const profileCtx = useProfile();
 
   // Profile data from global profile context with fallbacks
-  const [userName, setUserName] = useState(profileCtx?.profile?.name || 'Arjun Reddy');
-  const [userPhone, setUserPhone] = useState(profileCtx?.profile?.phone || '+91 98765 43210');
-  const [userEmail, setUserEmail] = useState(profileCtx?.profile?.email || 'arjun.reddy@example.com');
+  const [userName, setUserName] = useState(profileCtx?.profile?.name || '');
+  const [userPhone, setUserPhone] = useState(profileCtx?.profile?.phone || '');
+  const [userEmail, setUserEmail] = useState(profileCtx?.profile?.email || '');
 
   // Edit Profile Modal state
   const [editModalVisible, setEditModalVisible] = useState(false);
@@ -58,6 +59,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation, onGoHo
 
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [smsUpdatesEnabled, setSmsUpdatesEnabled] = useState(true);
+  const [paymentsModalPage, setPaymentsModalPage] = useState<'wallet' | 'main' | null>(null);
 
   const handleOpenEdit = () => {
     setEditNameInput(userName);
@@ -126,14 +128,26 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation, onGoHo
           subtitle: 'Available balance: ₹250.00',
           icon: <Wallet size={18} color={COLORS.secondary} />,
           badge: '₹250 Balance',
-          onPress: () => {},
+          onPress: () => {
+            if (navigation && typeof navigation.navigate === 'function') {
+              navigation.navigate('Wallet');
+            } else {
+              setPaymentsModalPage('wallet');
+            }
+          },
         },
         {
           id: 'payment',
           title: 'Saved Payment Methods',
           subtitle: 'UPI, Credit/Debit cards & net banking',
           icon: <CreditCard size={18} color={COLORS.accent} />,
-          onPress: () => {},
+          onPress: () => {
+            if (navigation && typeof navigation.navigate === 'function') {
+              navigation.navigate('SavedPayments');
+            } else {
+              setPaymentsModalPage('main');
+            }
+          },
         },
       ],
     },
@@ -368,6 +382,15 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation, onGoHo
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      {paymentsModalPage && (
+        <PaymentsHost
+          visible={true}
+          asModal={true}
+          initialPage={paymentsModalPage}
+          onClose={() => setPaymentsModalPage(null)}
+        />
+      )}
     </SafeAreaView>
   );
 };

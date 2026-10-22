@@ -13,13 +13,13 @@ export default function OrderCard({ order }: OrderCardProps) {
         <Text style={{ fontSize: 28 }}>🍝</Text>
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={styles.name}>{order?.restaurantName || "The Good Bowl"}</Text>
-        <Text style={styles.meta}>Order ID: {order?.id || "#FD12345"}</Text>
-        <Text style={styles.meta}>{order?.date || "May 27, 2024 • 1:15 PM"}</Text>
+        <Text style={styles.name}>{order?.restaurantName || ""}</Text>
+        {order?.id ? <Text style={styles.meta}>Order ID: {order.id}</Text> : null}
+        {order?.date ? <Text style={styles.meta}>{order.date}</Text> : null}
       </View>
       <View style={{ alignItems: "flex-end" }}>
-        <Text style={styles.delivered}>Delivered</Text>
-        <Text style={styles.price}>₹{order?.amount || 249}</Text>
+        <Text style={styles.delivered}>{order?.status || "Delivered"}</Text>
+        <Text style={styles.price}>₹{order?.amount || 0}</Text>
       </View>
     </View>
   );

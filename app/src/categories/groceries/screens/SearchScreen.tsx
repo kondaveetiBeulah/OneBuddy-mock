@@ -30,25 +30,11 @@ type SearchScreenProps = {
   route?: RouteProp<RootStackParamList, 'Search'>;
 };
 
-const POPULAR_SEARCHES = [
-  'Milk',
-  'Tomatoes',
-  'Basmati Rice',
-  'Bananas',
-  'Atta',
-  'Tea',
-  'Butter',
-  'Chips',
-];
-
 export const SearchScreen: React.FC<SearchScreenProps> = ({ navigation, route }) => {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Product[]>([]);
-  const [recentSearches, setRecentSearches] = useState<string[]>([
-    'Fresh Apples',
-    'Amul Milk',
-    'Fortune Oil',
-  ]);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [popularSearches, setPopularSearches] = useState<string[]>([]);
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState(false);
   const { addToCart, getCartCount } = useCart();
@@ -56,6 +42,18 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({ navigation, route })
   const groceryColors = useGroceryColors();
   const isDark = isCategoryDark() || groceryColors.cardBackground === '#000000';
   const dynStyles = getStyles(isDark);
+
+  useEffect(() => {
+    let isMounted = true;
+    productService.getCategories().then((cats) => {
+      if (isMounted && cats && cats.length > 0) {
+        setPopularSearches(cats.map((c) => c.name).filter(Boolean).slice(0, 8));
+      }
+    }).catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (query.trim().length > 0) {
@@ -149,22 +147,36 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({ navigation, route })
             </View>
           )}
 
-          {/* Popular Searches */}
-          <View style={dynStyles.section}>
-            <Text style={dynStyles.sectionTitle}>Popular Searches</Text>
-            <View style={dynStyles.chipContainer}>
-              {POPULAR_SEARCHES.map((chip, idx) => (
-                <TouchableOpacity
-                  key={idx}
-                  style={dynStyles.chip}
-                  onPress={() => handleSelectSearchTerm(chip)}
-                >
-                  <Ionicons name="trending-up-outline" size={14} color={isDark ? '#FFFFFF' : colors.primary} />
-                  <Text style={dynStyles.chipText}>{chip}</Text>
-                </TouchableOpacity>
-              ))}
+          {/* Popular Categories */}
+          {popularSearches.length > 0 && (
+            <View style={dynStyles.section}>
+              <Text style={dynStyles.sectionTitle}>Popular Categories</Text>
+              <View style={dynStyles.chipContainer}>
+                {popularSearches.map((chip, idx) => (
+                  <TouchableOpacity
+                    key={idx}
+                    style={dynStyles.chip}
+                    onPress={() => handleSelectSearchTerm(chip)}
+                  >
+                    <Ionicons name="trending-up-outline" size={14} color={isDark ? '#FFFFFF' : colors.primary} />
+                    <Text style={dynStyles.chipText}>{chip}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
-          </View>
+          )}
+
+          {recentSearches.length === 0 && popularSearches.length === 0 && (
+            <View style={{ paddingVertical: 40, alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="search-outline" size={40} color={isDark ? '#6B7280' : colors.textMuted} />
+              <Text style={{ marginTop: 12, fontSize: 14, fontWeight: '600', color: isDark ? '#E5E7EB' : colors.text }}>
+                Search Groceries
+              </Text>
+              <Text style={{ marginTop: 4, fontSize: 12, color: isDark ? '#9CA3AF' : colors.textMuted }}>
+                Search by product name, category, or brand
+              </Text>
+            </View>
+          )}
         </ScrollView>
       ) : searching ? (
         <LoadingState

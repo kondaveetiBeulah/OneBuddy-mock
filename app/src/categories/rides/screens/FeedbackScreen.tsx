@@ -38,14 +38,14 @@ export interface FeedbackScreenProps {
 }
 
 const DEFAULT_RIDE: FeedbackRideDetails = {
-  riderName: 'Aarav Sharma',
-  vehicleNumber: 'TS 09 EA 4821',
+  riderName: '',
+  vehicleNumber: '',
   vehicleType: 'cab',
-  pickup: '1373, Madhapur, Hyderabad',
-  dropOff: 'Ammerpet, Hyderabad',
-  distance: '6.8 km',
-  duration: '1 min',
-  amount: 140,
+  pickup: '',
+  dropOff: '',
+  distance: '',
+  duration: '',
+  amount: 0,
 };
 
 export const STAR_LABELS: Record<number, string> = {
@@ -185,13 +185,13 @@ function CompleteStep({
           <Ionicons name="receipt-outline" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
           <Text style={styles.sectionTitle}>Ride Summary</Text>
         </View>
-        <DetailRow label="Rider Name" value={ride.riderName || 'Sai Krishna'} isDark={isDark} />
-        <DetailRow label="Vehicle Number" value={ride.vehicleNumber || 'AP 16 TG 6843'} isDark={isDark} />
-        <DetailRow label="Vehicle Type" value={ride.vehicleType || 'Cab'} isDark={isDark} />
-        <DetailRow label="Pickup Point" value={ride.pickup || '1373, Madhapur, Hyderabad'} isDark={isDark} />
-        <DetailRow label="Drop Destination" value={ride.dropOff || 'Ammerpet, Hyderabad'} isDark={isDark} />
-        <DetailRow label="Trip Distance" value={ride.distance || '6.8 km'} isDark={isDark} />
-        <DetailRow label="Travel Duration" value={ride.duration || '10 sec'} isDark={isDark} />
+        <DetailRow label="Rider Name" value={ride.riderName || 'Driver'} isDark={isDark} />
+        <DetailRow label="Vehicle Number" value={ride.vehicleNumber || 'N/A'} isDark={isDark} />
+        <DetailRow label="Vehicle Type" value={ride.vehicleType || 'Ride'} isDark={isDark} />
+        <DetailRow label="Pickup Point" value={ride.pickup || 'Pickup Location'} isDark={isDark} />
+        <DetailRow label="Drop Destination" value={ride.dropOff || 'Destination'} isDark={isDark} />
+        <DetailRow label="Trip Distance" value={ride.distance || 'N/A'} isDark={isDark} />
+        <DetailRow label="Travel Duration" value={ride.duration || 'N/A'} isDark={isDark} />
       </View>
 
       {/* Pay to ride display */}
@@ -477,7 +477,7 @@ function RiderCard({
         <View style={styles.riderCardInfo}>
           <View style={styles.riderNameRow}>
             <Text style={[styles.riderNameText, isDark && { color: '#F1F1EC' }]}>
-              {ride.riderName || 'Aarav Sharma'}
+              {ride.riderName || 'Driver'}
             </Text>
             <View style={styles.verifiedPartnerBadge}>
               <Ionicons name="checkmark-circle" size={12} color="#16A34A" />
@@ -485,7 +485,7 @@ function RiderCard({
             </View>
           </View>
           <Text style={[styles.riderSubText, isDark && { color: '#9BA08F' }]}>
-            {ride.vehicleNumber || 'TS 09 EA 4821'} · {ride.vehicleType || 'Cab'}
+            {ride.vehicleNumber ? `${ride.vehicleNumber} · ` : ''}{ride.vehicleType || 'Ride'}
           </Text>
         </View>
         <View style={[styles.farePill, isDark && { backgroundColor: 'rgba(84, 183, 19, 0.18)' }]}>
@@ -503,10 +503,10 @@ function RiderCard({
         </View>
         <View style={styles.routeTextCol}>
           <Text style={[styles.routeLocationText, isDark && { color: '#F1F1EC' }]} numberOfLines={1}>
-            {ride.pickup || '1373, Madhapur, Hyderabad'}
+            {ride.pickup || 'Pickup Location'}
           </Text>
           <Text style={[styles.routeLocationText, isDark && { color: '#F1F1EC' }]} numberOfLines={1}>
-            {ride.dropOff || 'Ammerpet, Hyderabad'}
+            {ride.dropOff || 'Destination'}
           </Text>
         </View>
       </View>

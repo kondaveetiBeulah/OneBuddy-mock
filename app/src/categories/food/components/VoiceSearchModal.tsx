@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -149,22 +149,6 @@ export interface VoiceSearchModalProps {
   restaurants?: Restaurant[];
 }
 
-const SAMPLE_FOOD_SUGGESTIONS = [
-  { label: 'Biryani', type: 'dish', icon: 'restaurant-outline' },
-  { label: 'Paradise Restaurant', type: 'restaurant', icon: 'business-outline' },
-  { label: 'Mehfil', type: 'restaurant', icon: 'business-outline' },
-  { label: 'Pizza', type: 'dish', icon: 'pizza-outline' },
-  { label: 'Bawarchi', type: 'restaurant', icon: 'business-outline' },
-  { label: 'Biryani from Mehfil', type: 'combo', icon: 'sparkles-outline' },
-  { label: 'Butter Chicken', type: 'dish', icon: 'fast-food-outline' },
-  { label: 'Pizza House', type: 'restaurant', icon: 'business-outline' },
-  { label: 'Paneer Butter Masala', type: 'dish', icon: 'restaurant-outline' },
-  { label: 'Blue Sea Restaurant', type: 'restaurant', icon: 'business-outline' },
-  { label: 'Burgers', type: 'dish', icon: 'fast-food-outline' },
-  { label: 'Dosa', type: 'dish', icon: 'restaurant-outline' },
-  { label: 'Biryani from Paradise', type: 'combo', icon: 'sparkles-outline' },
-  { label: 'Shawarma', type: 'dish', icon: 'fast-food-outline' },
-];
 
 export const VoiceSearchModal: React.FC<VoiceSearchModalProps> = ({
   visible,
@@ -471,7 +455,24 @@ export const VoiceSearchModal: React.FC<VoiceSearchModalProps> = ({
     onResult(suggestion);
   };
 
-  const filteredSuggestions = SAMPLE_FOOD_SUGGESTIONS.filter((item) => {
+  type FoodSuggestion = { label: string; type: 'dish' | 'restaurant' | 'combo'; icon: string };
+  const foodSuggestions = useMemo<FoodSuggestion[]>(() => {
+    if (!restaurants || restaurants.length === 0) return [];
+    const list: FoodSuggestion[] = [];
+    restaurants.forEach((r) => {
+      list.push({ label: r.name, type: 'restaurant', icon: 'business-outline' });
+      r.menu?.slice(0, 3).forEach((m) => {
+        list.push({
+          label: m.name,
+          type: m.isCombo ? 'combo' : 'dish',
+          icon: m.isCombo ? 'sparkles-outline' : 'restaurant-outline',
+        });
+      });
+    });
+    return list;
+  }, [restaurants]);
+
+  const filteredSuggestions = foodSuggestions.filter((item: FoodSuggestion) => {
     if (selectedFilter === 'dishes') return item.type === 'dish' || item.type === 'combo';
     if (selectedFilter === 'restaurants') return item.type === 'restaurant';
     return true;

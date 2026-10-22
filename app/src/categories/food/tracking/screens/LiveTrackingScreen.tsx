@@ -196,13 +196,13 @@ export default function LiveTrackingScreen({
   // Driver details
   const driver: DriverProfile = useMemo(
     () => ({
-      name: orderDetails?.driver?.name ?? 'Imran Khan',
-      avatar: orderDetails?.driver?.avatar ?? 'IK',
-      phone: orderDetails?.driver?.phone ?? '+91 98765 43210',
-      rating: orderDetails?.driver?.rating ?? 4.9,
-      completedDeliveries: orderDetails?.driver?.completedDeliveries ?? 1280,
-      vehicleModel: orderDetails?.driver?.vehicleModel ?? 'Honda Activa 6G',
-      vehiclePlate: orderDetails?.driver?.vehiclePlate ?? 'TS 09 EA 4412',
+      name: orderDetails?.driver?.name ?? 'Assigning driver...',
+      avatar: orderDetails?.driver?.avatar ?? '',
+      phone: orderDetails?.driver?.phone ?? '',
+      rating: orderDetails?.driver?.rating ?? 0,
+      completedDeliveries: orderDetails?.driver?.completedDeliveries ?? 0,
+      vehicleModel: orderDetails?.driver?.vehicleModel ?? '',
+      vehiclePlate: orderDetails?.driver?.vehiclePlate ?? '',
     }),
     [orderDetails],
   );

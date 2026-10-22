@@ -47,6 +47,21 @@ export {
   FALLBACK_CATEGORY_PRODUCT_MAP,
 };
 
+export const DUMMY_PROVIDER_IDS = new Set([
+  'aditi', 'ananya', 'arjun', 'isha', 'kabir', 'meera', 'neel',
+  'nurse-deepa', 'nurse-kavita', 'nurse-rajesh', 'nurse-sunita',
+  'priya', 'rohan', 'rohit', 'sana', 'vikram',
+  'hs-1', 'hs-2', 'hs-3', 'pro-1', 'pro-2', 'pro-3',
+]);
+
+export function isDummyProvider(id: string, name?: string): boolean {
+  if (DUMMY_PROVIDER_IDS.has(id)) return true;
+  if (/^(aditi|ananya|arjun|isha|kabir|meera|neel|nurse-|priya|pro-|rohan|rohit|sana|vikram|hs-)/i.test(id)) return true;
+  if (name && /^(Dr\.\s*(Aditi|Ananya|Arjun|Isha|Kabir|Meera|Neel|Priya|Rohan|Rohit|Sana|Vikram)|Nurse\s*(Deepa|Kavitha|Rajesh|Sunita)|Ramesh Electric|QuickClean|Praveen Plumbing|Rajesh Kumar|Vikram Shinde|Anil Verma)/i.test(name)) return true;
+  return false;
+}
+
+
 export interface HospitalCatalogItem {
   id: string;
   name: string;
@@ -138,6 +153,10 @@ export interface CareProviderItem {
   rating: number;
   ratingCount: number;
   serviceArea: string;
+  specialty?: string;
+  avatar?: string;
+  issueIds?: string[];
+  location?: string;
 }
 
 export interface BookAppointmentParams {
@@ -255,21 +274,21 @@ export async function fetchHospitals(cityKey: string = 'hyderabad'): Promise<Hos
       if (res.data?.hospitals && res.data.hospitals.length > 0) {
         return res.data.hospitals.map((h: any) => ({
           id: h.id,
-          name: h.name,
+          name: h.name || '',
           cityKey: cityKey,
           description: h.description || '',
-          coverImagePath: h.imageUrl || h.coverImagePath,
-          rating: h.rating || 4.8,
-          ratingCount: h.ratingCount || 1000,
-          departments: h.departments || ['General OPD', 'Cardiology', 'Orthopedics'],
+          coverImagePath: h.imageUrl || h.coverImagePath || '',
+          rating: typeof h.rating === 'number' ? h.rating : 0,
+          ratingCount: typeof h.ratingCount === 'number' ? h.ratingCount : 0,
+          departments: Array.isArray(h.departments) ? h.departments : (Array.isArray(h.services) ? h.services : []),
           address:
             typeof h.address === 'object'
-              ? `${h.address?.line1 || ''}, ${h.address?.area || ''}, ${h.address?.city || 'Hyderabad'}`
-              : h.address || 'Hyderabad',
-          opFee: h.opFee || h.consultationFee || 600,
-          specialtyTag: h.departments?.slice(0, 3).join(' • ') || 'Multi-Specialty OPD',
-          distance: h.distance || '2.5 km away',
-          discountBadge: 'Flat 20% OFF on OP Booking',
+              ? `${h.address?.line1 || ''}, ${h.address?.area || ''}, ${h.address?.city || ''}`
+              : h.address || '',
+          opFee: h.opFee || h.consultationFee || 0,
+          specialtyTag: Array.isArray(h.departments) ? h.departments.slice(0, 3).join(' • ') : '',
+          distance: h.distance || '',
+          discountBadge: h.discountBadge || '',
         }));
       }
     } catch (err: any) {
@@ -291,22 +310,22 @@ export async function fetchHospitals(cityKey: string = 'hyderabad'): Promise<Hos
           const addrStr =
             typeof data.address === 'object'
               ? `${data.address.line1 || ''}, ${data.address.area || ''}, ${data.address.city || ''}`
-              : data.address || 'Hyderabad';
+              : data.address || '';
 
           return {
             id: docSnap.id,
-            name: data.name || 'Hospital',
+            name: data.name || '',
             cityKey: data.cityKey || 'hyderabad',
             description: data.description || '',
-            coverImagePath: data.coverImagePath,
-            rating: data.rating || 4.8,
-            ratingCount: data.ratingCount || 1000,
-            departments: data.services || ['General OPD', 'Cardiology', 'Orthopedics'],
+            coverImagePath: data.coverImagePath || data.imageUrl || '',
+            rating: typeof data.rating === 'number' ? data.rating : 0,
+            ratingCount: typeof data.ratingCount === 'number' ? data.ratingCount : 0,
+            departments: Array.isArray(data.services) ? data.services : (Array.isArray(data.departments) ? data.departments : []),
             address: addrStr,
-            opFee: Math.round((data.opFeeMinor || 80000) / 100),
-            specialtyTag: data.services?.slice(0, 3).join(' • ') || 'Multi-Specialty OPD',
-            distance: '2.5 km away',
-            discountBadge: 'Flat 20% OFF on OP Booking',
+            opFee: data.opFeeMinor ? Math.round(data.opFeeMinor / 100) : (data.opFee || 0),
+            specialtyTag: Array.isArray(data.services) ? data.services.slice(0, 3).join(' • ') : '',
+            distance: data.distance || '',
+            discountBadge: data.discountBadge || '',
           };
         });
       }
@@ -332,25 +351,25 @@ export async function fetchDoctors(hospitalId?: string, specialtyId?: string): P
       if (res.data?.doctors && res.data.doctors.length > 0) {
         return res.data.doctors.map((d: any) => ({
           id: d.id,
-          hospitalId: d.hospitalId || 'hyd-1',
-          hospital: d.hospital || 'Apollo Hospitals',
-          name: d.displayName || d.name || 'Dr. Specialist',
-          avatar: d.avatar || d.photoPath,
-          specialty: d.specialty || 'General Physician',
-          specialtyKey: d.specialtyKey || 'general_physician',
-          degrees: d.degrees || d.qualificationSummary || 'MBBS, MD',
-          experienceYears: d.experienceYears || 10,
-          languages: d.languages || ['English', 'Hindi', 'Telugu'],
-          consultationFee: d.consultationFee || (d.consultationFeeMinor ? Math.round(d.consultationFeeMinor / 100) : 499),
-          consultationFeeMinor: d.consultationFeeMinor || (d.consultationFee ? d.consultationFee * 100 : 49900),
-          audioConsultationFee: d.audioConsultationFee || 399,
-          consultationModes: d.availableModes || d.consultationModes || ['video', 'audio'],
-          rating: d.rating || 4.9,
-          ratingCount: d.totalReviews || d.ratingCount || 500,
+          hospitalId: d.hospitalId || '',
+          hospital: d.hospital || '',
+          name: d.displayName || d.name || '',
+          avatar: d.avatar || d.photoPath || '',
+          specialty: d.specialty || '',
+          specialtyKey: d.specialtyKey || (d.specialtyIds ? d.specialtyIds[0] : ''),
+          degrees: d.degrees || d.qualificationSummary || '',
+          experienceYears: typeof d.experienceYears === 'number' ? d.experienceYears : 0,
+          languages: Array.isArray(d.languages) ? d.languages : [],
+          consultationFee: d.consultationFee || (d.consultationFeeMinor ? Math.round(d.consultationFeeMinor / 100) : 0),
+          consultationFeeMinor: d.consultationFeeMinor || (d.consultationFee ? d.consultationFee * 100 : 0),
+          audioConsultationFee: d.audioConsultationFee || 0,
+          consultationModes: Array.isArray(d.availableModes) ? d.availableModes : (Array.isArray(d.consultationModes) ? d.consultationModes : ['video']),
+          rating: typeof d.rating === 'number' ? d.rating : 0,
+          ratingCount: typeof d.totalReviews === 'number' ? d.totalReviews : (typeof d.ratingCount === 'number' ? d.ratingCount : 0),
           about: d.about || '',
-          nextAvailable: d.nextAvailable || 'Today in 15 mins',
-          isTopRated: d.isTopRated !== undefined ? d.isTopRated : true,
-          isInstantAvailable: d.isInstantAvailable !== undefined ? d.isInstantAvailable : true,
+          nextAvailable: d.nextAvailable || '',
+          isTopRated: Boolean(d.isTopRated),
+          isInstantAvailable: Boolean(d.isInstantAvailable),
         }));
       }
     } catch (err: any) {
@@ -372,24 +391,24 @@ export async function fetchDoctors(hospitalId?: string, specialtyId?: string): P
       if (res.data?.doctors && res.data.doctors.length > 0) {
         return res.data.doctors.map((d: any) => ({
           id: d.id,
-          hospitalId: d.hospitalId,
-          hospital: d.hospital || 'Apollo Hospitals',
-          name: d.displayName || d.name || 'Dr. Specialist',
-          avatar: d.photoPath || d.avatar,
-          specialty: d.specialty || (d.specialtyIds ? d.specialtyIds[0] : 'General Physician'),
-          degrees: d.qualificationSummary || d.degrees || 'MBBS, MD',
-          experienceYears: d.experienceYears || 10,
-          languages: d.languages || ['English', 'Hindi', 'Telugu'],
-          consultationFee: d.consultationFeeMinor ? Math.round(d.consultationFeeMinor / 100) : d.consultationFee || 499,
-          consultationFeeMinor: d.consultationFeeMinor || 49900,
-          audioConsultationFee: d.audioConsultationFee || 399,
-          consultationModes: d.consultationModes || ['video', 'in_person'],
-          rating: d.rating || 4.9,
-          ratingCount: d.ratingCount || 500,
+          hospitalId: d.hospitalId || '',
+          hospital: d.hospital || '',
+          name: d.displayName || d.name || '',
+          avatar: d.photoPath || d.avatar || '',
+          specialty: d.specialty || (d.specialtyIds ? d.specialtyIds[0] : ''),
+          degrees: d.qualificationSummary || d.degrees || '',
+          experienceYears: typeof d.experienceYears === 'number' ? d.experienceYears : 0,
+          languages: Array.isArray(d.languages) ? d.languages : [],
+          consultationFee: d.consultationFeeMinor ? Math.round(d.consultationFeeMinor / 100) : (d.consultationFee || 0),
+          consultationFeeMinor: d.consultationFeeMinor || (d.consultationFee ? d.consultationFee * 100 : 0),
+          audioConsultationFee: d.audioConsultationFee || 0,
+          consultationModes: Array.isArray(d.consultationModes) ? d.consultationModes : ['video'],
+          rating: typeof d.rating === 'number' ? d.rating : 0,
+          ratingCount: typeof d.ratingCount === 'number' ? d.ratingCount : 0,
           about: d.about || '',
-          nextAvailable: d.nextAvailable || 'Today in 15 mins',
-          isTopRated: d.isTopRated !== undefined ? d.isTopRated : true,
-          isInstantAvailable: d.isInstantAvailable !== undefined ? d.isInstantAvailable : true,
+          nextAvailable: d.nextAvailable || '',
+          isTopRated: Boolean(d.isTopRated),
+          isInstantAvailable: Boolean(d.isInstantAvailable),
         }));
       }
     } catch (err: any) {
@@ -409,25 +428,25 @@ export async function fetchDoctors(hospitalId?: string, specialtyId?: string): P
           const d = docSnap.data();
           return {
             id: docSnap.id,
-            hospitalId: d.hospitalId || 'hyd-1',
-            hospital: d.hospital || 'Apollo Hospitals',
-            name: d.displayName || d.name || 'Dr. Specialist',
-            avatar: d.photoPath || d.avatar,
-            specialty: d.specialty || 'General Physician',
-            specialtyKey: d.specialtyKey || 'general_physician',
-            degrees: d.qualificationSummary || d.degrees || 'MBBS, MD',
-            experienceYears: d.experienceYears || 10,
-            languages: d.languages || ['English', 'Hindi', 'Telugu'],
-            consultationFee: d.consultationFeeMinor ? Math.round(d.consultationFeeMinor / 100) : d.consultationFee || 499,
-            consultationFeeMinor: d.consultationFeeMinor || 49900,
-            audioConsultationFee: d.audioConsultationFee || 399,
-            consultationModes: d.consultationModes || ['video', 'in_person'],
-            rating: d.rating || 4.9,
-            ratingCount: d.ratingCount || 500,
+            hospitalId: d.hospitalId || '',
+            hospital: d.hospital || '',
+            name: d.displayName || d.name || '',
+            avatar: d.photoPath || d.avatar || '',
+            specialty: d.specialty || (d.specialtyIds ? d.specialtyIds[0] : ''),
+            specialtyKey: d.specialtyKey || (d.specialtyIds ? d.specialtyIds[0] : ''),
+            degrees: d.qualificationSummary || d.degrees || '',
+            experienceYears: typeof d.experienceYears === 'number' ? d.experienceYears : 0,
+            languages: Array.isArray(d.languages) ? d.languages : [],
+            consultationFee: d.consultationFeeMinor ? Math.round(d.consultationFeeMinor / 100) : (d.consultationFee || 0),
+            consultationFeeMinor: d.consultationFeeMinor || (d.consultationFee ? d.consultationFee * 100 : 0),
+            audioConsultationFee: d.audioConsultationFee || 0,
+            consultationModes: Array.isArray(d.consultationModes) ? d.consultationModes : ['video'],
+            rating: typeof d.rating === 'number' ? d.rating : 0,
+            ratingCount: typeof d.ratingCount === 'number' ? d.ratingCount : 0,
             about: d.about || '',
-            nextAvailable: d.nextAvailable || 'Today in 15 mins',
-            isTopRated: d.isTopRated !== undefined ? d.isTopRated : true,
-            isInstantAvailable: d.isInstantAvailable !== undefined ? d.isInstantAvailable : true,
+            nextAvailable: d.nextAvailable || '',
+            isTopRated: Boolean(d.isTopRated),
+            isInstantAvailable: Boolean(d.isInstantAvailable),
           };
         });
       }
@@ -481,27 +500,28 @@ export async function fetchHomeVisitProviders(issueId?: string): Promise<any[]> 
       );
       const snap = await getDocs(q);
       if (!snap.empty) {
-        return snap.docs.map((doc) => {
-          const d = doc.data();
-          return {
-            id: doc.id,
-            name: d.name,
-            specialty: d.specialty || d.description || 'Home Care Specialist',
-            hospital: d.hospital || 'Apollo Home Care',
-            location: d.serviceArea || 'Hyderabad',
-            rating: d.rating || 4.9,
-            experience: d.experience || 10,
-            fee: d.fee || 500,
-            phone: d.phone || '+919876543230',
-            initials: d.name ? d.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'HP',
-            avatar:
-              d.image ||
-              'https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?w=200&auto=format&fit=crop&q=80',
-            issueIds: d.serviceTypes || ['nursing', 'checkup', 'injections'],
-            symptoms: d.symptoms || ['home care', 'nursing'],
-            slots: {},
-          };
-        });
+        const genuineDocs = snap.docs.filter((doc) => !isDummyProvider(doc.id, doc.data()?.name));
+        if (genuineDocs.length > 0) {
+          return genuineDocs.map((doc) => {
+            const d = doc.data();
+            return {
+              id: doc.id,
+              name: d.name,
+              specialty: d.specialty || d.description || 'Home Care Specialist',
+              hospital: d.hospital || 'Apollo Home Care',
+              location: d.serviceArea || 'Hyderabad',
+              rating: d.rating || 0,
+              experience: d.experience || 0,
+              fee: d.fee || 0,
+              phone: d.phone || '',
+              initials: d.name ? d.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : '',
+              avatar: d.image || '',
+              issueIds: d.serviceTypes || ['nursing', 'checkup', 'injections'],
+              symptoms: d.symptoms || ['home care', 'nursing'],
+              slots: {},
+            };
+          });
+        }
       }
     } catch {
       // Quiet fallback
@@ -510,7 +530,7 @@ export async function fetchHomeVisitProviders(issueId?: string): Promise<any[]> 
 
   // 3. Resilient complete fallback catalog
   if (issueId) {
-    const matched = FALLBACK_PROVIDERS.filter((p) => p.issueIds.includes(issueId));
+    const matched = FALLBACK_PROVIDERS.filter((p) => p.issueIds?.includes(issueId));
     if (matched.length > 0) return matched;
   }
   return FALLBACK_PROVIDERS;
@@ -1376,38 +1396,7 @@ export async function getPharmacies(params?: { serviceArea?: string; limit?: num
     }
   }
 
-  return [
-    {
-      id: 'apollo-pharmacy-jubilee',
-      name: 'Apollo Pharmacy 24x7',
-      description: 'Authentic medicines, wellness products & health devices',
-      image: 'https://images.unsplash.com/photo-1586015555751-63bb77f4322a?w=800',
-      address: 'Road No 36, Jubilee Hills, Hyderabad',
-      phoneNumber: '+91 40 2360 8888',
-      serviceArea: 'Hyderabad',
-      deliveryAvailable: true,
-      active: true,
-      rating: 4.8,
-      ratingCount: 1200,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-    {
-      id: 'medplus-pharmacy-banjara',
-      name: 'MedPlus Express Pharmacy',
-      description: 'Prescription medicines with 2-hour doorstep delivery',
-      image: 'https://images.unsplash.com/photo-1576602976047-174e57a47881?w=800',
-      address: 'Banjara Hills Road 12, Hyderabad',
-      phoneNumber: '+91 40 2335 1111',
-      serviceArea: 'Hyderabad',
-      deliveryAvailable: true,
-      active: true,
-      rating: 4.7,
-      ratingCount: 890,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-  ];
+  return [];
 }
 
 /**
@@ -1569,7 +1558,9 @@ export async function getServiceProviders(params?: {
       }
       const snap = await getDocs(q);
       if (!snap.empty) {
-        return snap.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() } as ServiceProvider));
+        return snap.docs
+          .filter((docSnap) => !isDummyProvider(docSnap.id, (docSnap.data() as any)?.name))
+          .map((docSnap) => ({ id: docSnap.id, ...docSnap.data() } as ServiceProvider));
       }
     } catch {
       // ignore
@@ -1578,15 +1569,15 @@ export async function getServiceProviders(params?: {
 
   return FALLBACK_PROVIDERS.map((p) => ({
     id: p.id,
-    service: 'care',
+    service: 'care' as const,
     name: p.name,
-    description: p.specialty,
-    image: p.avatar,
-    serviceTypes: p.issueIds,
+    description: p.specialty || p.description || '',
+    image: p.avatar || p.image || '',
+    serviceTypes: p.issueIds || p.serviceTypes || [],
     rating: p.rating,
     ratingCount: 150,
     active: true,
-    serviceArea: p.location || 'Hyderabad',
+    serviceArea: p.location || p.serviceArea || 'Hyderabad',
     createdAt: new Date(),
     updatedAt: new Date(),
   }));
@@ -1626,15 +1617,15 @@ export async function getServiceProvider(providerId: string): Promise<ServicePro
   if (!fb) return null;
   return {
     id: fb.id,
-    service: 'care',
+    service: 'care' as const,
     name: fb.name,
-    description: fb.specialty,
-    image: fb.avatar,
-    serviceTypes: fb.issueIds,
+    description: fb.specialty || fb.description || '',
+    image: fb.avatar || fb.image || '',
+    serviceTypes: fb.issueIds || fb.serviceTypes || [],
     rating: fb.rating,
     ratingCount: 150,
     active: true,
-    serviceArea: fb.location || 'Hyderabad',
+    serviceArea: fb.location || fb.serviceArea || 'Hyderabad',
     createdAt: new Date(),
     updatedAt: new Date(),
   };
@@ -1920,7 +1911,7 @@ export async function seedCareCatalogToFirestore(): Promise<{ success: boolean; 
       id: 'apollo-pharmacy-jubilee',
       name: 'Apollo Pharmacy 24x7',
       description: 'Complete range of genuine medicines and healthcare essentials',
-      image: 'https://images.unsplash.com/photo-1586015555751-63bb77f4322a?w=800',
+      image: '',
       address: { line1: 'Road 36, Jubilee Hills', city: 'Hyderabad', state: 'Telangana', postalCode: '500033' },
       phoneNumber: '+91 40 2360 8888',
       email: 'jubilee@apollopharmacy.in',
@@ -1935,7 +1926,7 @@ export async function seedCareCatalogToFirestore(): Promise<{ success: boolean; 
       id: 'medplus-pharmacy-banjara',
       name: 'MedPlus Express Pharmacy',
       description: 'Super-fast prescription medicine delivery and health checks',
-      image: 'https://images.unsplash.com/photo-1576602976047-174e57a47881?w=800',
+      image: '',
       address: { line1: 'Road 12, Banjara Hills', city: 'Hyderabad', state: 'Telangana', postalCode: '500034' },
       phoneNumber: '+91 40 2335 1111',
       email: 'banjara@medplusindia.com',
@@ -2057,13 +2048,13 @@ export async function seedCareCatalogToFirestore(): Promise<{ success: boolean; 
       {
         service: 'care',
         name: p.name,
-        description: p.specialty,
-        image: p.avatar,
-        serviceTypes: p.issueIds,
+        description: p.specialty || p.description || '',
+        image: p.avatar || p.image || '',
+        serviceTypes: p.issueIds || p.serviceTypes || [],
         rating: p.rating,
         ratingCount: 150,
         active: true,
-        serviceArea: p.location || 'Hyderabad',
+        serviceArea: p.location || p.serviceArea || 'Hyderabad',
         createdAt: new Date(),
         updatedAt: new Date(),
       },
@@ -2079,7 +2070,7 @@ export async function seedCareCatalogToFirestore(): Promise<{ success: boolean; 
       service: 'homeServices',
       name: 'Ramesh Electric Works',
       description: 'Expert home electrical repairs, wiring, and appliance installation',
-      image: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=800',
+      image: '',
       serviceTypes: ['electrical', 'wiring', 'lighting', 'inverter_repair'],
       rating: 4.8,
       ratingCount: 180,
@@ -2091,7 +2082,7 @@ export async function seedCareCatalogToFirestore(): Promise<{ success: boolean; 
       service: 'homeServices',
       name: 'QuickClean Home Solutions',
       description: 'Deep cleaning, sofa shampooing, and kitchen sanitization',
-      image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=800',
+      image: '',
       serviceTypes: ['cleaning', 'deep_cleaning', 'kitchen_cleaning', 'sofa_cleaning'],
       rating: 4.9,
       ratingCount: 220,
@@ -2103,7 +2094,7 @@ export async function seedCareCatalogToFirestore(): Promise<{ success: boolean; 
       service: 'homeServices',
       name: 'Praveen Plumbing & Sanitary',
       description: 'Leak fixing, bathroom fittings, pipe repairs, and tank cleaning',
-      image: 'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=800',
+      image: '',
       serviceTypes: ['plumbing', 'pipe_repair', 'water_heater_install', 'tap_repair'],
       rating: 4.7,
       ratingCount: 140,

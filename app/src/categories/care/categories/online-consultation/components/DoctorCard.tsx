@@ -27,12 +27,6 @@ export const DoctorCard: React.FC<DoctorCardProps> = ({
   const [imageError, setImageError] = React.useState(false);
   const oc = useOCColors();
 
-  const fallbackUri = doctor.gender === 'female'
-    ? 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?q=80&w=400&auto=format&fit=crop'
-    : 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?q=80&w=400&auto=format&fit=crop';
-
-  const avatarUri = imageError || !doctor.avatar ? fallbackUri : doctor.avatar;
-
   const fee = selectedMode === 'audio' && doctor.audioConsultationFee
     ? doctor.audioConsultationFee
     : doctor.consultationFee;
@@ -45,13 +39,17 @@ export const DoctorCard: React.FC<DoctorCardProps> = ({
     >
       <View style={styles.mainRow}>
         {/* Doctor Avatar */}
-        <View style={styles.avatarContainer}>
-          <Image
-            source={{ uri: avatarUri }}
-            style={styles.avatar}
-            resizeMode="cover"
-            onError={() => setImageError(true)}
-          />
+        <View style={[styles.avatarContainer, { backgroundColor: oc.isDark ? '#27272A' : '#EFF6FF', justifyContent: 'center', alignItems: 'center' }]}>
+          {doctor.avatar && !imageError ? (
+            <Image
+              source={{ uri: doctor.avatar }}
+              style={styles.avatar}
+              resizeMode="cover"
+              onError={() => setImageError(true)}
+            />
+          ) : (
+            <Feather name="user" size={26} color={oc.isDark ? '#A1A1AA' : '#3B82F6'} />
+          )}
         </View>
 
         {/* Doctor Main Info */}

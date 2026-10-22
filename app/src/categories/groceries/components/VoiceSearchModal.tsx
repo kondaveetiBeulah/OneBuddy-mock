@@ -26,18 +26,8 @@ interface VoiceSearchModalProps {
   visible: boolean;
   onClose: () => void;
   onResult: (spokenText: string) => void;
+  suggestions?: string[];
 }
-
-const SAMPLE_SUGGESTIONS = [
-  'Fresh Apples',
-  'Amul Milk',
-  'Tomatoes',
-  'Basmati Rice',
-  'Butter',
-  'Snacks',
-  'Farm Bread',
-  'Eggs',
-];
 
 export const cleanVoiceQuery = (rawText: string): string => {
   let text = rawText.trim();
@@ -53,6 +43,7 @@ export const VoiceSearchModal: React.FC<VoiceSearchModalProps> = ({
   visible,
   onClose,
   onResult,
+  suggestions = [],
 }) => {
   const [isListening, setIsListening] = useState<boolean>(false);
   const [liveTranscript, setLiveTranscript] = useState<string>('');
@@ -437,20 +428,24 @@ export const VoiceSearchModal: React.FC<VoiceSearchModalProps> = ({
             </TouchableOpacity>
           )}
 
-          <View style={styles.divider} />
-          <Text style={styles.suggestionsLabel}>Or tap a quick product:</Text>
-          <View style={styles.chipsRow}>
-            {SAMPLE_SUGGESTIONS.map((item) => (
-              <TouchableOpacity
-                key={item}
-                style={styles.suggestionChip}
-                onPress={() => handleSelectSuggestion(item)}
-                activeOpacity={0.75}
-              >
-                <Text style={styles.suggestionChipText}>{item}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          {suggestions.length > 0 && (
+            <>
+              <View style={styles.divider} />
+              <Text style={styles.suggestionsLabel}>Or tap a quick product:</Text>
+              <View style={styles.chipsRow}>
+                {suggestions.map((item) => (
+                  <TouchableOpacity
+                    key={item}
+                    style={styles.suggestionChip}
+                    onPress={() => handleSelectSuggestion(item)}
+                    activeOpacity={0.75}
+                  >
+                    <Text style={styles.suggestionChipText}>{item}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </>
+          )}
         </View>
       </View>
     </Modal>

@@ -12,38 +12,12 @@ import {
 const hasValidImage = (p: Product) =>
   Boolean(p.image && p.image.trim().length > 0 && p.image !== 'null' && p.image !== 'undefined');
 
-const DEFAULT_CATEGORIES: Category[] = [
-  { id: 'cat_fruits', name: 'Fruits & Vegetables', icon: 'basket-outline', image: 'https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&w=400&q=80', productCount: 24, backgroundColor: '#FEF6E4' },
-  { id: 'cat_dairy', name: 'Dairy & Breakfast', icon: 'egg-outline', image: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=400&q=80', productCount: 18, backgroundColor: '#EFF6FF' },
-  { id: 'cat_snacks', name: 'Snacks & Munchies', icon: 'fast-food-outline', image: 'https://images.unsplash.com/photo-1599490659213-e2b9527bd087?auto=format&fit=crop&w=400&q=80', productCount: 32, backgroundColor: '#FFF7ED' },
-  { id: 'cat_house_necessities', name: 'Home Essentials', icon: 'home-outline', image: 'https://images.unsplash.com/photo-1583947215259-38e31be8751f?auto=format&fit=crop&w=400&q=80', productCount: 15, backgroundColor: '#F0FDF4' },
-  { id: 'cat_cosmetics', name: 'Personal Care', icon: 'sparkles-outline', image: 'https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?auto=format&fit=crop&w=400&q=80', productCount: 20, backgroundColor: '#FDF4FF' },
-  { id: 'cat_beverages', name: 'Cold Drinks & Juices', icon: 'wine-outline', image: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=400&q=80', productCount: 22, backgroundColor: '#FEF2F2' },
-];
+const DEFAULT_CATEGORIES: Category[] = [];
 
-const DEFAULT_OFFERS: Offer[] = [
-  {
-    id: 'off_welcome',
-    title: '50% OFF Fresh Produce',
-    subtitle: 'Use code FRESH50 on fruits and vegetables',
-    discountTag: '50% OFF',
-    code: 'FRESH50',
-    image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=800&q=80',
-    backgroundColor: '#1E3A1E',
-  },
-  {
-    id: 'off_express',
-    title: 'Superfast Delivery',
-    subtitle: 'Free delivery on orders above ₹199',
-    discountTag: 'FREE DELIVERY',
-    code: 'EXPRESS',
-    image: 'https://images.unsplash.com/photo-1607349913338-fca6f7429e88?auto=format&fit=crop&w=800&q=80',
-    backgroundColor: '#2D3748',
-  },
-];
+const DEFAULT_OFFERS: Offer[] = [];
 
-let _categoriesCache: Category[] | null = DEFAULT_CATEGORIES;
-let _offersCache: Offer[] | null = DEFAULT_OFFERS;
+let _categoriesCache: Category[] | null = null;
+let _offersCache: Offer[] | null = null;
 let _productsCache: Product[] | null = null;
 
 export const productService = {

@@ -327,37 +327,47 @@ export const LiveTrackingScreen: React.FC<LiveTrackingScreenProps> = ({
           <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Assigned Service Professional</Text>
           <Card style={[styles.providerCard, { backgroundColor: colors.surface }]} variant="elevated">
             <View style={styles.providerRow}>
-              <Image
-                source={{
-                  uri:
-                    provider?.avatar ||
-                    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80',
-                }}
-                style={styles.avatar}
-              />
+              {provider?.avatar ? (
+                <Image
+                  source={{ uri: provider.avatar }}
+                  style={styles.avatar}
+                />
+              ) : (
+                <View style={[styles.avatar, { backgroundColor: isDark ? colors.surfaceSubtle : '#E2E8F0', alignItems: 'center', justifyContent: 'center' }]}>
+                  <Award size={20} color={colors.textSecondary} />
+                </View>
+              )}
               <View style={styles.providerMeta}>
                 <View style={styles.providerNameRow}>
-                  <Text style={[styles.providerName, { color: colors.textPrimary }]}>{provider?.name || 'Rajesh Kumar'}</Text>
-                  <View style={styles.proBadge}>
-                    <Award size={10} color="#FFFFFF" style={{ marginRight: 2 }} />
-                    <Text style={styles.proBadgeText}>{provider?.badge || 'Super Pro'}</Text>
+                  <Text style={[styles.providerName, { color: colors.textPrimary }]}>{provider?.name || 'Assigned Technician'}</Text>
+                  {provider?.badge ? (
+                    <View style={styles.proBadge}>
+                      <Award size={10} color="#FFFFFF" style={{ marginRight: 2 }} />
+                      <Text style={styles.proBadgeText}>{provider.badge}</Text>
+                    </View>
+                  ) : null}
+                </View>
+
+                {provider?.rating ? (
+                  <View style={styles.ratingRow}>
+                    <RatingStars rating={provider.rating} size={12} />
+                    <Text style={[styles.ratingValue, { color: colors.textPrimary }]}>{provider.rating}</Text>
+                    {provider?.jobsCompleted ? (
+                      <Text style={[styles.jobsValue, { color: colors.textMuted }]}>
+                        ({provider.jobsCompleted}+ jobs)
+                      </Text>
+                    ) : null}
                   </View>
-                </View>
+                ) : null}
 
-                <View style={styles.ratingRow}>
-                  <RatingStars rating={provider?.rating || 4.9} size={12} />
-                  <Text style={[styles.ratingValue, { color: colors.textPrimary }]}>{provider?.rating || 4.9}</Text>
-                  <Text style={[styles.jobsValue, { color: colors.textMuted }]}>
-                    ({provider?.jobsCompleted || 486}+ jobs)
-                  </Text>
-                </View>
-
-                <View style={styles.vehicleRow}>
-                  <Car size={12} color={colors.textSecondary} />
-                  <Text style={[styles.vehicleText, { color: colors.textSecondary }]}>
-                    {provider?.vehicleNo || 'KA 03 EJ 4821'} ({provider?.experienceYears || 6} yrs exp)
-                  </Text>
-                </View>
+                {provider?.vehicleNo ? (
+                  <View style={styles.vehicleRow}>
+                    <Car size={12} color={colors.textSecondary} />
+                    <Text style={[styles.vehicleText, { color: colors.textSecondary }]}>
+                      {provider.vehicleNo} {provider?.experienceYears ? `(${provider.experienceYears} yrs exp)` : ''}
+                    </Text>
+                  </View>
+                ) : null}
               </View>
 
               {/* Call & Message Direct Actions */}

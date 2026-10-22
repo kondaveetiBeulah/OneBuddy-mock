@@ -41,20 +41,13 @@ const QUICK_CHIPS = [
 export const ChatModal: React.FC<ChatModalProps> = ({
   visible,
   onClose,
-  technicianName = 'Rajesh Kumar',
-  technicianAvatar = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80',
+  technicianName = 'Technician',
+  technicianAvatar = '',
   onCall,
 }) => {
   const insets = useSafeAreaInsets();
   const [inputText, setInputText] = useState('');
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      sender: 'technician',
-      text: 'Hello! I have been assigned to your booking. I am preparing the tools and on my way.',
-      time: 'Just now',
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
 
   const sendMessage = (textToSend: string) => {
@@ -104,7 +97,13 @@ export const ChatModal: React.FC<ChatModalProps> = ({
         {/* Chat Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Image source={{ uri: technicianAvatar }} style={styles.avatar} />
+            {technicianAvatar ? (
+              <Image source={{ uri: technicianAvatar }} style={styles.avatar} />
+            ) : (
+              <View style={[styles.avatar, { backgroundColor: '#E2E8F0', alignItems: 'center', justifyContent: 'center' }]}>
+                <Text style={{ fontSize: 16 }}>👤</Text>
+              </View>
+            )}
             <View>
               <Text style={styles.techName}>{technicianName}</Text>
               <View style={styles.statusRow}>

@@ -28,7 +28,7 @@ import * as Clipboard from 'expo-clipboard';
 
 import { Colors, useOCColors } from './constants/colors';
 import { BookingProvider, useBooking } from './context/BookingContext';
-import { HEALTH_CATEGORIES, MOCK_DOCTORS, generateMockSlots, COMMON_SYMPTOMS } from './data/mockData';
+import { HEALTH_CATEGORIES, generateMockSlots, COMMON_SYMPTOMS } from './data/mockData';
 import { Doctor, HealthCategory, DaySlot, TimeSlot, BookingSummary } from './types/doctor';
 
 import { OneBuddyHeader } from './components/OneBuddyHeader';
@@ -39,6 +39,7 @@ import { DoctorCard } from './components/DoctorCard';
 import { ServiceCard } from './components/ServiceCard';
 import { BookingStepper } from './components/BookingStepper';
 import { RatingStars } from './components/RatingStars';
+import { ShimmerBox, ShimmerCircle, ShimmerText } from '@/components/common/Shimmer';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -85,7 +86,7 @@ function OCHomeTabScreen({
   };
 
   const displayedDoctors = useMemo(() => {
-    return (doctors || MOCK_DOCTORS).filter((doc) => {
+    return (doctors || []).filter((doc) => {
       if (searchQuery.trim().length > 0) {
         const q = searchQuery.toLowerCase();
         const matchesName = doc.name.toLowerCase().includes(q);
@@ -104,7 +105,7 @@ function OCHomeTabScreen({
       }
       return true;
     }).sort((a, b) => b.rating - a.rating);
-  }, [searchQuery, selectedCategory, selectedMode]);
+  }, [doctors, searchQuery, selectedCategory, selectedMode]);
 
   const activeCategoryName = useMemo(() => {
     if (!selectedCategory) return 'Featured Specialists';
@@ -188,7 +189,43 @@ function OCHomeTabScreen({
           </TouchableOpacity>
         </View>
 
-        {displayedDoctors.length === 0 ? (
+        {doctors.length === 0 ? (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={homeStyles.sliderScroll}
+          >
+            {[1, 2].map((i) => (
+              <View
+                key={i}
+                style={{
+                  width: 260,
+                  height: 200,
+                  backgroundColor: oc.isDark ? '#1C1917' : '#F3F4F6',
+                  borderColor: oc.border,
+                  borderWidth: 1,
+                  borderRadius: 16,
+                  padding: 16,
+                  marginRight: 12,
+                  justifyContent: 'space-between',
+                }}
+              >
+                <View style={{ flexDirection: 'row', gap: 12 }}>
+                  <ShimmerCircle size={52} isDark={oc.isDark} />
+                  <View style={{ flex: 1, gap: 8, justifyContent: 'center' }}>
+                    <ShimmerText width="80%" height={14} isDark={oc.isDark} />
+                    <ShimmerText width="55%" height={11} isDark={oc.isDark} />
+                  </View>
+                </View>
+                <ShimmerText width="95%" height={12} isDark={oc.isDark} />
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <ShimmerBox width={60} height={18} borderRadius={6} isDark={oc.isDark} />
+                  <ShimmerBox width={70} height={26} borderRadius={13} isDark={oc.isDark} />
+                </View>
+              </View>
+            ))}
+          </ScrollView>
+        ) : displayedDoctors.length === 0 ? (
           <View style={[homeStyles.emptyContainer, { backgroundColor: oc.surface, borderColor: oc.border }]}>
             <Ionicons name="search-outline" size={38} color={oc.textMuted} />
             <Text style={[homeStyles.emptyTitle, { color: oc.textPrimary }]}>No Doctors Found</Text>
@@ -382,7 +419,7 @@ function OCDoctorsListScreen({
   const [sortBy, setSortBy] = useState<'rating' | 'experience' | 'price_low'>('rating');
 
   const filteredDoctors = useMemo(() => {
-    return (doctors || MOCK_DOCTORS).filter((doc) => {
+    return (doctors || []).filter((doc) => {
       if (searchQuery.trim().length > 0) {
         const q = searchQuery.toLowerCase();
         const matchesName = doc.name.toLowerCase().includes(q);
@@ -403,7 +440,7 @@ function OCDoctorsListScreen({
       if (sortBy === 'price_low') return a.consultationFee - b.consultationFee;
       return 0;
     });
-  }, [searchQuery, sortBy, selectedMode]);
+  }, [doctors, searchQuery, sortBy, selectedMode]);
 
   const handleDoctorPress = (doctor: Doctor) => {
     setSelectedDoctor(doctor);
@@ -465,7 +502,37 @@ function OCDoctorsListScreen({
       </View>
 
       {/* Doctor Cards List */}
-      {filteredDoctors.length === 0 ? (
+      {doctors.length === 0 ? (
+        <View style={{ paddingHorizontal: 20, paddingTop: 10 }}>
+          {[1, 2, 3].map((i) => (
+            <View
+              key={i}
+              style={{
+                backgroundColor: oc.surface,
+                borderColor: oc.border,
+                borderWidth: 1,
+                borderRadius: 16,
+                marginBottom: 14,
+                padding: 16,
+                gap: 12,
+              }}
+            >
+              <View style={{ flexDirection: 'row', gap: 14 }}>
+                <ShimmerCircle size={60} isDark={oc.isDark} />
+                <View style={{ flex: 1, gap: 8, justifyContent: 'center' }}>
+                  <ShimmerText width="75%" height={16} isDark={oc.isDark} />
+                  <ShimmerText width="50%" height={12} isDark={oc.isDark} />
+                  <ShimmerText width="60%" height={12} isDark={oc.isDark} />
+                </View>
+              </View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
+                <ShimmerBox width={80} height={20} borderRadius={6} isDark={oc.isDark} />
+                <ShimmerBox width={100} height={32} borderRadius={16} isDark={oc.isDark} />
+              </View>
+            </View>
+          ))}
+        </View>
+      ) : filteredDoctors.length === 0 ? (
         <View style={docListStyles.emptyState}>
           <Ionicons name="search-outline" size={48} color={oc.textMuted} />
           <Text style={[docListStyles.emptyTitle, { color: oc.textPrimary }]}>No Doctors Found</Text>
@@ -615,7 +682,7 @@ function OCDoctorDetailScreen({
     setSelectedSlot,
   } = useBooking();
 
-  const doctor = selectedDoctor || MOCK_DOCTORS[0];
+  const doctor = selectedDoctor;
 
   const daySlots = useMemo(() => generateMockSlots(), []);
 
@@ -629,6 +696,27 @@ function OCDoctorDetailScreen({
   const morningSlots = currentSlots.filter((s) => s.period === 'morning');
   const afternoonSlots = currentSlots.filter((s) => s.period === 'afternoon');
   const eveningSlots = currentSlots.filter((s) => s.period === 'evening');
+
+  const [imageError, setImageError] = React.useState(false);
+  const oc = useOCColors();
+
+  if (!doctor) {
+    return (
+      <View style={[docDetailStyles.container, { backgroundColor: oc.background, justifyContent: 'center', alignItems: 'center', padding: 24 }]}>
+        <Ionicons name="alert-circle-outline" size={48} color={oc.textMuted} />
+        <Text style={{ color: oc.textPrimary, fontSize: 16, fontWeight: '600', marginTop: 12 }}>No Doctor Selected</Text>
+        <Text style={{ color: oc.textSecondary, fontSize: 14, textAlign: 'center', marginTop: 6, marginBottom: 20 }}>
+          Please select a doctor to view available appointment slots.
+        </Text>
+        <TouchableOpacity
+          style={{ backgroundColor: Colors.primary, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8 }}
+          onPress={onBack}
+        >
+          <Text style={{ color: '#FFFFFF', fontWeight: '600' }}>Choose Doctor</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   const currentFee = selectedMode === 'audio' && doctor.audioConsultationFee
     ? doctor.audioConsultationFee
@@ -653,14 +741,6 @@ function OCDoctorDetailScreen({
     onProceed();
   };
 
-  const [imageError, setImageError] = React.useState(false);
-  const fallbackUri = doctor?.gender === 'female'
-    ? 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?q=80&w=400&auto=format&fit=crop'
-    : 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?q=80&w=400&auto=format&fit=crop';
-  const avatarUri = imageError || !doctor?.avatar ? fallbackUri : doctor.avatar;
-
-  const oc = useOCColors();
-
   return (
     <View style={[docDetailStyles.container, { backgroundColor: oc.background }]}>
       <ScrollView
@@ -672,12 +752,16 @@ function OCDoctorDetailScreen({
         {/* Doctor Hero Card */}
         <View style={[docDetailStyles.heroCard, { backgroundColor: oc.surface, borderColor: oc.border }]}>
           <View style={docDetailStyles.heroTopRow}>
-            <View style={docDetailStyles.avatarWrapper}>
-              <Image
-                source={{ uri: avatarUri }}
-                style={docDetailStyles.avatar}
-                onError={() => setImageError(true)}
-              />
+            <View style={[docDetailStyles.avatarWrapper, { backgroundColor: oc.isDark ? '#27272A' : '#EFF6FF', justifyContent: 'center', alignItems: 'center' }]}>
+              {doctor?.avatar && !imageError ? (
+                <Image
+                  source={{ uri: doctor.avatar }}
+                  style={docDetailStyles.avatar}
+                  onError={() => setImageError(true)}
+                />
+              ) : (
+                <Feather name="user" size={36} color={oc.isDark ? '#A1A1AA' : '#3B82F6'} />
+              )}
             </View>
 
             <View style={docDetailStyles.heroInfo}>
@@ -1603,7 +1687,26 @@ function OCCheckoutScreen({ onConfirmed, onBack }: { onConfirmed: () => void; on
     confirmBooking,
   } = useBooking();
 
-  const doctor = selectedDoctor || MOCK_DOCTORS[0];
+  const doctor = selectedDoctor;
+
+  if (!doctor) {
+    return (
+      <View style={{ flex: 1, backgroundColor: oc.background, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+        <Ionicons name="alert-circle-outline" size={48} color={oc.textMuted} />
+        <Text style={{ color: oc.textPrimary, fontSize: 16, fontWeight: '600', marginTop: 12 }}>No Doctor Selected</Text>
+        <Text style={{ color: oc.textSecondary, fontSize: 14, textAlign: 'center', marginTop: 6, marginBottom: 20 }}>
+          Please go back and select a doctor to complete your consultation booking.
+        </Text>
+        <TouchableOpacity
+          style={{ backgroundColor: Colors.primary, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8 }}
+          onPress={onBack}
+        >
+          <Text style={{ color: '#FFFFFF', fontWeight: '600' }}>Go Back</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   const fee = selectedMode === 'audio' && doctor.audioConsultationFee
     ? doctor.audioConsultationFee
     : doctor.consultationFee;
@@ -2277,16 +2380,16 @@ function OCAppointmentsScreen({
       <View style={[apptStyles.divider, { backgroundColor: oc.borderSubtle }]} />
 
       <View style={apptStyles.doctorRow}>
-        <Image
-          source={{
-            uri:
-              item.doctor.avatar ||
-              (item.doctor.gender === 'female'
-                ? 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?q=80&w=400&auto=format&fit=crop'
-                : 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?q=80&w=400&auto=format&fit=crop'),
-          }}
-          style={apptStyles.doctorAvatar}
-        />
+        {item.doctor.avatar ? (
+          <Image
+            source={{ uri: item.doctor.avatar }}
+            style={apptStyles.doctorAvatar}
+          />
+        ) : (
+          <View style={[apptStyles.doctorAvatar, { justifyContent: 'center', alignItems: 'center', backgroundColor: oc.isDark ? '#27272A' : '#EFF6FF' }]}>
+            <Feather name="user" size={20} color={oc.isDark ? '#A1A1AA' : '#3B82F6'} />
+          </View>
+        )}
         <View style={apptStyles.doctorInfo}>
           <Text style={[apptStyles.doctorName, { color: oc.textPrimary }]}>{item.doctor.name}</Text>
           <Text style={[apptStyles.doctorSpecialty, { color: oc.isDark ? '#86EFAC' : Colors.primaryDark }]}>{item.doctor.specialty}</Text>
@@ -2522,14 +2625,14 @@ function OCProfileScreen({
 }) {
   const oc = useOCColors();
   const [isEditing, setIsEditing] = useState(false);
-  const [fullName, setFullName] = useState('Rahul Sharma');
-  const [phone, setPhone] = useState('9876543210');
-  const [email, setEmail] = useState('rahul.sharma@example.com');
-  const [gender, setGender] = useState('Male');
-  const [age, setAge] = useState('28');
-  const [bloodGroup, setBloodGroup] = useState('O+');
-  const [city, setCity] = useState('Bangalore, India');
-  const [emergencyContact, setEmergencyContact] = useState('9876500000');
+  const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [gender, setGender] = useState('');
+  const [age, setAge] = useState('');
+  const [bloodGroup, setBloodGroup] = useState('');
+  const [city, setCity] = useState('');
+  const [emergencyContact, setEmergencyContact] = useState('');
 
   const handleSave = () => {
     if (!fullName.trim()) {
@@ -2901,10 +3004,7 @@ function OCConsultationCallScreen({
   const waveAnim4 = useRef(new Animated.Value(0.9)).current;
   const waveAnim5 = useRef(new Animated.Value(0.5)).current;
 
-  const fallbackAvatar = doctor.gender === 'female'
-    ? 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?q=80&w=400&auto=format&fit=crop'
-    : 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?q=80&w=400&auto=format&fit=crop';
-  const avatarUri = doctor.avatar || fallbackAvatar;
+  const avatarUri = doctor.avatar || undefined;
 
   useEffect(() => {
     const connectTimer = setTimeout(() => setIsConnecting(false), 2000);
@@ -2981,7 +3081,13 @@ function OCConsultationCallScreen({
           <View style={callStyles.haloContainer}>
             <Animated.View style={[callStyles.pulseRingOuter, { transform: [{ scale: pulseAnim }] }]} />
             <View style={callStyles.pulseRingInner} />
-            <Image source={{ uri: avatarUri }} style={callStyles.audioDoctorAvatar} />
+            {avatarUri ? (
+              <Image source={{ uri: avatarUri }} style={callStyles.audioDoctorAvatar} />
+            ) : (
+              <View style={[callStyles.audioDoctorAvatar, { backgroundColor: '#1E293B', alignItems: 'center', justifyContent: 'center' }]}>
+                <Ionicons name="person" size={40} color="#64748B" />
+              </View>
+            )}
             <View style={callStyles.onlineAudioBadge}>
               <Ionicons name="call" size={12} color="#FFFFFF" />
             </View>
@@ -3050,7 +3156,13 @@ function OCConsultationCallScreen({
     <View style={callStyles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#0F172A" />
       <View style={callStyles.mainFeed}>
-        <Image source={{ uri: avatarUri }} style={callStyles.doctorFullVideo} resizeMode="cover" />
+        {avatarUri ? (
+          <Image source={{ uri: avatarUri }} style={callStyles.doctorFullVideo} resizeMode="cover" />
+        ) : (
+          <View style={[callStyles.doctorFullVideo, { backgroundColor: '#1E293B', alignItems: 'center', justifyContent: 'center' }]}>
+            <Ionicons name="person" size={80} color="#64748B" />
+          </View>
+        )}
         <View style={callStyles.videoOverlayGradient} />
       </View>
 

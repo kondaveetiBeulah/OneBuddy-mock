@@ -14,6 +14,7 @@ import { useGroceryColors } from '../theme/colors';
 import { isCategoryDark } from '@/theme/categoryThemeBridge';
 import { Header } from '../components/Header';
 import { LoadingState } from '../components/LoadingState';
+import { EmptyState } from '../components/EmptyState';
 import { productService } from '../services/productService';
 import { Category } from '../types/category.types';
 import { useNavigation } from '@react-navigation/native';
@@ -50,6 +51,12 @@ export const CategoriesScreen: React.FC = () => {
         <LoadingState
           message="Loading Categories..."
           subtitle="Fetching fresh grocery aisles for you"
+        />
+      ) : categoriesList.length === 0 ? (
+        <EmptyState
+          iconName="grid-outline"
+          title="No Categories Available"
+          message="There are no categories listed right now. Please check back shortly."
         />
       ) : (
         <FlatList

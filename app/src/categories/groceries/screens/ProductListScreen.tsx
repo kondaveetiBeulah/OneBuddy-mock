@@ -19,6 +19,7 @@ import { ProductCard } from '../components/ProductCard';
 import { EmptyState } from '../components/EmptyState';
 import { LoadingState } from '../components/LoadingState';
 import { NetworkErrorState } from '@/components/NetworkErrorState';
+import { GroceryProductGridSkeleton } from '@/components/common/skeletons';
 import { productService } from '../services/productService';
 import { Product, SortOption, ProductFilter } from '../types/product.types';
 import { useCart } from '../context/CartContext';
@@ -147,7 +148,9 @@ export const ProductListScreen: React.FC<ProductListScreenProps> = ({
       </View>
 
       {loading ? (
-        <LoadingState message={`Fetching ${categoryName}...`} />
+        <View style={{ paddingTop: 12 }}>
+          <GroceryProductGridSkeleton isDark={isDark} count={6} />
+        </View>
       ) : networkError && productsList.length === 0 ? (
         <NetworkErrorState
           title="Could Not Load Products"

@@ -111,21 +111,25 @@ export const RatingReviewModal: React.FC<RatingReviewModalProps> = ({
           >
             {/* Header with Provider Info */}
             <View style={[styles.header, isDark && { borderBottomColor: colors.border }]}>
-              <Image
-                source={{
-                  uri:
-                    provider?.avatar ||
-                    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80',
-                }}
-                style={styles.avatar}
-              />
+              {provider?.avatar ? (
+                <Image
+                  source={{ uri: provider.avatar }}
+                  style={styles.avatar}
+                />
+              ) : (
+                <View style={[styles.avatar, { backgroundColor: isDark ? colors.surfaceSubtle : '#E2E8F0', alignItems: 'center', justifyContent: 'center' }]}>
+                  <Award size={18} color={colors.textSecondary} />
+                </View>
+              )}
               <View style={styles.headerMeta}>
                 <View style={styles.nameRow}>
-                  <Text style={[styles.techName, { color: colors.textPrimary }]}>{provider?.name || 'Rajesh Kumar'}</Text>
-                  <View style={styles.proTag}>
-                    <Award size={10} color="#FFFFFF" style={{ marginRight: 2 }} />
-                    <Text style={styles.proTagText}>{provider?.badge || 'Super Pro'}</Text>
-                  </View>
+                  <Text style={[styles.techName, { color: colors.textPrimary }]}>{provider?.name || 'Assigned Technician'}</Text>
+                  {provider?.badge ? (
+                    <View style={styles.proTag}>
+                      <Award size={10} color="#FFFFFF" style={{ marginRight: 2 }} />
+                      <Text style={styles.proTagText}>{provider.badge}</Text>
+                    </View>
+                  ) : null}
                 </View>
                 <Text style={[styles.serviceDoneText, { color: colors.textSecondary }]} numberOfLines={1}>
                   Completed {activeBooking?.category.title || 'Home Care Service'}

@@ -1,66 +1,14 @@
 import { DestinationItem, PreviousRide, PaymentMethod, SavedPlace, Faq } from './types';
 
-export const INITIAL_DESTINATIONS: DestinationItem[] = [
-  {
-    id: '1',
-    title: 'Road Number 6',
-    subtitle: 'Addagutta, Samatha Nagar, Kukatpally, Hyderabad',
-    favorite: false,
-  },
-  {
-    id: '2',
-    title: 'Shilparamam',
-    subtitle: '305, Jubilee Enclave, HITEC City, Hyderabad',
-    favorite: false,
-  },
-  {
-    id: '3',
-    title: 'TR Square',
-    subtitle: 'Jai Hind Gandhi Road, VIP Hills, Jaihind Enclave',
-    favorite: false,
-  },
-  {
-    id: '4',
-    title: 'Lakeshore Mall',
-    subtitle: 'IDA Kukatpally, Kukatpally, Hyderabad, Telangana',
-    favorite: false,
-  },
-  {
-    id: '5',
-    title: 'Cyber Towers - HITEC City',
-    subtitle: 'Hitech City Road, Patrika Nagar, Madhapur, Hyderabad',
-    favorite: false,
-  },
-  {
-    id: '6',
-    title: 'Yadagirigutta',
-    subtitle: 'Yadadri Bhuvanagiri, Telangana, India',
-    favorite: false,
-  },
-  {
-    id: '7',
-    title: '131a',
-    subtitle: 'Road No. 6, Addagutta, Samatha Nagar, Kukatpally',
-    favorite: false,
-  },
-];
+export const INITIAL_DESTINATIONS: DestinationItem[] = [];
 
-export const PREVIOUS_RIDES: PreviousRide[] = [
-  { id: 'r1', title: 'Kukatpally Housing Board', date: 'Yesterday, 6:42 PM', fare: '₹186', rating: 5 },
-  { id: 'r2', title: 'HITEC City Metro Station', date: '3 Sep, 9:15 AM', fare: '₹142', rating: 4 },
-  { id: 'r3', title: 'Jubilee Hills Check Post', date: '29 Aug, 8:03 PM', fare: '₹231', rating: 5 },
-  { id: 'r4', title: 'Gachibowli Stadium', date: '24 Aug, 7:20 AM', fare: '₹98', rating: 5 },
-];
+export const PREVIOUS_RIDES: PreviousRide[] = [];
 
 export const INITIAL_PAYMENT_METHODS: PaymentMethod[] = [
-  { id: 'p1', label: 'UPI — rider@okhdfcbank', isDefault: true },
-  { id: 'p2', label: 'Cash', isDefault: false },
+  { id: 'cash', label: 'Cash', isDefault: true },
 ];
 
-export const INITIAL_SAVED_PLACES: SavedPlace[] = [
-  { id: 's1', label: 'Home', address: 'VIP Hills, Jaihind Enclave, Hyderabad', icon: 'home' },
-  { id: 's2', label: 'Work', address: 'HITEC City, Hyderabad', icon: 'briefcase' },
-];
+export const INITIAL_SAVED_PLACES: SavedPlace[] = [];
 
 export const FAQS: Faq[] = [
   {

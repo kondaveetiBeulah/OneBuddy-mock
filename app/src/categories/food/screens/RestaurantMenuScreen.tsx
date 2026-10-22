@@ -13,6 +13,7 @@ import { MenuItem } from '../types';
 import { useNetwork } from '@/context/NetworkContext';
 import { NetworkErrorState } from '@/components/NetworkErrorState';
 import { isCategoryDark } from '@/theme/categoryThemeBridge';
+import { RestaurantMenuSkeleton } from '@/components/common/skeletons';
 
 interface RestaurantMenuScreenProps {
   restaurantId: string;
@@ -30,7 +31,7 @@ export const RestaurantMenuScreen: React.FC<RestaurantMenuScreenProps> = ({
   const { isConnected } = useNetwork();
   const isDark = isCategoryDark();
   const restaurant = useMemo(() => {
-    return restaurants.find((r) => r.id === restaurantId) || restaurants[0];
+    return restaurants.find((r) => r.id === restaurantId) || null;
   }, [restaurants, restaurantId]);
 
   const scrollViewRef = useRef<ScrollView>(null);
@@ -112,13 +113,9 @@ export const RestaurantMenuScreen: React.FC<RestaurantMenuScreenProps> = ({
     });
   };
 
-  if (!restaurant) {
+  if (!restaurant || isLoading) {
     if (isLoading) {
-      return (
-        <View style={[styles.container, isDark && { backgroundColor: '#000000' }, { justifyContent: 'center', alignItems: 'center' }]}>
-          <ActivityIndicator size="large" color="#65A30D" />
-        </View>
-      );
+      return <RestaurantMenuSkeleton isDark={isDark} />;
     }
     if (!isConnected || error) {
       return (

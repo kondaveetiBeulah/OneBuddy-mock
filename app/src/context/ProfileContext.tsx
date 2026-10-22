@@ -64,9 +64,9 @@ export interface ProfileData {
 }
 
 export const DEFAULT_PROFILE: ProfileData = {
-  name: 'User 8225',
-  phone: '7013138225',
-  email: 'you@example.com',
+  name: '',
+  phone: '',
+  email: '',
   style: 'classic',
   color: '#589E6E',
 };

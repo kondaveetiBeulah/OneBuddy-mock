@@ -34,6 +34,7 @@ import { AddAddressAlert } from '../components/home/AddAddressAlert';
 import { AppLogo } from '../components/common/AppLogo';
 import { Badge } from '../components/common/Badge';
 import { useHomeTheme, COLORS, RADII, SPACING, SHADOWS } from '../theme';
+import { HomeBannerSkeleton, HomeCategoryGridSkeleton } from '@/components/common/skeletons';
 import { db } from '../../../firebase/config';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 
@@ -63,13 +64,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const [categories, setCategories] = useState<ServiceCategory[]>(SERVICE_CATEGORIES);
   const [banners, setBanners] = useState<OfferBanner[]>(OFFER_BANNERS);
   const [subServices, setSubServices] = useState<SubService[]>(SUB_SERVICES);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Fetch live home services data from Firestore after initial screen interactions
   React.useEffect(() => {
     let isMounted = true;
     async function loadFirestoreHomeData() {
       try {
-        if (!db) return;
+        if (!db) {
+          if (isMounted) setIsLoading(false);
+          return;
+        }
         const [catSnap, banSnap, subSnap] = await Promise.all([
           getDocs(query(collection(db, 'catalogHomeCategories'), where('active', '==', true))),
           getDocs(query(collection(db, 'catalogHomeBanners'), where('active', '==', true))),
@@ -91,7 +96,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           }
         }
       } catch {
-        // Fallback silently to defaults
+        // Handled silently
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     }
 
@@ -302,10 +311,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           </View>
           <Badge label="Limited" variant="warning" size="sm" />
         </View>
-        <BannerCarousel
-          banners={banners}
-          onBannerPress={handleSelectBanner}
-        />
+        {isLoading || banners.length === 0 ? (
+          <HomeBannerSkeleton isDark={isDark} />
+        ) : (
+          <BannerCarousel
+            banners={banners}
+            onBannerPress={handleSelectBanner}
+          />
+        )}
 
         {/* 4 Service Categories Section */}
         <View style={[styles.sectionHeaderRow, { marginTop: SPACING.md }]}>
@@ -314,10 +327,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             <Text style={styles.sectionSubtitle}>Select a category to view specialized options</Text>
           </View>
         </View>
-        <CategoryGrid
-          categories={categories}
-          onSelectCategory={handleSelectCategory}
-        />
+        {isLoading || categories.length === 0 ? (
+          <HomeCategoryGridSkeleton isDark={isDark} />
+        ) : (
+          <CategoryGrid
+            categories={categories}
+            onSelectCategory={handleSelectCategory}
+          />
+        )}
       </ScrollView>
 
       {/* Initial Add Address Alert Dialog (Alert format with Add Address and Skip options) */}

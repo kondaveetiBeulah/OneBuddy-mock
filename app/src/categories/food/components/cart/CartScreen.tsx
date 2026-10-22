@@ -119,7 +119,7 @@ function useCartTheme() {
     return { isDark, COLORS: currentColors, styles: currentStyles };
 }
 
-// ─── Mock Data ──────────────────────────────────────────────────────────────
+// ─── Delivery Constants ───────────────────────────────────────────────────────
 const DELIVERY_FEE = 39;
 
 

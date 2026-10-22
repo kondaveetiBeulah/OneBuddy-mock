@@ -163,12 +163,25 @@ export function createStyles(COLORS: OrdersColors) {
     fontSize: 12,
     fontWeight: '600',
   },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+    paddingHorizontal: 24,
+  },
+  emptyTitle: {
+    color: COLORS.text,
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 6,
+    textAlign: 'center',
+  },
   emptyMsg: {
     color: COLORS.textFaint,
     fontSize: 13,
     textAlign: 'center',
-    paddingVertical: 40,
     paddingHorizontal: 20,
+    lineHeight: 18,
   },
   });
 }

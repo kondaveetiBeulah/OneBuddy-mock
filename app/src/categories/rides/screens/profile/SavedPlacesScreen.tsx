@@ -37,6 +37,13 @@ export default function SavedPlacesScreen({ onBack }: Props) {
     <View style={styles.container}>
       <ProfileHeader title="Saved places" onBack={onBack} />
       <ScrollView contentContainerStyle={styles.content}>
+        {places.length === 0 && !showForm && (
+          <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 40 }}>
+            <Ionicons name="bookmark-outline" size={40} color="#94a3b8" style={{ marginBottom: 10 }} />
+            <Text style={{ fontSize: 15, fontWeight: '600', color: '#1E293B', marginBottom: 4 }}>No Saved Places</Text>
+            <Text style={{ fontSize: 13, color: '#64748B', textAlign: 'center' }}>Add your frequent destinations for faster booking.</Text>
+          </View>
+        )}
         {places.map((place) => (
           <View key={place.id} style={styles.row}>
             <Ionicons name={iconFor(place.icon) as any} size={18} color="#64748b" />

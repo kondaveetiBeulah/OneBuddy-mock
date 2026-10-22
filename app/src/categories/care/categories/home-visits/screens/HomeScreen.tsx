@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, useColors } from '../components/UI';
 import { doctors } from '../mockData';
 import { useBooking } from '../context/BookingContext';
+import { CareDoctorSlideCardSkeleton } from '@/components/common/skeletons';
 
 interface Props {
   navigation: {
@@ -206,7 +207,7 @@ export function HomeScreen({ navigation, onClose }: Props) {
   const [query, setQuery] = useState('');
   const [selectedCatId, setSelectedCatId] = useState<string | null>(null);
   const { doctorsList } = useBooking();
-  const activeDoctors = doctorsList && doctorsList.length > 0 ? doctorsList : doctors;
+  const activeDoctors = doctorsList || [];
   const topDoctors = activeDoctors.slice(0, 6);
   const tc = useColors(); // theme-aware colors
 
@@ -312,63 +313,75 @@ export function HomeScreen({ navigation, onClose }: Props) {
           <View style={styles.sectionHeaderRow}>
             <View style={{ flex: 1, paddingRight: 8 }}>
               <Text style={[styles.headingTitle, { color: tc.ink }]}>Featured Specialists</Text>
-              <Text style={[styles.subHeadingText, { color: tc.muted }]}>Slide left to browse verified specialist doctors ({doctors.length})</Text>
+              <Text style={[styles.subHeadingText, { color: tc.muted }]}>Slide left to browse verified specialist doctors {topDoctors.length > 0 ? `(${topDoctors.length})` : ''}</Text>
             </View>
             <Pressable onPress={() => navigation.navigate('Doctors', {})}>
               <Text style={styles.seeAllText}>View All &gt;</Text>
             </Pressable>
           </View>
 
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            decelerationRate="fast"
-            contentContainerStyle={styles.doctorScrollContainer}
-          >
-            {topDoctors.map((doc) => (
-              <Pressable
-                key={doc.id}
-                style={[styles.doctorSlideCard, { backgroundColor: tc.surface, borderColor: tc.border }]}
-                onPress={() => navigation.navigate('Availability', { doctorId: doc.id })}
-              >
-                <View style={styles.docHeaderRow}>
-                  {doc.avatar ? (
-                    <Image source={{ uri: doc.avatar }} style={styles.docAvatar} />
-                  ) : (
-                    <View style={styles.docInitialsBadge}>
-                      <Text style={styles.docInitialsText}>{doc.initials}</Text>
-                    </View>
-                  )}
-                  <View style={styles.docHeaderInfo}>
-                    <Text style={[styles.docName, { color: tc.ink }]} numberOfLines={1}>{doc.name}</Text>
-                    <Text style={styles.docSpecialtyGreen} numberOfLines={1}>{doc.specialty}</Text>
-                    <Text style={[styles.docHospitalGray, { color: tc.muted }]} numberOfLines={1}>{doc.hospital}</Text>
-                    <View style={styles.ratingBadgeRow}>
-                      <View style={styles.ratingBadgeYellow}>
-                        <Ionicons name="star" size={11} color="#D97706" />
-                        <Text style={styles.ratingBadgeText}>{doc.rating.toFixed(1)}</Text>
+          {topDoctors.length === 0 ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.doctorScrollContainer}
+            >
+              {[1, 2, 3].map((i) => (
+                <CareDoctorSlideCardSkeleton key={`doc-skel-${i}`} isDark={tc.isDark} />
+              ))}
+            </ScrollView>
+          ) : (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              decelerationRate="fast"
+              contentContainerStyle={styles.doctorScrollContainer}
+            >
+              {topDoctors.map((doc) => (
+                <Pressable
+                  key={doc.id}
+                  style={[styles.doctorSlideCard, { backgroundColor: tc.surface, borderColor: tc.border }]}
+                  onPress={() => navigation.navigate('Availability', { doctorId: doc.id })}
+                >
+                  <View style={styles.docHeaderRow}>
+                    {doc.avatar ? (
+                      <Image source={{ uri: doc.avatar }} style={styles.docAvatar} />
+                    ) : (
+                      <View style={styles.docInitialsBadge}>
+                        <Text style={styles.docInitialsText}>{doc.initials}</Text>
                       </View>
-                      <View style={styles.expBadgeBlue}>
-                        <Text style={styles.expBadgeText}>{doc.experience}y exp</Text>
+                    )}
+                    <View style={styles.docHeaderInfo}>
+                      <Text style={[styles.docName, { color: tc.ink }]} numberOfLines={1}>{doc.name}</Text>
+                      <Text style={styles.docSpecialtyGreen} numberOfLines={1}>{doc.specialty}</Text>
+                      <Text style={[styles.docHospitalGray, { color: tc.muted }]} numberOfLines={1}>{doc.hospital}</Text>
+                      <View style={styles.ratingBadgeRow}>
+                        <View style={styles.ratingBadgeYellow}>
+                          <Ionicons name="star" size={11} color="#D97706" />
+                          <Text style={styles.ratingBadgeText}>{doc.rating.toFixed(1)}</Text>
+                        </View>
+                        <View style={styles.expBadgeBlue}>
+                          <Text style={styles.expBadgeText}>{doc.experience}y exp</Text>
+                        </View>
                       </View>
                     </View>
                   </View>
-                </View>
 
-                <View style={styles.docCardDivider} />
+                  <View style={styles.docCardDivider} />
 
-                <View style={styles.docFooterRow}>
-                  <View>
-                    <Text style={styles.feeLabel}>FEE</Text>
-                    <Text style={[styles.feeValue, { color: tc.ink }]}>₹{doc.fee}</Text>
+                  <View style={styles.docFooterRow}>
+                    <View>
+                      <Text style={styles.feeLabel}>FEE</Text>
+                      <Text style={[styles.feeValue, { color: tc.ink }]}>₹{doc.fee}</Text>
+                    </View>
+                    <View style={styles.bookBtn}>
+                      <Text style={styles.bookBtnText}>Book Visit &gt;</Text>
+                    </View>
                   </View>
-                  <View style={styles.bookBtn}>
-                    <Text style={styles.bookBtnText}>Book Visit &gt;</Text>
-                  </View>
-                </View>
-              </Pressable>
-            ))}
-          </ScrollView>
+                </Pressable>
+              ))}
+            </ScrollView>
+          )}
         </View>
 
         {/* Popular specialists section */}

@@ -24,9 +24,9 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
   navigation,
 }) => {
   const { user, updateProfile } = useUser();
-  const [name, setName] = useState(user?.name || 'Anjali');
-  const [email, setEmail] = useState(user?.email || 'anjali@example.com');
-  const [phone, setPhone] = useState(user?.phone || '9876543210');
+  const [name, setName] = useState(user?.name || '');
+  const [email, setEmail] = useState(user?.email || '');
+  const [phone, setPhone] = useState(user?.phone || '');
   const [loading, setLoading] = useState(false);
   const groceryColors = useGroceryColors();
   const isDark = isCategoryDark() || groceryColors.cardBackground === '#000000';
